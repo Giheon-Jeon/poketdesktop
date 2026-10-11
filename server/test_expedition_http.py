@@ -62,7 +62,7 @@ def main():
     pid = mons["pokemon"][0]["id"]
     st, s0 = call("GET", "/api/expedition")
     chk("처음 상태: 칸 3, 비어 있다", st == 200 and s0["slots"] == 3 and s0["free"] == 3 and s0["out"] == []
-        and s0["hours"] == [2, 4, 8] and s0["nextIn"] is None, s0)
+        and s0["hours"] == [2, 4, 8] and s0["nextIn"] is None and s0.get("growth") == {}, s0)
     st, r = call("POST", "/api/expedition/send", {"pokemon": pid, "place": "forest", "hours": 2})
     chk("데리고 다니는 포켓몬은 못 보낸다 (409, 까닭이 온다)", st == 409 and "박스" in (r.get("error") or r.get("detail") or ""), (st, r))
     call("POST", "/api/pokemon/%d/desktop" % pid, {"on": False})
@@ -103,7 +103,8 @@ def main():
         bag0 = dict(me.get("bag") or {})
         st, got = call("POST", "/api/expedition/claim", {})
         cl = (got.get("claimed") or [{}])[0]
-        want = {"id", "pokemon", "place", "placeKr", "hours", "grade", "gradeKr", "items", "tm"}
+        want = {"id", "pokemon", "place", "placeKr", "hours", "grade", "gradeKr", "items", "tm", "bonus", "growth",
+                "friend", "friendFull"}
         chk("전부 받기: 화면이 읽는 칸이 다 있다", st == 200 and got.get("ok") and len(got["claimed"]) == 1 and set(cl) == want
             and got["free"] == 3 and got["out"] == [] and set(got) >= {"bag", "money", "balls", "message"},
             (st, sorted(set(cl) ^ want)))
@@ -119,6 +120,51 @@ def main():
         st, r2 = call("POST", "/api/pokemon/%d/desktop" % pid, {"on": True})
         chk("  다시 데리고 다닐 수 있다", st == 200, (st, r2))
         call("POST", "/api/pokemon/%d/desktop" % pid, {"on": False})
+
+        # ---- 쉬기와 성장 (1.10.5)
+        gr = cl.get("growth") or {}
+        chk("받은 보따리에 성장이 실린다", set(gr) == {"xp", "levelBefore", "level", "into", "need", "free", "rest"}
+            and gr["xp"] in (20, 24, 30) and gr["rest"] == 0, gr)      # (2020년에 돌아온 것으로 고쳤으니 다 쉬었다)
+        g = (got.get("growth") or {}).get(str(pid)) or {}
+        chk("상태에 포켓몬마다의 성장이 실린다 (화면이 읽는 칸)", set(g) == {"xp", "level", "into", "need", "stats", "free",
+                                                                "rest", "runs"}
+            and set(g["stats"]) == {"speed", "luck", "haul", "lore", "charm"} and g["runs"] == 1
+            and cl.get("friend") is None and cl.get("friendFull") is False, g)
+        conn = sqlite3.connect(DB, timeout=30)
+        conn.execute("UPDATE expedition_mon SET rest_until='2999-01-01T00:00:00+00:00' WHERE pokemon_id=?", (pid,))
+        conn.commit()
+        conn.close()
+        st, r2 = call("POST", "/api/expedition/send", {"pokemon": pid, "place": "forest", "hours": 2})
+        chk("쉬는 동안에는 못 보낸다 (409, 까닭이 온다)", st == 409 and "쉬는 중" in (r2.get("error") or r2.get("detail") or ""),
+            (st, r2))
+        st, s2 = call("GET", "/api/expedition")
+        chk("  남은 쉬는 시간이 초로 온다", s2["growth"][str(pid)]["rest"] > 86400, s2["growth"][str(pid)])
+        conn = sqlite3.connect(DB, timeout=30)
+        conn.execute("UPDATE expedition_mon SET rest_until=NULL, xp=240 WHERE pokemon_id=?", (pid,))
+        conn.execute("UPDATE users SET money=1500 WHERE id=(SELECT user_id FROM pokemon WHERE id=?)", (pid,))
+        conn.commit()
+        conn.close()
+        st, r2 = call("POST", "/api/expedition/grow", {"pokemon": pid, "add": {"speed": 1, "luck": 1}})
+        g = (r2.get("growth") or {}).get(str(pid)) or {}
+        chk("성장치를 찍는다 (탐험 Lv.2 = 2점)", st == 200 and r2.get("ok") and g.get("level") == 2 and g.get("free") == 0
+            and g["stats"] == {"speed": 1, "luck": 1, "haul": 0, "lore": 0, "charm": 0} and "message" in r2,
+            (st, r2.get("message"), g))
+        st, r2 = call("POST", "/api/expedition/grow", {"pokemon": pid, "add": {"haul": 1}})
+        chk("  남은 점수가 없으면 409", st == 409, (st, r2))
+        st, r2 = call("POST", "/api/expedition/grow", {"pokemon": pid, "add": {"power": 1}})
+        chk("  없는 성장치는 400", st == 400, (st, r2))
+        st, r2 = call("POST", "/api/expedition/send", {"pokemon": pid, "place": "forest", "hours": 2})
+        chk("발걸음 1점: 2시간이 1시간 57분", st == 200 and 7010 <= r2["out"][0]["left"] <= 7020 and r2["out"][0]["total"] == 7020,
+            (st, (r2.get("out") or [{}])[0].get("left")))
+        st, r3 = call("POST", "/api/expedition/reset", {"pokemon": pid})
+        chk("  나가 있는 동안에는 못 되돌린다 (409)", st == 409, (st, r3))
+        call("POST", "/api/expedition/%d/recall" % r2["out"][0]["id"], {})
+        st, r3 = call("POST", "/api/expedition/reset", {"pokemon": pid})
+        g = (r3.get("growth") or {}).get(str(pid)) or {}
+        chk("되돌리기: 1,000원을 내고 점수가 돌아온다", st == 200 and r3.get("money") == 500 and g.get("free") == 2
+            and sum(g["stats"].values()) == 0, (st, r3.get("money"), g))
+        st, r3 = call("POST", "/api/expedition/reset", {"pokemon": pid})
+        chk("  되돌릴 것이 없으면 409 (돈은 그대로)", st == 409, (st, r3))
 
     st, r = call("POST", "/api/expedition/send", {"pokemon": pid, "place": "ruins", "hours": 8})
     eid = r["out"][0]["id"] if st == 200 else 0

@@ -755,7 +755,23 @@ def scrollable(canvas, div=60, after=None):
     canvas.wheel_div = div
     if after:
         canvas.wheel_after = after
+    canvas.bind("<Map>", lambda _e, cv=canvas: redraw_canvas(cv), add="+")
     return canvas
+
+
+def redraw_canvas(canvas):
+    """가려졌다 다시 보인 캔버스가 **안에 든 창(create_window)** 을 다시 올리게 한다.
+
+    캔버스는 다시 그릴 때에만 안에 든 창을 화면에 올린다. 맥의 Tk(8.6 aqua)는 pack_forget 했던 틀을
+    같은 크기로 다시 담으면 캔버스에 <Map> 만 보내고 Expose 도 Configure 도 안 보낸다 - 다시 그릴
+    일이 없으니 목록의 줄이 하나도 안 보이고, 굴리거나 내용을 바꿔야 그제야 나타난다 (관장 탭에서
+    카드를 봤다가 목록으로 돌아오면 목록이 비어 있었다 - client/test_gym_ui.py 가 못 박는다).
+    같은 값으로 configure 하면 통째로 다시 그린다.
+    """
+    try:
+        canvas.configure(bg=canvas["bg"])
+    except tk.TclError:
+        pass
 
 
 class ScrollFit(object):

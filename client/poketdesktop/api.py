@@ -233,6 +233,15 @@ class Api(object):
         """불러들인다. 빈손으로 돌아온다."""
         return self._call("POST", "/api/expedition/%d/recall" % int(eid), {})
 
+    def expedition_grow(self, pid, add):
+        """탐험 성장치를 찍는다 (1.10.5). add = {"speed": 1, "luck": 2, ...}"""
+        return self._call("POST", "/api/expedition/grow",
+                          {"pokemon": int(pid), "add": dict((k, int(v)) for k, v in add.items() if v)})
+
+    def expedition_reset(self, pid):
+        """찍은 성장치를 전부 되돌린다 (돈이 든다)."""
+        return self._call("POST", "/api/expedition/reset", {"pokemon": int(pid)})
+
     def set_order(self, ids):
         """데리고 다니는 순서. 화면에 보이는 차례대로 넘긴다 (음수는 알)."""
         return self._call("POST", "/api/pokemon/order",

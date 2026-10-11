@@ -19,7 +19,19 @@
 ## 누구를: 긴 목록
 
 박스에 수백 마리가 있을 수 있다. 목록은 보이는 줄만 만든다 (U.VirtualList).
-데리고 다니는 포켓몬·알·이미 나가 있는 포켓몬은 목록에 없다 (보낼 수 없다).
+알·이미 나가 있는 포켓몬은 목록에 없다 (보낼 수 없다).
+
+줄은 두 줄이다 (1.10.5): 이름·레벨 / 타입, 오른쪽에 예상 성공도 / 탐험 레벨. 한 줄에 다섯 칸을
+나란히 뒀더니 허브를 가장 좁게 줄였을 때 오른쪽 두 칸이 창 밖으로 나가 있었다.
+
+## 쉬기와 성장 (1.10.5)
+
+다녀온 포켓몬은 24시간 쉰다. 쉬는 포켓몬은 목록의 **아래쪽**에 흐리게 서고 (곧 끝나는 차례로), 남은
+시간이 적힌다. 골라서 성장치를 찍을 수는 있지만 보낼 수는 없다. 데리고 다니는 포켓몬 가운데 탐험을
+다녀온 적이 있는 것도 맨 아래에 선다 - 성장치를 찍을 길이 있어야 한다.
+
+성장치는 [성장] 단추의 창에서 찍는다 (GrowDialog). 레벨마다 받은 점수를 발걸음·눈썰미·주머니·호기심·
+친화력에 나눠 찍고, 찍기 전에는 얼마든지 넣었다 뺐다 할 수 있다. 서버에는 [찍기] 를 눌렀을 때 한 번 간다.
 """
 import time
 import tkinter as tk
@@ -39,13 +51,12 @@ LEFT_W = 300                 # 탐험 칸
 MID_W = 304                  # 어디로 · 얼마나
 CARD_H = U.h(96)             # 탐험 칸 하나. 창을 가장 낮게(620) 줄여도 셋이 다 들어가는 높이다
 PLACE_H = U.h(30)            # 갈 곳 한 줄 (이름 + 맞는 타입 셋)
-ROW_H = U.h(32)
+ROW_H = U.h(44)              # '누구를' 의 한 줄 (이름·레벨 / 타입 두 줄)
 THUMB = 40
 PANEL = "#101623"
 GRADE_COLOR = {"great": U.ACCENT, "good": U.GOOD, "normal": U.FG_DIM}
-# 누구를: (제목, x, 폭, 정렬). 오른쪽 단의 폭(창 1020 에서 410 남짓)에 맞춘 값이다.
-COLS = [("이름", 12, 132, "w"), ("Lv", 146, 32, "center"), ("타입", 182, 112, "w"),
-        ("예상", 296, 54, "center"), ("물건", 352, 40, "center")]
+GROW_W = 470                 # 성장 창의 폭
+PIP = 9                      # 성장치 한 점의 네모 (px - 글자가 아니라서 글꼴 배율을 안 탄다)
 
 
 def _err(e):
@@ -57,76 +68,111 @@ def types_of(dex, mon):
     return list((sp or {}).get("types") or [])
 
 
-def candidates(mons, dex, place_id):
-    """보낼 수 있는 포켓몬을 그곳에서 잘할 차례로. [(포켓몬, 점수, 성공도)]
+def candidates(mons, dex, place_id, growth=None):
+    """'누구를' 목록에 설 포켓몬. [(포켓몬, 점수, 성공도)]
 
-    데리고 다니는 것·알·이미 나가 있는 것은 뺀다. 점수가 같으면 레벨 높은 것부터.
+    보낼 수 있는 것이 먼저다 (그곳에서 잘할 차례로, 점수가 같으면 레벨 높은 것부터). 그 아래에 쉬는
+    포켓몬 (곧 끝나는 차례로), 맨 아래에 데리고 다니는 포켓몬 가운데 탐험을 다녀온 적이 있는 것.
+    알과 이미 나가 있는 것은 뺀다. growth = {포켓몬 id(글자): {"rest": 남은 초, "xp": ...}} (서버가 준 것).
     """
-    out = []
+    growth = growth or {}
+    ok, resting, party = [], [], []
     for m in mons or []:
-        if m.get("isEgg") or m.get("onDesktop") or m.get("away") or int(m.get("id") or 0) <= 0:
+        if m.get("isEgg") or m.get("away") or int(m.get("id") or 0) <= 0:
             continue
+        g = growth.get(str(m["id"])) or {}
         pts = X.score(m.get("level", 0), types_of(dex, m), place_id)
-        out.append((m, pts, X.grade(pts)))
-    out.sort(key=lambda r: (-r[1], -int(r[0].get("level") or 0), r[0]["id"]))
-    return out
+        row = (m, pts, X.grade(pts))
+        if m.get("onDesktop"):
+            if int(g.get("xp") or 0) > 0:
+                party.append(row)
+        elif int(g.get("rest") or 0) > 0:
+            resting.append((int(g["rest"]), row))
+        else:
+            ok.append(row)
+    by_score = lambda r: (-r[1], -int(r[0].get("level") or 0), r[0]["id"])      # noqa: E731
+    ok.sort(key=by_score)
+    resting.sort(key=lambda x: (x[0],) + by_score(x[1]))
+    party.sort(key=by_score)
+    return ok + [r for _rest, r in resting] + party
 
 
 class PickRow(object):
-    """'누구를' 목록의 한 줄. 같은 줄이 여러 포켓몬을 돌아가며 보여 준다 (U.VirtualList)."""
+    """'누구를' 목록의 한 줄. 같은 줄이 여러 포켓몬을 돌아가며 보여 준다 (U.VirtualList).
+
+        ▌ 이상해꽃  Lv.80                 대성공
+        ▌ [풀] [독]                    탐험 Lv.3
+
+    쉬는 포켓몬은 흐리게, 오른쪽에 '쉬는 중 / 23시간 뒤'. 글자는 place 로 놓되 폭·높이를 주지 않는다 -
+    제 크기만큼 선다 (폭을 박아 두면 글꼴이 다른 PC 에서 잘린다).
+    """
 
     def __init__(self, parent, win):
         self.win = win
         self.data = None
         self.selected = False
+        self.state = "ok"
         self.f = tk.Frame(parent, bg="#161a24")              # 아래 한 줄이 금으로 남는다
         self.body = tk.Frame(self.f, bg=U.BG, cursor="hand2")
-        self.body.place(x=0, y=0, relwidth=1.0, height=ROW_H)
+        self.body.place(x=0, y=0, relwidth=1.0, height=ROW_H - U.h(1))
         self.mark = tk.Frame(self.body, bg=U.BG, width=3)
         self.mark.place(x=0, y=0, relheight=1.0)
-        self.name = self._cell(COLS[0], U.FONT_S)
-        self.lv = self._cell(COLS[1], U.FONT_B)
+        x = 12
+        self.name = self._label(U.FONT_B)
+        self.name.place(x=x, rely=0.30, anchor="w")
+        self.lv = self._label(U.FONT_XS)
         self.types = tk.Frame(self.body, bg=U.BG)
-        self.types.place(x=COLS[2][1], rely=0.5, anchor="w")
+        self.types.place(x=x, rely=0.72, anchor="w")
         self.chips = [U.chip(self.types, "", U.BG3, padx=6) for _i in range(2)]
-        self.grade = self._cell(COLS[3], U.FONT_B)
-        self.items = self._cell(COLS[4], U.FONT_XS)
-        self.cells = [self.name, self.lv, self.types, self.grade, self.items]
+        self.grade = self._label(U.FONT_B)
+        self.grade.place(relx=1.0, x=-8, rely=0.30, anchor="e")
+        self.grow = self._label(U.FONT_XS)
+        self.grow.place(relx=1.0, x=-8, rely=0.72, anchor="e")
+        self.cells = [self.name, self.lv, self.types, self.grade, self.grow]
         for w in [self.body] + self.cells + self.chips:
             w.bind("<Button-1>", self._click)
             w.bind("<Enter>", self._in)
             w.bind("<Leave>", self._out)
 
-    def _cell(self, col, font):
-        _t, x, w, anchor = col
-        lb = tk.Label(self.body, text="", bg=U.BG, fg=U.FG, font=font, anchor=anchor)
-        lb.place(x=x, y=0, width=w, relheight=1.0)
-        return lb
+    def _label(self, font):
+        return tk.Label(self.body, text="", bg=U.BG, fg=U.FG, font=font, bd=0, padx=0, pady=0)
 
     def bind(self, data):
         self.data = data
         mon, _pts, grade = data
-        dex = self.win.app.dex
+        win = self.win
+        dex = win.app.dex
         info = mon.get("info") or {}
         name = info.get("name") or mon.get("species") or "?"
+        self.state = st = win.mon_state(mon)
+        g = win.growth_of(mon["id"])
         self.name.configure(text=("★ " if mon.get("shiny") else "") + name)
-        self.lv.configure(text=str(mon.get("level", "")))
+        self.lv.configure(text="Lv.%s" % mon.get("level", ""))
+        self.lv.place(in_=self.name, relx=1.0, x=6, rely=0.5, anchor="w")       # 이름 바로 뒤에
         tps = types_of(dex, mon)
-        good = set((X.place(self.win.place) or {}).get("types") or ())
+        good = set((X.place(win.place) or {}).get("types") or ())
         for i, chip in enumerate(self.chips):
             if i < len(tps):
                 t = tps[i]
                 # 그곳과 맞는 타입은 제 색으로, 안 맞는 타입은 흐리게 - 왜 그 성공도인지가 보인다
+                lit = t in good and st == "ok"
                 chip.configure(text=dex.type_name(t) if dex is not None else t,
-                               bg=U.TYPE_COLOR.get(t, U.BG3) if t in good else U.BG3,
-                               fg="#14141a" if t in good else U.FG_FAINT)
+                               bg=U.TYPE_COLOR.get(t, U.BG3) if lit else U.BG3,
+                               fg="#14141a" if lit else U.FG_FAINT)
                 if not chip.winfo_manager():
                     chip.pack(side="left", padx=(0, 3))
             elif chip.winfo_manager():
                 chip.pack_forget()
-        self.grade.configure(text=X.GRADE_KR.get(grade, ""), fg=GRADE_COLOR.get(grade, U.FG_DIM))
-        self.items.configure(text="%d개" % X.item_count(self.win.hours, grade), fg=U.FG_DIM)
-        self.selected = (mon["id"] == self.win.pick)
+        if st == "rest":
+            self.grade.configure(text="쉬는 중", fg=U.FG_FAINT)
+            self.grow.configure(text="%s 뒤" % X.hours_text(win.rest_left(mon["id"])), fg=U.FG_FAINT)
+        elif st == "party":
+            self.grade.configure(text="데리고 다니는 중", fg=U.FG_FAINT)
+            self.grow.configure(text=grow_text(g), fg=U.ACCENT_TEXT if g.get("free") else U.FG_FAINT)
+        else:
+            self.grade.configure(text=X.GRADE_KR.get(grade, ""), fg=GRADE_COLOR.get(grade, U.FG_DIM))
+            self.grow.configure(text=grow_text(g), fg=U.ACCENT_TEXT if g.get("free") else U.FG_FAINT)
+        self.selected = (mon["id"] == win.pick)
         self._look()
 
     def _paint(self, bg, mark):
@@ -137,12 +183,14 @@ class PickRow(object):
 
     def _look(self):
         mon = self.data[0] if self.data else {}
+        dim = self.state != "ok"
         if self.selected:
             self._paint("#2b2417", U.ACCENT)
-            self.name.configure(fg=U.ACCENT_TEXT, font=U.FONT_B)
+            self.name.configure(fg=U.ACCENT_TEXT)
         else:
             self._paint(U.BG, U.BG)
-            self.name.configure(fg=U.SHINY if mon.get("shiny") else U.FG, font=U.FONT_S)
+            self.name.configure(fg=U.FG_FAINT if dim else (U.SHINY if mon.get("shiny") else U.FG))
+        self.lv.configure(fg=U.FG_FAINT if dim else U.FG_DIM)
 
     def _click(self, _e):
         if self.data is not None:
@@ -155,6 +203,15 @@ class PickRow(object):
     def _out(self, _e):
         if not self.selected:
             self._paint(U.BG, U.BG)
+
+
+def grow_text(g):
+    """줄의 오른쪽 아래: 탐험 레벨. 찍을 점수가 남았으면 점을 붙인다 (색은 부르는 쪽이 바꾼다)."""
+    lv = int((g or {}).get("level") or 0)
+    free = int((g or {}).get("free") or 0)
+    if not lv and not free:
+        return "탐험 Lv.0"
+    return "탐험 Lv.%d" % lv + (" ● %d점" % free if free else "")
 
 
 class ExpeditionWindow(object):
@@ -177,6 +234,9 @@ class ExpeditionWindow(object):
         self.cards = []              # 탐험 칸의 틀 셋
         self.live = []               # 칸마다 1초에 한 번 고칠 것 [(탐험, 남은 시간 글, 막대)]
         self.place_cards = {}
+        self.growth = {}             # {포켓몬 id(글자): 탐험 성장·쉬는 시간} - 서버가 준 것 (1.10.5)
+        self._rest_job = None        # 쉬는 시간이 줄어드는 것을 가끔 다시 칠한다
+        self.grow_dialog = None
 
         self.win = U.panel(parent, self.root, "포스크탑 — 탐험", 1020, 664, 980, 600, self.close)
         self.win.configure(bg=U.BG, highlightthickness=2, highlightbackground=U.LINE2)
@@ -210,12 +270,15 @@ class ExpeditionWindow(object):
         self.sub = tk.Label(title, text="박스의 포켓몬을 보내 두면 도구를 가져옵니다", bg=U.BG2, fg=U.FG_FAINT,
                             font=U.FONT_XS)
         self.sub.pack(anchor="w")
-        U.ghost_button(inner, "새로고침", self.reload, height=32).pack(side="right", pady=18)
+        # 위아래 여백을 숫자로 박지 않는다 (pack 이 가운데로 놓는다). pady=18 로 두었더니 윈도우(글꼴 10pt)
+        # 에서 머리줄이 68px 라 단추(36px)가 4px 눌려 있었다.
+        self.reload_btn = U.ghost_button(inner, "새로고침", self.reload, height=32)
+        self.reload_btn.pack(side="right")
         tk.Frame(self.win, bg=U.LINE2, height=U.h(2)).pack(fill="x")
         tip = tk.Frame(self.win, bg=U.INK)
         tip.pack(fill="x")
-        tk.Label(tip, text="타입이 맞고 레벨이 높을수록 잘 해냅니다.   프로그램을 꺼도 시간은 흐릅니다.   "
-                           "나가 있는 동안은 데리고 다닐 수 없습니다.",
+        tk.Label(tip, text="타입이 맞고 레벨이 높을수록 잘 해냅니다.   꺼 두어도 시간은 흐릅니다.   "
+                           "다녀온 포켓몬은 %d시간 쉬고, 탐험 경험치가 쌓입니다." % X.REST_HOURS,
                  bg=U.INK, fg=U.FG_FAINT, font=U.FONT_XS).pack(side="left", padx=16, pady=6)
         tk.Frame(self.win, bg=U.LINE2, height=U.h(2)).pack(fill="x")
 
@@ -281,7 +344,7 @@ class ExpeditionWindow(object):
         slot = tk.Frame(top, bg=PANEL, width=U.h(42), height=U.h(42))
         slot.pack(side="left")
         slot.pack_propagate(False)
-        art = tk.Label(slot, bg=PANEL)
+        art = tk.Label(slot, bg=PANEL, bd=0, highlightthickness=0)     # (테두리 4px 이 칸보다 커서 눌렸다)
         art.pack(expand=True)
         self._thumb(art, mon)
         text = tk.Frame(top, bg=PANEL)
@@ -409,26 +472,25 @@ class ExpeditionWindow(object):
         self.pick_note = tk.Label(head, text="", bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS)
         self.pick_note.pack(side="right")
 
-        # 바닥의 보내기 줄을 먼저 잡는다 (목록이 남은 높이를 다 먹는다)
-        foot = tk.Frame(right, bg=U.BG2, height=U.h(62))
+        # 바닥의 보내기 줄을 먼저 잡는다 (목록이 남은 높이를 다 먹는다).
+        # 높이를 박아 두지 않는다: 요약 글이 좁은 창에서 서너 줄로 접히면 그만큼 자란다 (단추의 높이가
+        # 바닥값이다). 62px 로 박아 두면 성장치를 여럿 찍은 포켓몬의 요약이 아래로 잘린다.
+        foot = tk.Frame(right, bg=U.BG2)
         foot.pack(fill="x", side="bottom")
-        foot.pack_propagate(False)
         tk.Frame(right, bg=U.LINE, height=U.h(1)).pack(fill="x", side="bottom")
         self.send_btn = U.PushButton(foot, "보내기", self.do_send, height=34, font=U.FONT_B)
-        self.send_btn.pack(side="right", padx=(8, 14), pady=12)
+        self.send_btn.pack(side="right", padx=(6, 14), pady=12)
+        # 성장: 고른 포켓몬의 탐험 레벨과 성장치 (찍을 점수가 남았으면 점이 붙는다)
+        self.grow_btn = U.ghost_button(foot, "성장", self.open_grow, height=34)
+        self.grow_btn.pack(side="right", pady=12)
         self.summary = tk.Label(foot, text="", bg=U.BG2, fg=U.FG_DIM, font=U.FONT_S, anchor="w", justify="left")
-        self.summary.pack(side="left", padx=(14, 0), fill="both", expand=True)
+        self.summary.pack(side="left", padx=(14, 6), pady=8, fill="both", expand=True)
         U.wrap_to_width(self.summary)
 
-        colhead = tk.Frame(right, bg=U.INK, height=U.h(26))
-        colhead.pack(fill="x", padx=14)
-        colhead.pack_propagate(False)
-        for title, x, w, anchor in COLS:
-            tk.Label(colhead, text=title, bg=U.INK, fg=U.FG_FAINT, font=U.FONT_XS,
-                     anchor=anchor).place(x=x, y=0, width=w, relheight=1.0)
+        tk.Frame(right, bg=U.LINE, height=U.h(1)).pack(fill="x", padx=14)
         wrap = tk.Frame(right, bg=U.BG)
         wrap.pack(fill="both", expand=True, padx=14, pady=(0, 8))
-        self.vl = U.VirtualList(wrap, {"mon": (ROW_H + U.h(1), lambda p: PickRow(p, self))}, bg=U.BG)
+        self.vl = U.VirtualList(wrap, {"mon": (ROW_H, lambda p: PickRow(p, self))}, bg=U.BG)
         self.vl.pack(fill="both", expand=True)
         self.empty = tk.Label(wrap, text="", bg=U.BG, fg=U.FG_FAINT, font=U.FONT_S, justify="center")
         self._paint_place()
@@ -471,14 +533,35 @@ class ExpeditionWindow(object):
         """지금 화면에 걸친 줄 [(포켓몬 id, 줄)] (검사가 본다)."""
         return [(r.data[0]["id"], r) for _i, r in self.vl.shown() if r.data is not None]
 
+    # ---- 쉬기와 성장 (1.10.5)
+    def growth_of(self, pid):
+        """그 포켓몬의 탐험 성장 (다녀온 적이 없으면 0 에서 시작)."""
+        return self.growth.get(str(pid)) or {"xp": 0, "level": 0, "into": 0, "need": X.level_need(1),
+                                             "stats": dict((k, 0) for k in X.STATS), "free": 0, "rest": 0, "runs": 0}
+
+    def rest_left(self, pid):
+        """그 포켓몬이 쉬어야 할 남은 초 (받은 뒤 흐른 시간을 뺀다)."""
+        rest = int((self.growth.get(str(pid)) or {}).get("rest") or 0)
+        return max(0, rest - int(time.monotonic() - self._t0))
+
+    def mon_state(self, mon):
+        """'ok' 보낼 수 있다 · 'rest' 쉬는 중 · 'party' 데리고 다니는 중."""
+        if mon.get("onDesktop"):
+            return "party"
+        return "rest" if self.rest_left(mon["id"]) > 0 else "ok"
+
     def _fill(self, keep=True):
-        rows = candidates(self.mons, self.app.dex, self.place)
+        # 쉬는 시간은 지금 남은 값으로 (받은 뒤 흐른 만큼 뺀다) - 다 쉰 포켓몬이 위로 올라온다
+        now = dict((k, dict(g, rest=self.rest_left(k))) for k, g in self.growth.items())
+        rows = candidates(self.mons, self.app.dex, self.place, now)
         ids = [m["id"] for m, _p, _g in rows]
         if self.pick not in ids:
             self.pick = ids[0] if ids else None
         self.vl.set([("mon", r) for r in rows], keep=keep)
-        boxed = len(rows)
-        self.pick_note.configure(text="박스 %d마리 · 잘할 차례로" % boxed if boxed else "")
+        ready = sum(1 for m, _p, _g in rows if self.mon_state(m) == "ok")
+        resting = sum(1 for m, _p, _g in rows if self.mon_state(m) == "rest")
+        self.pick_note.configure(text=("보낼 수 있는 %d마리 · 잘할 차례로" % ready
+                                       + (" · 쉬는 중 %d" % resting if resting else "")) if rows else "")
         if rows:
             self.empty.place_forget()
         else:
@@ -487,6 +570,26 @@ class ExpeditionWindow(object):
                                  else "보낼 포켓몬이 없습니다.")
             self.empty.place(relx=0.5, rely=0.4, anchor="center")
         self._paint_summary()
+        self._arm_rest()
+
+    def _arm_rest(self):
+        """쉬는 포켓몬이 있으면 가끔 다시 칠한다 (남은 시간이 줄고, 다 쉬면 위로 올라온다)."""
+        if self._rest_job is not None:
+            try:
+                self.root.after_cancel(self._rest_job)
+            except Exception:                               # noqa: BLE001
+                pass
+            self._rest_job = None
+        left = [self.rest_left(k) for k in self.growth]
+        left = [x for x in left if x > 0]
+        if left and self.alive:
+            # 다음 것이 다 쉴 때, 아니면 1분 뒤 (적힌 '몇 분 뒤' 가 묵지 않게)
+            self._rest_job = self.root.after(int(min(min(left) + 1, 60) * 1000), self._rest_tick)
+
+    def _rest_tick(self):
+        self._rest_job = None
+        if self.alive:
+            self._fill(keep=True)
 
     def pick_mon(self, pid):
         self.pick = pid
@@ -505,6 +608,9 @@ class ExpeditionWindow(object):
     def _paint_summary(self):
         data = self._picked()
         p = X.place(self.place) or {}
+        g = self.growth_of(data[0]["id"]) if data is not None else {}
+        self.grow_btn.configure(text="성장 ●" if g.get("free") else "성장",
+                                state="normal" if data is not None else "disabled")
         if self.state is not None and self.free() <= 0:
             self.summary.configure(text="탐험 칸이 꽉 찼습니다.\n돌아온 보따리를 받으면 칸이 빕니다.", fg=U.FG_FAINT)
             self.send_btn.configure(state="disabled")
@@ -515,12 +621,36 @@ class ExpeditionWindow(object):
             return
         mon, _pts, grade = data
         name = (mon.get("info") or {}).get("name") or "?"
+        st = self.mon_state(mon)
+        if st != "ok":
+            why = ("쉬는 중입니다.\n%s 뒤에 다시 나갈 수 있습니다." % X.hours_text(self.rest_left(mon["id"])) if st == "rest"
+                   else "데리고 다니는 중입니다.\n박스에 넣으면 보낼 수 있습니다.")
+            self.summary.configure(text="%s — %s" % (name, why), fg=U.FG_FAINT)
+            self.send_btn.configure(state="disabled")
+            return
+        stats = g.get("stats") or {}
+        took = X.duration(self.hours, stats.get("speed", 0))
+        n = X.item_count(self.hours, grade)
+        # 성장치로 붙는 덤은 셋째 줄에 따로 적는다 (없으면 두 줄이다)
+        extra = []
+        if stats.get("haul"):
+            extra.append("물건 하나 더 %d%%" % round(100 * X.haul_chance(stats["haul"])))
+        if stats.get("charm"):
+            extra.append("포켓몬을 데려올 확률 %d%%" % round(100 * X.charm_chance(stats["charm"])))
         self.summary.configure(
-            text="%s Lv.%s → %s · %d시간\n예상 %s · 물건 %d개"
-                 % (name, mon.get("level", "?"), p.get("kr", ""), self.hours, X.GRADE_KR.get(grade, ""),
-                    X.item_count(self.hours, grade)),
+            text="%s Lv.%s → %s · %s\n예상 %s · 물건 %d개%s"
+                 % (name, mon.get("level", "?"), p.get("kr", ""), X.time_text(took), X.GRADE_KR.get(grade, ""), n,
+                    "\n" + " · ".join(extra) if extra else ""),
             fg=U.FG)
         self.send_btn.configure(state="disabled" if self.busy else "normal")
+
+    def open_grow(self):
+        data = self._picked()
+        if data is None:
+            return
+        if self.grow_dialog is not None:
+            self.grow_dialog.close()
+        self.grow_dialog = GrowDialog(self, data[0])
 
     # ---------------- 서버 ----------------
     def reload(self):
@@ -553,9 +683,14 @@ class ExpeditionWindow(object):
             return
         self.state = state
         self._t0 = time.monotonic()
+        # 포켓몬마다의 탐험 성장과 쉬는 시간 (받으면 경험치가 오르고 쉬기 시작한다)
+        growth = state.get("growth")
+        changed = False
+        if isinstance(growth, dict):
+            changed = growth != self.growth
+            self.growth = growth
         # 나가 있는 포켓몬은 '누구를' 목록에서 빠진다 (돌아온 포켓몬은 다시 들어온다)
         away = set(int((o.get("pokemon") or {}).get("id") or 0) for o in state.get("out") or [])
-        changed = False
         for m in self.mons:
             now_away = m.get("id") in away
             if bool(m.get("away")) != now_away:
@@ -566,13 +701,16 @@ class ExpeditionWindow(object):
             self._fill(keep=True)
         else:
             self._paint_summary()
+            self._arm_rest()             # (남은 초의 기준이 바뀌었다)
         if self._tick_job is None and self.live:
             self._tick_job = self.root.after(1000, self._tick)
+        if self.grow_dialog is not None:
+            self.grow_dialog.paint()
 
     def do_send(self):
         data = self._picked()
-        if data is None or self.busy or self.free() <= 0:
-            return                           # (칸이 꽉 찼으면 단추가 잠겨 있다 - 눌려도 서버에 안 간다)
+        if data is None or self.busy or self.free() <= 0 or self.mon_state(data[0]) != "ok":
+            return                           # (칸이 꽉 찼거나 쉬는 중이면 단추가 잠겨 있다 - 눌려도 서버에 안 간다)
         mon = data[0]
         self.busy = True
         self.send_btn.configure(state="disabled")
@@ -658,13 +796,245 @@ class ExpeditionWindow(object):
     # ---------------- 끝 ----------------
     def close(self):
         self.alive = False
-        if self._tick_job is not None:
-            try:
-                self.root.after_cancel(self._tick_job)
-            except Exception:                               # noqa: BLE001
-                pass
-            self._tick_job = None
+        if self.grow_dialog is not None:
+            self.grow_dialog.close()
+        for name in ("_tick_job", "_rest_job"):
+            job = getattr(self, name)
+            if job is not None:
+                try:
+                    self.root.after_cancel(job)
+                except Exception:                           # noqa: BLE001
+                    pass
+                setattr(self, name, None)
         try:
             self.win.destroy()
         except Exception:                                   # noqa: BLE001
+            pass
+
+
+class GrowDialog(object):
+    """탐험 성장치를 찍는 창 (1.10.5). 내용만큼만 크다.
+
+    레벨마다 받은 점수를 다섯 중 원하는 데에 나눠 찍는다. [+] [-] 는 **이 창 안에서만** 움직인다 -
+    [찍기] 를 눌러야 서버에 간다 (잘못 눌렀다고 되돌리는 값을 물지 않게). 이미 찍은 점수는 [-] 로
+    못 뺀다. 그건 [되돌리기] 다 (돈이 든다, 전부 되돌린다).
+    """
+
+    def __init__(self, win, mon):
+        from . import ui_box
+        self.win = win
+        self.app = win.app
+        self.root = win.root
+        self.mon = mon
+        self.pid = mon["id"]
+        self.alive = True
+        self.busy = False
+        self.pending = dict((k, 0) for k in X.STATS)
+        self.rows = {}
+        self.top, f = ui_box._shell(win.win.winfo_toplevel(), "탐험 성장", GROW_W, U.h(320))
+        self.top.protocol("WM_DELETE_WINDOW", self.close)
+
+        head = tk.Frame(f, bg=U.BG)
+        head.pack(fill="x")
+        name = (mon.get("info") or {}).get("name") or mon.get("species") or "?"
+        tk.Label(head, text=("★ " if mon.get("shiny") else "") + name, bg=U.BG, fg=U.FG,
+                 font=(U.FAMILY_BLACK, U.pt(16))).pack(side="left")
+        self.lv = tk.Label(head, text="", bg=U.ACCENT_SOFT, fg=U.ACCENT_TEXT, font=U.FONT_B, padx=8, pady=2,
+                           highlightthickness=1, highlightbackground=U.ACCENT)
+        self.lv.pack(side="right")
+        bar = tk.Frame(f, bg=U.INK, height=6)
+        bar.pack(fill="x", pady=(10, 0))
+        self.xp_fill = tk.Frame(bar, bg=U.GOOD)
+        self.xp_fill.place(x=0, y=0, relheight=1.0, relwidth=0.0)
+        line = tk.Frame(f, bg=U.BG)
+        line.pack(fill="x", pady=(5, 0))
+        self.xp_note = tk.Label(line, text="", bg=U.BG, fg=U.FG_DIM, font=U.FONT_XS)
+        self.xp_note.pack(side="left")
+        self.free_note = tk.Label(line, text="", bg=U.BG, fg=U.FG_DIM, font=U.FONT_B)
+        self.free_note.pack(side="right")
+
+        box = tk.Frame(f, bg=PANEL, highlightthickness=2, highlightbackground=U.LINE)
+        box.pack(fill="x", pady=(12, 0))
+        for i, k in enumerate(X.STATS):
+            if i:
+                tk.Frame(box, bg=U.LINE, height=1).pack(fill="x", padx=12)
+            self._stat_row(box, k)
+
+        # 처음부터 창 폭에 맞춰 접는다. 접히기 전의 한 줄 높이로 창을 재면 아래 단추가 눌린다
+        # (wrap_to_width 는 창이 뜬 뒤에야 접는다).
+        wrap = GROW_W - 2 * 18 - 12
+        note = tk.Label(f, text="탐험을 다녀오면 경험치가 쌓이고, 탐험 레벨이 오를 때마다 성장치 1점을 받습니다 "
+                                "(Lv.%d 까지). 나가 있는 동안에는 바꿀 수 없습니다." % X.MAX_LEVEL,
+                        bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS, justify="left", anchor="w", wraplength=wrap)
+        note.pack(fill="x", pady=(10, 0))
+        U.wrap_to_width(note)
+        self.status = tk.Label(f, text=" ", bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS, anchor="w", justify="left",
+                               wraplength=wrap)
+        self.status.pack(fill="x", pady=(6, 0))
+        U.wrap_to_width(self.status)
+
+        foot = tk.Frame(f, bg=U.BG)
+        foot.pack(fill="x", pady=(8, 0))
+        self.reset_btn = U.ghost_button(foot, "되돌리기 %s원" % format(X.RESET_COST, ","), self.reset, height=34)
+        self.reset_btn.pack(side="left")
+        self.ok_btn = U.PushButton(foot, "찍기", self.commit, height=34, font=U.FONT_B)
+        self.ok_btn.pack(side="right")
+        U.ghost_button(foot, "닫기", self.close, height=34).pack(side="right", padx=(0, 6))
+
+        self.paint()
+        ui_box.fit(self.top)
+        try:
+            self.top.grab_set()
+        except tk.TclError:
+            pass
+
+    def _stat_row(self, box, k):
+        row = tk.Frame(box, bg=PANEL)
+        row.pack(fill="x", padx=12, pady=7)
+        top = tk.Frame(row, bg=PANEL)
+        top.pack(fill="x")
+        tk.Label(top, text=X.STAT_KR[k], bg=PANEL, fg=U.FG, font=U.FONT_B, bd=0).pack(side="left")
+        plus = U.ghost_button(top, "+", lambda s=k: self.bump(s, 1), height=26)
+        plus.pack(side="right")
+        minus = U.ghost_button(top, "−", lambda s=k: self.bump(s, -1), height=26)
+        minus.pack(side="right", padx=(0, 4))
+        for b in (plus, minus):
+            b.holder.configure(width=U.h(38))        # (단추의 기본 폭 72 는 글자 하나에 너무 넓다)
+        num = tk.Label(top, text="", bg=PANEL, fg=U.FG_DIM, font=U.FONT_B, bd=0)
+        num.pack(side="right", padx=(0, 10))
+        # 열 점을 네모 열 개로 (글자가 아니라 그림이다 - 글꼴에 따라 모양이 달라지지 않는다)
+        cv = tk.Canvas(top, width=X.STAT_CAP * (PIP + 3), height=PIP + 2, bg=PANEL, highlightthickness=0, bd=0)
+        cv.pack(side="left", padx=(12, 0))
+        effect = tk.Label(row, text="", bg=PANEL, fg=U.FG_DIM, font=U.FONT_XS, anchor="w", bd=0)
+        effect.pack(fill="x", pady=(4, 0))
+        self.rows[k] = (cv, num, effect, minus, plus)
+
+    # ---- 값
+    def growth(self):
+        return self.win.growth_of(self.pid)
+
+    def left(self):
+        """아직 안 넣은 점수 (이 창에서 넣어 둔 것을 뺀다)."""
+        return int(self.growth().get("free") or 0) - sum(self.pending.values())
+
+    def bump(self, k, by):
+        if self.busy:
+            return
+        have = int((self.growth().get("stats") or {}).get(k) or 0)
+        if by > 0 and (self.left() <= 0 or have + self.pending[k] >= X.STAT_CAP):
+            return
+        if by < 0 and self.pending[k] <= 0:
+            return
+        self.pending[k] += by
+        self.say("")
+        self.paint()
+
+    def say(self, text, color=None):
+        try:
+            self.status.configure(text=natural(text) if text else " ", fg=color or U.FG_FAINT)
+        except tk.TclError:
+            return
+        self._refit()
+
+    def _refit(self):
+        """알림 글이 두 줄로 접히면 그만큼 창을 늘린다 (아래 단추가 눌리지 않게). 자리는 그대로."""
+        from . import ui_box
+        if self.alive and self.top.winfo_ismapped():
+            ui_box.fit(self.top, keep_pos=True)
+
+    def paint(self):
+        if not self.alive:
+            return
+        g = self.growth()
+        stats = g.get("stats") or {}
+        free = int(g.get("free") or 0)
+        # 서버의 값이 바뀌어(되돌리기·다른 창) 넣어 둔 것이 남은 점수를 넘으면 버린다
+        if sum(self.pending.values()) > free:
+            self.pending = dict((k, 0) for k in X.STATS)
+        left = self.left()
+        away = bool(self.mon.get("away"))
+        try:
+            self.lv.configure(text="탐험 Lv.%d" % int(g.get("level") or 0))
+            need = g.get("need")
+            if need:
+                self.xp_fill.place_configure(relwidth=max(0.0, min(1.0, int(g.get("into") or 0) / float(need))))
+                self.xp_note.configure(text="다음 레벨까지 %d / %d" % (int(g.get("into") or 0), need))
+            else:
+                self.xp_fill.place_configure(relwidth=1.0)
+                self.xp_note.configure(text="가장 높은 레벨입니다")
+            self.free_note.configure(text="남은 성장치 %d점" % left, fg=U.ACCENT_TEXT if left > 0 else U.FG_DIM)
+            for k, (cv, num, effect, minus, plus) in self.rows.items():
+                have, add = int(stats.get(k) or 0), self.pending[k]
+                cv.delete("all")
+                for i in range(X.STAT_CAP):
+                    x = i * (PIP + 3) + 1
+                    fill = U.ACCENT if i < have else (U.ACCENT_TEXT if i < have + add else U.INK)
+                    cv.create_rectangle(x, 1, x + PIP, 1 + PIP, fill=fill,
+                                        outline=U.ACCENT if i < have + add else U.LINE2)
+                num.configure(text="%d" % have + (" +%d" % add if add else ""),
+                              fg=U.ACCENT_TEXT if add else (U.FG if have else U.FG_DIM))
+                effect.configure(text="%s  ·  %s" % (X.stat_text(k, have + add), X.STAT_HINT[k]) if have + add
+                                 else X.STAT_HINT[k], fg=U.ACCENT_TEXT if add else U.FG_DIM)
+                minus.configure(state="normal" if add > 0 and not self.busy else "disabled")
+                plus.configure(state="normal" if left > 0 and have + add < X.STAT_CAP and not self.busy and not away
+                               else "disabled")
+            self.ok_btn.configure(state="normal" if sum(self.pending.values()) > 0 and not self.busy else "disabled")
+            self.reset_btn.configure(state="normal" if X.spent(stats) > 0 and not self.busy and not away else "disabled")
+        except tk.TclError:
+            pass
+
+    # ---- 서버
+    def commit(self):
+        add = dict((k, v) for k, v in self.pending.items() if v > 0)
+        if not add or self.busy:
+            return
+        self._send(lambda: self.app.api.expedition_grow(self.pid, add), "성장치를 찍었습니다.")
+
+    def reset(self):
+        from . import ui_box
+        n = X.spent(self.growth().get("stats") or {})
+        if n <= 0 or self.busy:
+            return
+        if not ui_box.confirm(self.top, "성장치 되돌리기",
+                              "찍은 성장치 %d점을 전부 되돌릴까요? %s원이 듭니다. (탐험 레벨은 그대로입니다)"
+                              % (n, format(X.RESET_COST, ",")), danger=False, ok_text="되돌리기"):
+            return
+        self._send(lambda: self.app.api.expedition_reset(self.pid), "성장치를 되돌렸습니다.", money=True)
+
+    def _send(self, call, fallback, money=False):
+        self.busy = True
+        self.paint()
+
+        def done(r, err):
+            self.busy = False
+            if not self.alive:
+                return
+            if err:
+                self.say(_err(err), U.RED)
+                return self.paint()
+            self.pending = dict((k, 0) for k in X.STATS)
+            if money and isinstance(r, dict) and "money" in r:
+                self.app.money = r["money"]
+                try:
+                    self.app.request_sync()          # 돈이 바뀌었다 - 상점·마이페이지가 새 값을 보게 한다
+                except Exception:                               # noqa: BLE001
+                    pass
+            self.win.apply(r)                        # (목록의 '탐험 Lv' 와 이 창을 같이 다시 칠한다)
+            self.say(r.get("message") or fallback, U.GOOD)
+            self.paint()
+        run_async(self.root, call, done)
+
+    def close(self):
+        if not self.alive:
+            return
+        self.alive = False
+        if self.win.grow_dialog is self:
+            self.win.grow_dialog = None
+        try:
+            self.top.grab_release()
+        except tk.TclError:
+            pass
+        try:
+            self.top.destroy()
+        except tk.TclError:
             pass

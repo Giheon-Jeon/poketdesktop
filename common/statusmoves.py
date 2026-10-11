@@ -345,6 +345,25 @@ def first_turn_only(f, k):
     return int((f.cond or {}).get("outTurns") or 0) > 1
 
 
+def first_turn_spent(bt, f, k):
+    """**고르는 쪽**이 본다: 속이기·만나자마자를 지금 고르면 실패하나 (나온 턴이 이미 지났나).
+
+    쓰는 순간의 판정은 first_turn_only 다 (outTurns 가 1 을 넘었나). 고르는 때는 그보다 앞이고,
+    이번 턴을 열기(begin_turn) 전일 수도 뒤일 수도 있다 - 내 자동 전투·잡기 모드는 열기 전에
+    고르고, 상대(야생·관장·보스)는 연 뒤에 고른다. 열기 전이면 열 때 하나 느는 것을 미리 센다
+    (bt.turn_open: begin_turn 이 켜고 턴 끝 처리가 끈다).
+
+    이걸 안 봐서 자동 전투가 만나자마자를 PP 가 떨어질 때까지 골랐다 (제보 #185: 갑주무사를
+    앞세웠더니 첫 턴 뒤로 매 턴 실패만 하다 쓰러진다). 위력이 가장 높으니 늘 '제일 아픈 기술' 이었다.
+    """
+    if k not in FIRST_TURN_ONLY:
+        return False
+    n = int((f.cond or {}).get("outTurns") or 0)
+    if not getattr(bt, "turn_open", False):
+        n += 1
+    return n > 1
+
+
 def hidden_spot(f):
     """지금 숨어 있는 자리 (공중·땅속·물속·그림자). 없으면 None."""
     return (f.cond or {}).get("invuln")

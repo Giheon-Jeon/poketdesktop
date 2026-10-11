@@ -395,6 +395,7 @@ def foe_only_turn(bt, ev):
     key = bt.choose_ai()
     if key and bt.foe.alive():
         bt._use("foe", bt.foe, bt.me, key, ev)
+    bt.turn_open = False                    # (턴 끝 처리를 안 부르니 여기서 닫는다 - SM.first_turn_spent)
     return key
 
 

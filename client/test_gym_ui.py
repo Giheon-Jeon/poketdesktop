@@ -24,6 +24,10 @@
   8. 배틀 창이 독을 뺀 화면 안에 들어온다 (맥북에서 기술 칸 아랫줄이 독에 가렸다).
   9. 기술을 쓰면 연출이 돈다. 남은 포켓몬은 몬스터볼 그림으로 보인다.
  10. 이스터에그: 카드는 렌트라와 함께 선 그림, 배틀은 혼자 선 그림.
+ 11. **오른쪽에 그 안의 트레이너 목록이 선다 (1.10.5).** 레벨 순, 이름·역할·지역이 잘리지 않고,
+     줄과 지도가 서로를 밝히고, 누르면 카드로 갔다가 '목록' 으로 보던 자리에 돌아온다.
+ 12. **오늘 완료가 보인다 (1.10.5).** 목록의 글, 지도의 초록 체크, 카드의 표식, 머리줄의 수.
+     자정에 한 번 다시 불러온다.
 """
 import io
 import json
@@ -85,6 +89,7 @@ class FakeApi(object):
         self.by_region = {code: next(t for t in gyms["trainers"] if t["id"] == tid)
                           for code, tid in gyms["regions"].items()}
         self.cleared = set()
+        self.today = set()               # 오늘 보상을 받은 곳 (1.10.5)
         self.party = party
         self.tb = None
         self.region = None
@@ -98,14 +103,15 @@ class FakeApi(object):
                 "level": t["level"], "type": t["type"], "typeKr": self.dex.type_name(t["type"]),
                 "region": t["region"], "why": t.get("why") or "",
                 "cleared": t["region"] in self.cleared, "wins": 1 if t["region"] in self.cleared else 0,
-                "bestTurns": 9 if t["region"] in self.cleared else None}
+                "bestTurns": 9 if t["region"] in self.cleared else None,
+                "today": t["region"] in self.today}
 
     def gym(self):
         self.calls.append("gym")
         act = {"id": 1, "region": self.region} if self.tb and not self.tb.over else None
         return {"regions": [self._public(t) for t in self.by_region.values()],
                 "cleared": len(self.cleared), "total": 256, "mapDigest": "test%d" % len(self.kmap["sgg"]),
-                "active": act}
+                "today": len(self.today), "resetIn": 3600, "active": act}
 
     def gym_map(self):
         return self.kmap
@@ -157,6 +163,7 @@ class FakeApi(object):
         if self.tb.over and self.tb.result == "won":
             first = self.region not in self.cleared
             self.cleared.add(self.region)
+            self.today.add(self.region)
             extra["reward"] = {"prize": self.tb.trainer["level"] * (50 if first else 5), "first": first,
                                "money": 12345, "cleared": len(self.cleared), "total": 256}
             extra["exp"] = [{"id": 11, "name": "뮤츠", "level": 100, "leveledUp": False}]
@@ -266,7 +273,7 @@ def main():
     gw._hover_sido("41", False)
     chk("경기에 마우스를 올렸다 내려도 서울이 위에 있다", topmost_tag(*tf(small[0]["center"])) == "s11",
         topmost_tag(*tf(small[0]["center"])))
-    btns = [t for t in texts(gw.card) if t in ("서울", "세종", "제주", "경기")]
+    btns = [t for t in texts(gw.head) if t in ("서울", "세종", "제주", "경기")]
     chk("옆 칸에 시·도 바로 가기", len(btns) == 4, btns)
 
     gw.enter_sido("41")
@@ -281,7 +288,7 @@ def main():
     # 이유 문장이 가장 긴 트레이너도 넣는다 (두 줄로 접히면 카드가 길어진다)
     longest_why = max(gyms["trainers"], key=lambda t: len(t.get("why") or ""))["name"]
     api.cleared.add(name_of["난천"])            # 이긴 곳 줄이 가장 길다
-    chk("요약에 '가장 센 트레이너' 가 없다", not any("가장 센 트레이너" in t for t in texts(gw.card)))
+    chk("요약에 '가장 센 트레이너' 가 없다", not any("가장 센 트레이너" in t for t in texts(gw.head)))
     for who in ("난천", "나여조경석", "담죽", "지우", longest_why):
         code = name_of[who]
         gw.select(code)
@@ -343,6 +350,266 @@ def main():
         bool(gw.card_sb.winfo_ismapped()) == (need > view), (need, view, gw.card_sb.winfo_ismapped()))
     gw.win.geometry("1040x700")
     pump(root, lambda: False, 0.6)
+
+    print("\n=== 목록과 오늘 완료 (1.10.5) ===")
+    S = ui_gym
+
+    def rows():
+        return [r for _i, r in gw.vl.shown()]
+
+    def row_trouble():
+        """보이는 줄마다: 글이 줄 밖으로 나가거나 서로 겹치면 적는다."""
+        bad = []
+        for r in rows():
+            h = r.body.winfo_height()
+            for x in r.cells:
+                if x.winfo_height() < x.winfo_reqheight() or x.winfo_width() < x.winfo_reqwidth() \
+                        or x.winfo_y() < 0 or x.winfo_y() + x.winfo_height() > h:
+                    bad.append(("칸 밖", x.cget("text"), x.winfo_y(), x.winfo_height(), h))
+            # (역할은 이름 안에 놓았다 - 좌표가 이름 기준이라 화면 좌표로 잰다)
+            if r.role.winfo_rootx() + r.role.winfo_width() > r.lv.winfo_rootx() - 2:
+                bad.append(("윗줄 겹침", r.data[0]["name"]))
+            if r.where.winfo_rootx() + r.where.winfo_width() > r.state.winfo_rootx() - 2:
+                bad.append(("아랫줄 겹침", r.data[1]))
+            if r.name.winfo_y() + r.name.winfo_height() > r.where.winfo_y() + 1:
+                bad.append(("두 줄이 겹침", r.data[0]["name"], r.name.winfo_y(), r.name.winfo_height(),
+                            r.where.winfo_y()))
+        return bad
+
+    gg = [d for d in kmap["sgg"] if d["sido"] == "41"]
+    lv_of = {t["region"]: t["level"] for t in gyms["trainers"]}
+    by_lv = sorted(gg, key=lambda d: lv_of[d["code"]])
+    low, mid, high = by_lv[0]["code"], by_lv[len(by_lv) // 2]["code"], by_lv[-1]["code"]
+    api.cleared = {name_of["난천"], low, mid}
+    api.today = {low}
+    gw.reload()
+    calls = len(api.calls)
+    pump(root, lambda: gw.by_region.get(low, {}).get("today") is True, 5)
+    gw.enter_sido("41")
+    pump(root, lambda: False, 0.4)
+    chk("시·도에 들어가면 오른쪽이 목록이다", gw._mode == "list" and gw.list_box.winfo_ismapped()
+        and not gw.card_wrap.winfo_ismapped() and not gw.action.winfo_ismapped(), gw._mode)
+    chk("경기: 목록에 %d곳이 다 있다" % n41, len(gw.vl.entries) == n41, len(gw.vl.entries))
+    lvs = [d[0]["level"] for _k, d in gw.vl.entries]
+    chk("레벨 낮은 곳부터 선다", lvs == sorted(lvs), lvs[:8])
+    chk("줄은 화면만큼만 만든다", 0 < gw.vl.made < n41, gw.vl.made)
+    first = rows()[0]
+    t0 = first.data[0]
+    chk("줄에 이름·역할·레벨·지역·상태가 있다",
+        [first.name.cget("text"), first.role.cget("text"), first.lv.cget("text")] ==
+        [t0["name"], t0["role"], "Lv.%d" % t0["level"]]
+        and first.where.cget("text") == S.sgg_name(next(d["name"] for d in gg if d["code"] == t0["region"]))
+        and first.state.cget("text") in ("미도전", "오늘 남음", "오늘 완료"),
+        [w.cget("text") for w in first.cells])
+    chk("줄의 막대는 지도와 같은 레벨 색", first.bar["bg"] == S.level_color(t0["level"]), first.bar["bg"])
+    chk("보이는 줄에 잘리거나 겹친 글이 없다", not row_trouble(), row_trouble()[:4])
+    # 가장 긴 이름·역할·지역도 줄 안에 든다 (보이는 줄만이 아니라 256곳 전부를 글꼴로 잰다)
+    import tkinter.font as tkfont
+    fn, fsub, flv, fst = (tkfont.Font(root=root, font=f) for f in (S.ROW_NAME, S.ROW_SUB, S.ROW_LV, S.ROW_STATE))
+    roww = first.body.winfo_width()
+    sgg = {d["code"]: d for d in kmap["sgg"]}
+    worst_top = max(fn.measure(t["name"]) + fsub.measure(t["role"]) for t in gyms["trainers"])
+    worst_bot = max(fsub.measure("%s %s" % (S.short_sido(sgg[t["region"]]["sidonm"]), S.sgg_name(sgg[t["region"]]["name"])))
+                    for t in gyms["trainers"])
+    chk("256곳 어느 줄도 윗줄(이름+역할+레벨)이 줄 폭에 든다",
+        U.h(13) + worst_top + U.h(7) + 8 + flv.measure("Lv.100") + U.h(8) <= roww, (worst_top, roww))
+    chk("256곳 어느 줄도 아랫줄(지역+상태)이 줄 폭에 든다",
+        U.h(13) + worst_bot + 8 + fst.measure("오늘 완료") + U.h(8) <= roww, (worst_bot, roww))
+    # 글자가 작다는 말을 들었다 (2026-10-11): 이름은 본문보다 크게, 나머지도 본문에서 한 단계 안쪽으로
+    sizes = [tkfont.Font(root=root, font=w.cget("font")).actual("size") for w in first.cells]
+    chk("목록의 글자가 작지 않다 (이름 %dpt · 나머지 %dpt 이상, 본문 %dpt)" % (sizes[0], min(sizes[1:]), U.BASE_PT),
+        sizes[0] > U.BASE_PT and min(sizes[1:]) >= U.BASE_PT - 1, sizes)
+    chk("목록 화면에 눌린 것이 없다", not squeezed(gw.win), squeezed(gw.win)[:4])
+    chk("목록이 옆 칸 바닥까지 찬다 (잘리지 않는다)",
+        abs((gw.vl.holder.winfo_rooty() + gw.vl.holder.winfo_height())
+            - (gw.side.winfo_rooty() + gw.side.winfo_height())) <= 2,
+        (gw.vl.holder.winfo_rooty() + gw.vl.holder.winfo_height(), gw.side.winfo_rooty() + gw.side.winfo_height()))
+    chk("목록이 다섯 줄 넘게 보인다", len(rows()) >= 6, len(rows()))
+
+    state_of = {d[0]["region"]: S.region_state(d[0]) for _k, d in gw.vl.entries}
+    chk("상태: 오늘 완료 · 오늘 남음 · 미도전", (state_of[low], state_of[mid], state_of[high]) == ("done", "left", "new"),
+        (state_of[low], state_of[mid], state_of[high]))
+    row_low = next(r for r in rows() if r.data[0]["region"] == low)
+    chk("오늘 완료는 초록 글씨다", row_low.state.cget("text") == "오늘 완료" and row_low.state.cget("fg") == S.TODAY,
+        (row_low.state.cget("text"), row_low.state.cget("fg")))
+    chk("요약에 이긴 곳과 오늘 완료가 있다", "2 / %d" % n41 in texts(gw.head) and "1곳" in texts(gw.head),
+        texts(gw.head))
+    chk("머리줄에 오늘 완료한 수", "오늘 1곳 완료" in gw.sub.cget("text"), gw.sub.cget("text"))
+
+    # 지도의 체크: 오늘 받은 곳은 초록, 이겼지만 오늘은 아직인 곳은 금색
+    ovals = sorted(gw.cv.itemcget(i, "fill") for i in gw.cv.find_withtag("label") if gw.cv.type(i) == "oval")
+    chk("지도: 체크가 이긴 두 곳에 하나씩, 초록 하나 금색 하나", ovals == sorted([S.TODAY, S.CLEAR]), ovals)
+    marks = [gw.legend_cv.itemcget(i, "text") for i in gw.legend_cv.find_withtag("marktext")]
+    chk("범례에 '이긴 곳' 과 '오늘 완료'", marks == ["이긴 곳", "오늘 완료"], marks)
+    right = max(gw.legend_cv.bbox(i)[2] for i in gw.legend_cv.find_all())
+    chk("범례가 칸 안에 든다", right <= gw.legend_cv.winfo_width(), (right, gw.legend_cv.winfo_width()))
+
+    print("  -- 거르기")
+    gw.set_filter("new")
+    root.update()
+    chk("미도전만: 이긴 두 곳이 빠진다", len(gw.vl.entries) == n41 - 2
+        and all(S.region_state(d[0]) == "new" for _k, d in gw.vl.entries), len(gw.vl.entries))
+    chk("  몇 곳 중 몇 곳인지 적는다", gw.list_note.cget("text") == "%d / %d곳" % (n41 - 2, n41),
+        gw.list_note.cget("text"))
+    gw.set_filter("left")
+    root.update()
+    chk("오늘 남음만: 이겼고 오늘은 아직인 한 곳", [d[0]["region"] for _k, d in gw.vl.entries] == [mid],
+        [d[0]["name"] for _k, d in gw.vl.entries])
+    api.today.add(mid)
+    gw.reload()
+    pump(root, lambda: gw.by_region.get(mid, {}).get("today") is True, 5)
+    root.update()
+    chk("오늘 남은 곳이 없으면 그렇게 말한다", not gw.vl.entries and gw.list_empty.winfo_ismapped()
+        and "오늘 남은 곳이 없습니다" in gw.list_empty.cget("text"), gw.list_empty.cget("text"))
+    api.today.discard(mid)
+    gw.reload()
+    pump(root, lambda: gw.by_region.get(mid, {}).get("today") is False, 5)
+    gw.set_filter("all")
+    root.update()
+    chk("전체로 돌아오면 빈 글이 사라진다", len(gw.vl.entries) == n41 and not gw.list_empty.winfo_ismapped())
+
+    print("  -- 목록과 지도")
+    r1 = rows()[1]
+    c1 = r1.data[0]["region"]
+    gw.hover_row(c1, True)
+    root.update()
+    chk("줄에 올리면 그 줄이 밝아진다", r1.body["bg"] == U.BG3 and r1.name["bg"] == U.BG3, r1.body["bg"])
+    chk("줄에 올리면 지도의 그곳에 흰 테두리", gw.cv.itemcget("g%s" % c1, "outline") == "#ffffff",
+        gw.cv.itemcget("g%s" % c1, "outline"))
+    chk("  아래 줄에 누구인지 적는다", r1.data[0]["name"] in gw.status.cget("text"), gw.status.cget("text"))
+    gw.hover_row(c1, False)
+    root.update()
+    chk("내리면 둘 다 돌아온다", r1.body["bg"] == U.BG2 and gw.cv.itemcget("g%s" % c1, "outline") != "#ffffff",
+        (r1.body["bg"], gw.cv.itemcget("g%s" % c1, "outline")))
+    gw._hover_sgg(high, True)             # 지도에서 가장 센 곳(목록의 맨 아래)에 올린다
+    root.update()
+    hot = [r for r in rows() if r.data[0]["region"] == high]
+    chk("지도에 올리면 목록이 그 줄까지 굴러가 밝아진다", bool(hot) and hot[0].body["bg"] == U.BG3,
+        (gw.hot, [r.data[0]["name"] for r in rows()][-3:]))
+    gw._hover_sgg(high, False)
+    root.update()
+    chk("내리면 밝던 줄이 꺼진다", gw.hot is None and all(r.body["bg"] == U.BG2 for r in rows()))
+    top_before = gw.vl.canvas.canvasy(0)
+
+    print("  -- 누르면 카드로, '목록' 으로 돌아온다")
+    pick = rows()[-2]
+    pcode, pname = pick.data[0]["region"], pick.data[0]["name"]
+    pick._click(None)
+    chk("줄을 누르면 그 트레이너의 카드가 뜬다",
+        pump(root, lambda: pname in texts(gw.card) and any("데리고 있는 포켓몬" in t for t in texts(gw.card)))
+        and gw.selected == pcode and gw._mode == "card", (gw.selected, gw._mode))
+    chk("  카드로 넘어가면 목록은 내려가고 도전 단추가 선다",
+        not gw.browse.winfo_ismapped() and gw.card_wrap.winfo_ismapped() and gw.action.winfo_ismapped()
+        and gw.card.winfo_ismapped())
+    chk("  경로 줄에 '목록' 단추가 붙는다", gw.back_link is not None and "목록" in texts(gw.crumb), texts(gw.crumb))
+    chk("  카드 화면에 눌린 것이 없다", not squeezed(gw.win), squeezed(gw.win)[:4])
+    back_lab = next(w for w in gw.back_link.winfo_children() if w.winfo_class() == "Label")
+    back_cv = next(w for w in gw.back_link.winfo_children() if w.winfo_class() == "Canvas")
+    crumb_size = max(tkfont.Font(root=root, font=w.cget("font")).actual("size")
+                     for w in gw.crumb.winfo_children() if w.winfo_class() == "Label")
+    chk("  '목록' 은 경로 글씨보다 크고 굵고, 꺾쇠는 선으로 그렸다 (글자보다 조금 작게)",
+        tkfont.Font(root=root, font=back_lab.cget("font")).actual("size") > crumb_size
+        and tkfont.Font(root=root, font=back_lab.cget("font")).actual("weight") == "bold"
+        and back_cv.find_all() and U.h(10) <= back_cv.winfo_height() <= U.h(12)
+        and gw.back_link.winfo_rootx() + gw.back_link.winfo_width() <= gw.side.winfo_rootx() + gw.side.winfo_width(),
+        (back_lab.cget("font"), crumb_size, back_cv.winfo_height()))
+    first_crumb = [w for w in gw.crumb.winfo_children() if w.winfo_class() == "Label"]
+    chk("  경로 글씨와 '목록' 단추가 안 겹친다",
+        max(w.winfo_rootx() + w.winfo_width() for w in first_crumb) <= gw.back_link.winfo_rootx(),
+        (max(w.winfo_rootx() + w.winfo_width() for w in first_crumb), gw.back_link.winfo_rootx()))
+    back = back_lab
+    back.event_generate("<Button-1>")
+    root.update()
+    pump(root, lambda: False, 0.3)
+    chk("'목록' 을 누르면 목록으로 돌아온다", gw._mode == "list" and gw.selected is None and gw.sido == "41"
+        and gw.browse.winfo_ismapped(), (gw._mode, gw.selected, gw.sido))
+    chk("  보던 자리 그대로다", abs(gw.vl.canvas.canvasy(0) - top_before) <= 1, (gw.vl.canvas.canvasy(0), top_before))
+    # 맥의 Tk 는 가렸다 다시 담은 캔버스를 다시 그리지 않아서, 줄이 하나도 안 올라와 있었다
+    chk("  돌아온 목록의 줄이 화면에 올라와 있다 (폭도 제대로다)",
+        len(rows()) >= 6 and all(r.f.winfo_ismapped() and r.body.winfo_width() > 100 for r in rows()),
+        [(r.f.winfo_ismapped(), r.body.winfo_width()) for r in rows()][:3])
+    chk("  돌아온 목록에 잘리거나 겹친 글이 없다", not row_trouble(), row_trouble()[:4])
+    chk("  경로 줄에서 '목록' 단추가 빠진다", gw.back_link is None and "목록" not in texts(gw.crumb), texts(gw.crumb))
+
+    print("  -- 카드의 오늘 표식")
+    for code, want, line in ((low, "오늘 완료", "오늘 상금을 받았다"), (mid, "오늘 남음", "오늘 다시 이기면"),
+                             (high, None, "처음 이기면 상금")):
+        gw.select(code)
+        pump(root, lambda: any("데리고 있는 포켓몬" in t for t in texts(gw.card))
+             and gw.by_region[code]["name"] in texts(gw.card))
+        root.update()
+        tx = texts(gw.card)
+        chips = [t.strip() for t in tx if t.strip() in ("오늘 완료", "오늘 남음")]
+        chk("%s: 표식 %s" % (line, want or "없음"), chips == ([want] if want else []), chips)
+        chk("  상금 줄: %s" % line, any(line in t for t in tx), [t for t in tx if "원" in t])
+        chk("  카드 안에 눌린 것이 없다", not squeezed(gw.card), squeezed(gw.card)[:4])
+        need, view = gw.card.winfo_reqheight(), gw.card_cv.winfo_height()
+        chk("  굴리지 않아도 에이스까지 보인다", need <= view, (need, view))
+
+    print("  -- 전국: 시·도 바로 가기와 256곳 목록")
+    gw.to_nation()
+    root.update()
+    chk("전국은 시·도 바로 가기가 먼저다 (목록은 접혀 있다)",
+        gw._mode == "list" and not gw.list_box.winfo_ismapped() and "시·도 바로 가기" in texts(gw.head))
+    chk("  시·도 / 트레이너 로 바꿔 본다", {"시·도", "트레이너"} <= set(texts(gw.head)), texts(gw.head)[:8])
+    chk("  전국 화면에 눌린 것이 없다", not squeezed(gw.win), squeezed(gw.win)[:4])
+    gw.set_nation_view("trainer")
+    root.update()
+    pump(root, lambda: False, 0.3)
+    chk("트레이너로 바꾸면 256곳 목록", gw.list_box.winfo_ismapped() and len(gw.vl.entries) == 256
+        and "시·도 바로 가기" not in texts(gw.head), len(gw.vl.entries))
+    chk("  지역 앞에 시·도가 붙는다", all(d[1].split(" ")[0] in
+                                 [S.short_sido(sd["name"]) for sd in kmap["sido"]] for _k, d in gw.vl.entries),
+        [d[1] for _k, d in gw.vl.entries][:3])
+    chk("  256곳이어도 줄은 화면만큼", gw.vl.made < 40, gw.vl.made)
+    chk("  잘리거나 겹친 글이 없다", not row_trouble(), row_trouble()[:4])
+    chk("  눌린 것이 없다", not squeezed(gw.win), squeezed(gw.win)[:4])
+    gw.set_filter("left")
+    root.update()
+    chk("  전국에서 오늘 남은 곳만: 두 곳 (난천, 경기 한 곳)",
+        sorted(d[0]["region"] for _k, d in gw.vl.entries) == sorted([name_of["난천"], mid]),
+        [d[0]["name"] for _k, d in gw.vl.entries])
+    nr = rows()[0]
+    gw.hover_row(nr.data[0]["region"], True)
+    chk("  줄에 올리면 지도의 그 시·도가 밝아진다",
+        gw.cv.itemcget("s%s" % sgg[nr.data[0]["region"]]["sido"], "outline") == "#ffffff")
+    gw.hover_row(nr.data[0]["region"], False)
+    ncode = nr.data[0]["region"]
+    nr._click(None)
+    chk("  줄을 누르면 그 시·도로 들어가 카드가 뜬다",
+        pump(root, lambda: gw.by_region[ncode]["name"] in texts(gw.card)) and gw.sido == sgg[ncode]["sido"]
+        and gw.selected == ncode, (gw.sido, gw.selected))
+    gw.set_filter("all")
+    gw.set_nation_view("sido")
+
+    print("  -- 자정")
+    chk("자정에 다시 불러올 예약이 걸려 있다", gw._reset_job is not None)
+    calls = len(api.calls)
+    gw._reset_day()
+    # (불러온 답이 화면에 올라온 뒤에 다음 자정 예약이 걸린다 - 서버를 부른 순간만 보고 넘어가면 아직 없다.
+    #  맥 CI 에서 그 틈에 걸려 떨어졌다.)
+    chk("그때가 되면 다시 불러오고, 다음 자정을 또 예약한다",
+        pump(root, lambda: len(api.calls) > calls and gw._reset_job is not None, 8), (api.calls[-2:], gw._reset_job))
+
+    print("  -- 가장 작은 창")
+    gw.win.geometry("900x600")
+    gw.enter_sido("41")
+    pump(root, lambda: False, 0.6)
+    chk("가장 작은 창: 목록에 눌린 것이 없다", not squeezed(gw.win), squeezed(gw.win)[:4])
+    chk("가장 작은 창: 다섯 줄 넘게 보인다", len(rows()) >= 5 and not row_trouble(), (len(rows()), row_trouble()[:3]))
+    right = max(gw.legend_cv.bbox(i)[2] for i in gw.legend_cv.find_all())
+    chk("가장 작은 창: 범례가 칸 안에 든다", right <= gw.legend_cv.winfo_width(), (right, gw.legend_cv.winfo_width()))
+    gw.to_nation()
+    pump(root, lambda: False, 0.4)
+    chk("가장 작은 창: 전국 요약이 옆 칸에 다 든다",
+        gw.head.winfo_rooty() + gw.head.winfo_reqheight() <= gw.side.winfo_rooty() + gw.side.winfo_height(),
+        (gw.head.winfo_reqheight(), gw.side.winfo_height()))
+    gw.win.geometry("1040x700")
+    api.cleared = {name_of["난천"]}
+    api.today = set()
+    gw.reload()
+    pump(root, lambda: gw.by_region.get(low, {}).get("cleared") is False, 5)
+    pump(root, lambda: False, 0.5)
 
     print("\n=== 확대와 끌기 ===")
     # 전국 지도도 휠로 키운다. **굴리는 순간** 그림이 커져야 한다 (다시 그리기 전에)

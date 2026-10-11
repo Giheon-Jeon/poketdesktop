@@ -324,7 +324,8 @@ class RaidBattle(object):
             md = bt.move_of(key)
             if not MC.attacks(md):
                 continue
-            d = bt.estimate(p.mon, self.boss, key)
+            # 지금 쓰면 실패하는 기술(나온 턴이 지난 속이기·만나자마자 ...)은 0 으로 친다
+            d = bt.estimate(p.mon, self.boss, key) * B.AF.ai_mult(bt, MC.key(md), md, p.mon, self.boss)
             if d > score:
                 best, score = key, d
         return ("move", best or bt.usable(p.mon)[0])

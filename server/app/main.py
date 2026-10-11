@@ -1483,6 +1483,7 @@ def release(pid: int, ctx=Depends(current)):
     if held:
         items.bag_add(uid, held, 1)
     db.run("DELETE FROM pokemon WHERE id=?", (pid,))
+    expedition.forget(uid, pid)              # 탐험 성장 기록 (1.10.5)
     msg = "%s 을(를) 보내주었습니다." % name
     if held:
         msg += " 지니고 있던 %s은(는) 가방에 넣었습니다." % items.name_of(held)

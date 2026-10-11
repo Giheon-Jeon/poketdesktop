@@ -81,16 +81,22 @@ def overview(ctx=Depends(deps.current)):
     d = deps.dex()
     g = gym.gyms()
     mine = gym.clears(uid)
+    today = gym.today_kst()
     regions = []
+    done = 0
     for code, t in g["_by_region"].items():
         c = mine.get(code)
         row = gym.public(t, d)
         row["cleared"] = bool(c)
         row["wins"] = c["wins"] if c else 0
         row["bestTurns"] = c["best_turns"] if c else None
+        # 오늘 이곳에서 보상을 받았나 (1.10.5). 자정(한국 시간)에 다시 열린다.
+        row["today"] = gym.paid_today(c, today)
+        done += row["today"]
         regions.append(row)
     act = _active(uid)
     return {"regions": regions, "cleared": len(mine), "total": len(g["regions"]),
+            "today": done, "resetIn": gym.reset_in(),
             "tiers": g["tiers"], "digest": g.get("digest"), "mapDigest": gym.korea_map()[1],
             "source": g.get("source"), "active": ({"id": act["id"], "region": act["region"]}
                                                   if act else None)}
@@ -114,6 +120,7 @@ def trainer_card(region: str, ctx=Depends(deps.current)):
     out["cleared"] = bool(c)
     out["wins"] = c["wins"] if c else 0
     out["bestTurns"] = c["best_turns"] if c else None
+    out["today"] = gym.paid_today(c)
     out["prize"] = t["level"] * (config.GYM_REPEAT_PER_LEVEL if c else config.GYM_PRIZE_PER_LEVEL)
     return out
 

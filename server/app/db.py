@@ -691,6 +691,22 @@ CREATE TABLE IF NOT EXISTS expedition (
     claimed_at  TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_expedition_user ON expedition(user_id, state);
+-- 탐험 성장과 쉬기 (1.10.5). 포켓몬마다 한 줄 - 탐험을 한 번이라도 다녀온 포켓몬만 있다.
+-- xp = 탐험 경험치 (레벨은 여기서 셈한다 - common/expedition.level_of).
+-- speed·luck·haul·lore·charm = 찍은 성장치. rest_until = 이때까지 쉰다 (돌아온 때 + 24시간).
+CREATE TABLE IF NOT EXISTS expedition_mon (
+    pokemon_id  INTEGER PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    xp          INTEGER NOT NULL DEFAULT 0,
+    speed       INTEGER NOT NULL DEFAULT 0,
+    luck        INTEGER NOT NULL DEFAULT 0,
+    haul        INTEGER NOT NULL DEFAULT 0,
+    lore        INTEGER NOT NULL DEFAULT 0,
+    charm       INTEGER NOT NULL DEFAULT 0,
+    rest_until  TEXT,
+    runs        INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_expedition_mon_user ON expedition_mon(user_id);
 -- 캐릭터 (1.10.3). 마이페이지에서 만든다. **그림이 아니라 고른 것(spec)을 적는다** -
 -- 그림은 common/avatar_art 가 그때그때 그린다 (서버도 화면도 같은 코드).
 -- image 는 **직접 그린 도트** (걷기 시트 PNG 의 base64, common/avatar_sheet). 화면이 올리는 길은
@@ -958,6 +974,9 @@ MIGRATIONS = [
     ("bond", "seen", "ALTER TABLE bond ADD COLUMN seen INTEGER NOT NULL DEFAULT 0"),
     # 1.9.0: 서버가 올린 글의 열쇠 (패치노트)
     ("board_post", "ref", "ALTER TABLE board_post ADD COLUMN ref TEXT"),
+    # 탐험 성장치 '친화력' (1.10.5 를 내기 전에 넣었다 - 시험하던 DB 에만 이 칸이 없다)
+    ("expedition_mon", "charm",
+     "ALTER TABLE expedition_mon ADD COLUMN charm INTEGER NOT NULL DEFAULT 0"),
     # 1.10.3: 채팅에 놓이는 카드 (길드 친선전). 빈 글이면 보통 줄이다
     ("guild_chat", "card", "ALTER TABLE guild_chat ADD COLUMN card TEXT NOT NULL DEFAULT ''"),
 ]

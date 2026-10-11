@@ -116,6 +116,76 @@ def main():
     chk("만나자마자도 같다", SM.first_turn_only(a, "FIRSTIMPRESSION"))
     chk("다른 기술은 그대로", not SM.first_turn_only(a, "TACKLE"))
 
+    print("=== 고르는 쪽도 '나온 턴이 지났다' 를 안다 (제보 #185: 갑주무사의 만나자마자) ===")
+    from common import attackfx as AF
+    from common import movecalc as MC
+    bt, a, b = duel("GOLISOPOD", "SNORLAX", a_moves=("FIRSTIMPRESSION", "AQUAJET"), b_moves=("SPLASH",))
+    b.hp = b.maxhp = 100000                       # 오래 버티는 상대 (쓰러뜨릴 수 없다)
+    md_fi = DEX.move("FIRSTIMPRESSION")
+    chk("나오자마자(턴을 열기 전): 아직 쓸 수 있다", not SM.first_turn_spent(bt, a, "FIRSTIMPRESSION")
+        and AF.ai_mult(bt, "FIRSTIMPRESSION", md_fi, a, b) == 1.0)
+    chk("  첫 턴에는 가장 센 만나자마자를 고른다", bt.choose_mine() == "FIRSTIMPRESSION", bt.choose_mine())
+    bt.begin_turn()
+    chk("첫 턴을 연 뒤(상대 쪽이 고르는 때)에도 쓸 수 있다", not SM.first_turn_spent(bt, a, "FIRSTIMPRESSION")
+        and not SM.first_turn_only(a, "FIRSTIMPRESSION"))
+    bt._end_of_turn([])
+    chk("**첫 턴이 끝나면 고르는 쪽이 '실패한다' 를 안다** (점수 0)", SM.first_turn_spent(bt, a, "FIRSTIMPRESSION")
+        and AF.ai_mult(bt, "FIRSTIMPRESSION", md_fi, a, b) == 0.0)
+    bt.begin_turn()
+    chk("  둘째 턴을 연 뒤에도 같다 (쓰는 순간의 판정과 맞는다)", SM.first_turn_spent(bt, a, "FIRSTIMPRESSION")
+        and SM.first_turn_only(a, "FIRSTIMPRESSION"))
+    bt._end_of_turn([])
+    chk("  다른 기술에는 상관없다", not SM.first_turn_spent(bt, a, "AQUAJET"))
+
+    used = []
+    for seed in range(12):                        # (열에 한두 번은 무작위로 고른다 - 그때도 안 나와야 한다)
+        bt, a, b = duel("GOLISOPOD", "SNORLAX", a_moves=("FIRSTIMPRESSION", "AQUAJET"), b_moves=("SPLASH",),
+                        seed=seed)
+        b.hp = b.maxhp = 100000
+        picks = []
+        for _t in range(12):
+            k = bt.choose_mine()
+            picks.append(k)
+            bt.take_turn(k)
+        used.append(picks)
+    chk("**자동 전투: 만나자마자는 나온 턴에 한 번만 쓰고, 그 뒤로는 다른 기술을 쓴다**",
+        all(p.count("FIRSTIMPRESSION") <= 1 and "FIRSTIMPRESSION" not in p[1:] for p in used)
+        and any(p[0] == "FIRSTIMPRESSION" for p in used), [p[:4] for p in used[:3]])
+    chk("  PP 가 헛되이 줄지 않는다 (만나자마자 PP 10 중 9 가 남는다)", a.pp["FIRSTIMPRESSION"] >= 9, a.pp)
+
+    # 잡기 모드 (제보가 난 자리다 - 야생을 잡으려고 앞세웠다). 크레베이스는 단단해서 두 대를 버틴다.
+    bt, a, b = duel("GOLISOPOD", "AVALUGG", a_moves=("FIRSTIMPRESSION", "AQUAJET"), b_moves=("SPLASH",))
+    first, _why = bt.spare_plan(a, b)
+    bt.take_turn(first)
+    later = [bt.spare_plan(a, b)[0] for _i in range(3)]
+    chk("잡기 모드도 같다: 첫 턴 뒤에는 만나자마자 대신 다른 기술을 고른다", first == "FIRSTIMPRESSION"
+        and later == ["AQUAJET"] * 3 and b.hp > b.maxhp * B.SPARE_LOW, (first, later, b.hp, b.maxhp))
+
+    bt, a, b = duel("SNORLAX", "HITMONTOP", b_moves=("FAKEOUT", "TACKLE"))
+    a.hp = a.maxhp = 100000
+    foe_picks = []
+    for _t in range(10):
+        bt.begin_turn()                           # 상대(야생·관장)는 턴을 연 뒤에 고른다
+        foe_picks.append(bt.choose_ai())
+        bt._end_of_turn([])
+    chk("상대 쪽(턴을 연 뒤에 고른다)도 속이기를 첫 턴에만 고른다", "FAKEOUT" not in foe_picks[1:], foe_picks)
+
+    bt, a, b = duel("GOLISOPOD", "SNORLAX", a_moves=("FIRSTIMPRESSION",), b_moves=("SPLASH",))
+    b.hp = b.maxhp = 100000
+    bt.take_turn(bt.choose_mine())
+    chk("기술이 만나자마자 하나뿐이면 그래도 그것을 낸다 (고를 것이 없다)", bt.choose_mine() == "FIRSTIMPRESSION",
+        bt.choose_mine())
+
+    bt, a, b = duel("ABSOL", "SNORLAX", a_moves=("SUCKERPUNCH", "NIGHTSLASH"), b_moves=("SPLASH",))
+    md_sp = DEX.move("SUCKERPUNCH")
+    chk("기습: 처음에는 그대로 친다", AF.ai_mult(bt, "SUCKERPUNCH", md_sp, a, b) == 1.0)
+    a.cond["lastMove"], a.cond["lastFailed"] = "SUCKERPUNCH", True
+    chk("**기습이 방금 실패했으면 같은 수를 바로 또 두지 않는다**", AF.ai_mult(bt, "SUCKERPUNCH", md_sp, a, b) == 0.25
+        and AF.ai_mult(bt, "NIGHTSLASH", DEX.move("NIGHTSLASH"), a, b) == 1.0)
+    a.cond["lastMove"], a.cond["lastFailed"] = "NIGHTSLASH", False
+    chk("  한 번 다른 기술을 쓰고 나면 다시 고를 수 있다", AF.ai_mult(bt, "SUCKERPUNCH", md_sp, a, b) == 1.0)
+    del MC
+
     print("=== 풀죽음 확률이 자료대로인가 ===")
     want = {"FAKEOUT": 100, "ROCKSLIDE": 30, "IRONHEAD": 30, "AIRSLASH": 30,
             "DARKPULSE": 20, "EXTRASENSORY": 10, "BITE": 30, "HEADBUTT": 30}

@@ -16,6 +16,13 @@
      놓아줄 수 없다. 포켓몬 목록에 '나가 있음' 이 실려 간다.
   6. 불러들이면 빈손이다. 돌아온 뒤에는 불러들일 수 없다 (받아야 한다).
   7. 굴리기: 물건 수가 규칙대로고, 등급 비율이 규칙에 가깝고, 특산물이 그곳에서 잘 나온다.
+  8. **쉬기 (1.10.5)**: 다녀온 포켓몬은 돌아온 때부터 24시간 탐험을 못 나간다 (데리고 다니는 것은 된다).
+     불러들인 포켓몬은 쉬지 않는다.
+  9. **성장 (1.10.5)**: 받을 때 탐험 경험치가 쌓이고, 레벨마다 성장치 1점을 원하는 데에 찍는다.
+     발걸음은 시간을, 눈썰미는 귀한 것을, 주머니는 물건 수를, 호기심은 기술머신을 올린다.
+     나가 있는 동안에는 못 바꾼다. 되돌리는 데는 돈이 든다. **다 키워도 하루 최대는 1만 3천 원어치 안쪽이다.**
+ 10. **친화력 (1.10.5)**: 받을 때 그곳 타입의 포켓몬을 데려온다 (다 찍어도 60%). 풀숲에 나오는 종만,
+     지금 풀숲에서 만나는 레벨로. 박스에 들어가고 도감에 오른다. 자리가 없으면 못 데려온다.
 """
 import collections
 import datetime
@@ -234,6 +241,11 @@ def main_():
     chk("  돌아온 포켓몬은 다시 데리고 다닐 수 있다", db.q1("SELECT on_desktop FROM pokemon WHERE id=?", (onix,))["on_desktop"] == 1)
     row = db.q1("SELECT state, loot, claimed_at FROM expedition WHERE id=?", (st["out"][1]["id"],))
     chk("  기록이 남는다 (받은 것)", row["state"] == "done" and row["loot"] and row["claimed_at"], dict(row))
+    grown = one.get("growth") or {}
+    chk("  **탐험 경험치를 받는다** (2시간 성공 = 24) · 돌아온 때부터 24시간 쉰다",
+        grown.get("xp") == 24 == X.xp_for(2, "good") and grown.get("level") == 0 and grown.get("levelBefore") == 0
+        and grown.get("need") == 100 and grown.get("into") == 24 and grown.get("free") == 0
+        and grown.get("rest") == 24 * 3600 and one.get("bonus") == 0, grown)
 
     none = E.claim(uid, None, later(hours=3))
     chk("돌아온 것이 없으면 '전부 받기' 는 아무것도 안 한다", none["claimed"] == [] and "아직" in none["message"] and len(none["out"]) == 2)
@@ -253,18 +265,143 @@ def main_():
     chk("  기술머신을 얹어 왔으면 실제로 받았다", len(tms.owned(uid)) == tm_before + len(tm_got), (len(tms.owned(uid)), tm_got))
 
     print("\n=== 불러들이기 ===")
-    out = E.send(uid, bulba, "forest", 4, later(hours=10))
+    out = E.send(uid, bulba, "forest", 4, later(hours=40))       # (쉬는 시간이 끝난 뒤다 - 아래 '쉬기')
     eid = out["out"][0]["id"]
     before = bag(uid)
-    back = E.recall(uid, eid, later(hours=11))
+    grow_before = E.state(uid, later(hours=40))["growth"][str(bulba)]
+    back = E.recall(uid, eid, later(hours=41))
     chk("불러들이면 빈손으로 돌아온다 (칸이 빈다)", back["ok"] and back["free"] == 3 and bag(uid) == before
         and not E.is_away(uid, bulba) and "빈손" in back["message"], back["message"])
-    why = refused(E.claim, uid, eid, later(hours=20))
+    why = refused(E.claim, uid, eid, later(hours=50))
     chk("  불러들인 것은 받을 수 없다", why and why[0] == 404, why)
-    why = refused(E.recall, uid, eid, later(hours=11))
+    why = refused(E.recall, uid, eid, later(hours=41))
     chk("  두 번 불러들일 수 없다", why and why[0] == 404, why)
-    chk("남의 탐험은 건드릴 수 없다", refused(E.recall, other, eid, later(hours=11))[0] == 404
+    chk("남의 탐험은 건드릴 수 없다", refused(E.recall, other, eid, later(hours=41))[0] == 404
         and E.claim(other, None, later(hours=99))["claimed"] == [])
+    g = back["growth"][str(bulba)]
+    chk("  **불러들인 포켓몬은 경험치도 없고 쉬지도 않는다** (바로 다시 보낼 수 있다)",
+        g["xp"] == grow_before["xp"] and g["runs"] == grow_before["runs"] and g["rest"] == 0, g)
+
+    print("\n=== 쉬기 (1.10.5) ===")
+    # 위에서: 롱스톤은 2시간 뒤에 돌아와 바로 받았고, 이상해꽃(8시간)·꼬마(4시간)는 9시간째에 한꺼번에 받았다
+    g9 = allgot["growth"]
+    chk("받은 답에 포켓몬마다의 성장·쉬는 시간이 실린다 (다녀온 셋만)", set(g9) == {str(bulba), str(onix), str(rat)}, sorted(g9))
+    chk("**쉬는 시간은 돌아온 때부터 센다** (8시간에 돌아와 9시간째에 받았다 = 23시간 남음)",
+        g9[str(bulba)]["rest"] == 23 * 3600 and g9[str(rat)]["rest"] == 19 * 3600 and g9[str(onix)]["rest"] == 17 * 3600,
+        dict((k, v["rest"]) for k, v in g9.items()))
+    by_mon = dict((c["pokemon"]["id"], c["growth"]) for c in allgot["claimed"])
+    chk("  받은 보따리마다 얻은 경험치와 쉬는 시간이 적혀 온다", by_mon[bulba]["xp"] == 120 and by_mon[bulba]["rest"] == 23 * 3600
+        and by_mon[rat]["xp"] == 40 and by_mon[rat]["rest"] == 19 * 3600, by_mon)
+    why = refused(E.send, uid, bulba, "forest", 2, later(hours=10))
+    chk("**쉬는 동안에는 탐험을 못 나간다** (남은 시간을 알려 준다)", why and why[0] == 409 and "쉬는 중" in why[1]
+        and "22시간" in why[1], why)
+    why = refused(E.send, uid, bulba, "forest", 2, later(hours=31, minutes=59))
+    chk("  24시간이 되기 1분 전에도 못 나간다", why and why[0] == 409 and "쉬는 중" in why[1], why)
+    main.set_desktop(bulba, main.DesktopIn(on=True), ctx(uid))
+    chk("  쉬는 동안에도 데리고 다닐 수는 있다 (탐험만 못 나간다)",
+        db.q1("SELECT on_desktop FROM pokemon WHERE id=?", (bulba,))["on_desktop"] == 1)
+    main.set_desktop(bulba, main.DesktopIn(on=False), ctx(uid))
+    chk("  쉬는 포켓몬은 칸을 차지하지 않는다 (나가 있는 것이 아니다)", not E.is_away(uid, bulba)
+        and E.state(uid, later(hours=10))["free"] == 3)
+    ok = E.send(uid, pika, "sea", 2, later(hours=10))
+    chk("  다른 포켓몬은 그동안 보낼 수 있다", ok["ok"] and ok["free"] == 2)
+    E.recall(uid, ok["out"][0]["id"], later(hours=10, minutes=1))
+    chk("  한 번도 안 다녀온 포켓몬은 성장 기록이 없다 (0 에서 시작)", str(pika) not in E.state(uid, later(hours=11))["growth"])
+    st = E.state(uid, later(hours=32))
+    chk("24시간이 지나면 다시 나갈 수 있다", st["growth"][str(bulba)]["rest"] == 0
+        and E.send(uid, bulba, "forest", 2, later(hours=32))["ok"])
+    E.recall(uid, E.state(uid, later(hours=32))["out"][0]["id"], later(hours=32, minutes=1))
+    # 보따리를 늦게 받아도 손해가 없다: 돌아온 지 24시간이 넘어 받으면 쉴 것이 없다
+    uid3 = mkuser("늦게받는사람")
+    late = mkmon(uid3, "VENUSAUR", 80)
+    eid3 = E.send(uid3, late, "forest", 2, T0)["out"][0]["id"]
+    got3 = E.claim(uid3, eid3, later(hours=30), rng=random.Random(1))
+    chk("  보따리를 이틀 뒤에 받았으면 이미 다 쉰 것이다", got3["claimed"][0]["growth"]["rest"] == 0
+        and E.send(uid3, late, "forest", 2, later(hours=30))["ok"], got3["claimed"][0]["growth"])
+
+    print("\n=== 성장 (1.10.5) ===")
+    chk("경험치: 시간 x 성공도 (8시간 대성공 120 · 8시간 보통 80 · 2시간 보통 20)",
+        [X.xp_for(h, g) for h, g in ((8, "great"), (8, "normal"), (2, "normal"), (4, "good"))] == [120, 80, 20, 48])
+    chk("레벨: 100, 140, 180 ... 으로 오른다 (다 합쳐 2,800 = 8시간 대성공 스물네 번)",
+        [X.level_need(n) for n in (1, 2, 10)] == [100, 140, 460] and X.XP_MAX == 2800
+        and [X.level_of(x)[0] for x in (0, 99, 100, 239, 240, 2799, 2800, 99999)] == [0, 0, 1, 1, 2, 9, 10, 10]
+        and X.level_of(120) == (1, 20, 140) and X.level_of(2800) == (10, 0, None), X.level_of(120))
+    now = later(hours=42)
+    g = E.state(uid, now)["growth"][str(bulba)]
+    chk("이상해꽃: 8시간 대성공 한 번 = 탐험 Lv.1, 성장치 1점", g["xp"] == 120 and g["level"] == 1 and g["into"] == 20
+        and g["need"] == 140 and g["free"] == 1 and g["stats"] == dict((k, 0) for k in X.STATS)
+        and g["runs"] == 1, g)
+    chk("  없는 성장치·음수·0점은 거절", refused(E.grow, uid, bulba, {"power": 1}, now)[0] == 400
+        and refused(E.grow, uid, bulba, {"speed": -1}, now)[0] == 400 and refused(E.grow, uid, bulba, {"speed": 0}, now)[0] == 400
+        and refused(E.grow, uid, bulba, {}, now)[0] == 400 and refused(E.grow, uid, bulba, {"speed": "x"}, now)[0] == 400)
+    why = refused(E.grow, uid, bulba, {"speed": 1, "luck": 1}, now)
+    chk("  가진 점수보다 많이는 못 찍는다", why and why[0] == 409 and "모자랍니다" in why[1], why)
+    chk("  남의 포켓몬·다녀온 적 없는 포켓몬은 못 찍는다", refused(E.grow, uid, theirs, {"speed": 1}, now)[0] == 404
+        and refused(E.grow, uid, pika, {"speed": 1}, now)[0] == 409)
+    out = E.grow(uid, bulba, {"speed": 1}, now)
+    g = out["growth"][str(bulba)]
+    chk("**발걸음에 1점을 찍었다**", out["ok"] and g["stats"]["speed"] == 1 and g["free"] == 0 and "1점" in out["message"], g)
+    chk("  다 찍었으면 더 못 찍는다", refused(E.grow, uid, bulba, {"luck": 1}, now)[0] == 409)
+
+    sent = E.send(uid, bulba, "forest", 8, now)
+    one = sent["out"][0]
+    chk("**발걸음 1점: 8시간이 7시간 48분이 된다** (물건 수·성공도는 그대로)", one["left"] == 28080 == X.duration(8, 1)
+        and one["total"] == 28080 and one["hours"] == 8 and one["items"] == 3 and one["grade"] == "great"
+        and "7시간 48분" in sent["message"], (one["left"], sent["message"]))
+    chk("  나가 있는 동안에는 찍지도 되돌리지도 못한다", refused(E.grow, uid, bulba, {"luck": 1}, now)[0] == 409
+        and "나가 있는" in refused(E.reset, uid, bulba, now)[1])
+    why = refused(E.claim, uid, one["id"], later(hours=42, minutes=467))
+    chk("  7시간 47분에는 아직이다", why and why[0] == 409, why)
+    got = E.claim(uid, one["id"], later(hours=42, minutes=468), rng=random.Random(8))
+    grown = got["claimed"][0]["growth"]
+    chk("  7시간 48분에 받는다. 경험치는 고른 시간(8시간)만큼 = 120", grown["xp"] == 120 and grown["levelBefore"] == 1
+        and grown["level"] == 2 and grown["free"] == 1 and grown["rest"] == 24 * 3600, grown)
+    now = later(hours=80)
+
+    # 레벨을 끝까지 올려 본다 (경험치를 직접 적는다 - 스물네 번 보내는 대신)
+    db.run("UPDATE expedition_mon SET xp=?, rest_until=NULL WHERE pokemon_id=?", (X.XP_MAX - 10, bulba))
+    g = E.state(uid, now)["growth"][str(bulba)]
+    chk("Lv.9: 다음 레벨까지 460", g["level"] == 9 and g["need"] == 460 and g["into"] == 450 and g["free"] == 8, g)
+    eid = E.send(uid, bulba, "forest", 2, now)["out"][0]["id"]
+    grown = E.claim(uid, eid, later(hours=82), rng=random.Random(8))["claimed"][0]["growth"]
+    chk("**Lv.10 이 끝이다** (경험치는 2,800 에서 멈춘다)", grown["level"] == 10 and grown["need"] is None and grown["xp"] == 10
+        and grown["free"] == 9 and db.q1("SELECT xp FROM expedition_mon WHERE pokemon_id=?", (bulba,))["xp"] == X.XP_MAX, grown)
+    db.run("UPDATE expedition_mon SET rest_until=NULL WHERE pokemon_id=?", (bulba,))
+    now = later(hours=83)
+    out = E.grow(uid, bulba, {"luck": 4, "haul": 2, "lore": 2, "charm": 1}, now)
+    g = out["growth"][str(bulba)]
+    chk("여러 성장치에 한꺼번에 나눠 찍는다 (다섯 가지)", g["stats"] == {"speed": 1, "luck": 4, "haul": 2, "lore": 2, "charm": 1}
+        and g["free"] == 0 and X.STATS == ("speed", "luck", "haul", "lore", "charm"), g)
+    chk("  성장치는 모두 열 점이다 (레벨 10)", X.spent(g["stats"]) == X.MAX_LEVEL == 10 and X.STAT_CAP == 10)
+
+    print("  -- 되돌리기")
+    db.run("UPDATE users SET money=? WHERE id=?", (X.RESET_COST - 1, uid))
+    why = refused(E.reset, uid, bulba, now)
+    chk("돈이 모자라면 못 되돌린다 (%s원)" % format(X.RESET_COST, ","), why and why[0] == 409 and "돈" in why[1]
+        and E.state(uid, now)["growth"][str(bulba)]["free"] == 0, why)
+    db.run("UPDATE users SET money=? WHERE id=?", (X.RESET_COST + 500, uid))
+    out = E.reset(uid, bulba, now)
+    g = out["growth"][str(bulba)]
+    chk("**돈을 내고 전부 되돌린다** (레벨과 경험치는 그대로, 다시 찍을 수 있다)", out["ok"] and out["money"] == 500
+        and items.money(uid) == 500 and g["stats"] == dict((k, 0) for k in X.STATS) and g["free"] == 10
+        and g["level"] == 10, g)
+    why = refused(E.reset, uid, bulba, now)
+    chk("  되돌릴 것이 없으면 돈을 안 받는다", why and why[0] == 409 and "되돌릴" in why[1] and items.money(uid) == 500, why)
+    chk("  남의 포켓몬은 못 되돌린다", refused(E.reset, other, bulba, now)[0] == 404)
+    E.grow(uid, bulba, {"speed": 10}, now)
+    sent = E.send(uid, bulba, "forest", 8, now)
+    chk("**발걸음 10점: 8시간이 6시간이 된다** (2시간은 1시간 30분, 4시간은 3시간)", sent["out"][0]["left"] == 6 * 3600
+        and [X.duration(h, 10) for h in X.HOURS] == [5400, 3 * 3600, 6 * 3600] and "6시간" in sent["message"],
+        sent["out"][0]["left"])
+    E.recall(uid, sent["out"][0]["id"], later(hours=83, minutes=1))
+    chk("  한 성장치에 열 점까지 (더는 못 찍는다 - 남은 점수도 없다)", refused(E.grow, uid, bulba, {"speed": 1}, now)[0] == 409)
+    db.run("UPDATE expedition_mon SET speed=0, luck=0, haul=0, lore=0, charm=0, xp=? WHERE pokemon_id=?", (120, bulba))
+
+    print("  -- 놓아주면 기록도 지운다")
+    main.release(rat, ctx(uid))
+    chk("놓아준 포켓몬의 성장 기록이 남지 않는다",
+        db.q1("SELECT pokemon_id FROM expedition_mon WHERE pokemon_id=?", (rat,)) is None
+        and str(rat) not in E.state(uid, now)["growth"])
 
     print("\n=== 굴리기 ===")
     rng = random.Random(2026)
@@ -313,6 +450,152 @@ def main_():
     chk("  유적의 '희귀' 는 열에 넷이 그곳의 것이다 (영계의천·업그레이드 ..., %.0f%%)" % (100.0 * share), 0.3 < share < 0.5,
         dict(ruins_rare))
 
+    print("  -- 성장치가 굴림에 드는 자리 (1.10.5)")
+    same = [E.roll(random.Random(k), uid, "snow", 8, "great") == E.roll(random.Random(k), uid, "snow", 8, "great", {})
+            == E.roll_more(random.Random(k), uid, "snow", 8, "great", dict((s_, 0) for s_ in X.STATS))[:2] for k in range(40)]
+    chk("성장치가 없으면 굴림이 전과 한 치도 다르지 않다", all(same), same.count(False))
+    n = 5000
+    base_t, luck_t = collections.Counter(), collections.Counter()
+    for _i in range(n):
+        base_t[E.roll_item(rng, "cave", 8, "great")[1]] += 1
+        luck_t[E.roll_item(rng, "cave", 8, "great", 10)[1]] += 1
+    fine = lambda c: (c["rare"] + c["epic"] + c["held"]) / float(n)       # noqa: E731
+    want0 = sum(p for t, p in X.tier_odds(8, "great") if t in ("rare", "epic", "held"))
+    want10 = sum(p for t, p in X.tier_odds(8, "great", 10) if t in ("rare", "epic", "held"))
+    chk("**눈썰미 10점: 귀한 것(희귀·특별·지닌 도구)이 1.5배** (%.1f%% -> %.1f%%)" % (100 * fine(base_t), 100 * fine(luck_t)),
+        abs(want10 / want0 - 1.5) < 1e-9 and abs(fine(base_t) - want0) < 0.015 and abs(fine(luck_t) - want10) < 0.02
+        and dict(X.tier_odds(8, "great", 10))["uncommon"] == dict(X.tier_odds(8, "great"))["uncommon"],
+        (fine(base_t), fine(luck_t), want0, want10))
+    for h in X.HOURS:
+        for g_ in X.GRADES:
+            odds = X.tier_odds(h, g_, 10)
+            if abs(sum(p for _t, p in odds) - 1.0) > 1e-9 or min(p for _t, p in odds) < 0:
+                chk("눈썰미 10점에서도 등급 확률의 합이 1 (%d시간 %s)" % (h, g_), False, odds)
+    sizes, extra = collections.Counter(), 0
+    for _i in range(3000):
+        loot, _tm, bonus = E.roll_more(rng, uid, "forest", 8, "great", {"haul": 10})
+        got_n = sum(i["count"] for i in loot)
+        sizes[got_n] += 1
+        extra += bonus
+        if got_n != 3 + bonus:
+            chk("더 가져온 수가 물건 수와 안 맞는다", False, (got_n, bonus))
+    avg = sum(k * v for k, v in sizes.items()) / 3000.0
+    chk("**주머니 10점: 물건마다 30%% 로 하나 더** (8시간 대성공 평균 %.2f개, 많아야 6개)" % avg,
+        3.75 < avg < 4.05 and max(sizes) <= 6 and min(sizes) == 3 and X.haul_chance(10) == 0.3, dict(sizes))
+    chk("  2시간 보통도 같은 비율이다 (1개 -> 평균 1.3개)",
+        1.2 < sum(sum(i["count"] for i in E.roll_more(rng, uid, "forest", 2, "normal", {"haul": 10})[0])
+                  for _i in range(2000)) / 2000.0 < 1.4)
+    uid4 = mkuser("기술머신찾는사람")
+    tm0 = sum(E.roll(rng, uid4, "forest", 8, "great")[1] is not None for _i in range(3000))
+    tm10 = sum(E.roll(rng, uid4, "forest", 8, "great", {"lore": 10})[1] is not None for _i in range(3000))
+    chk("**호기심 10점: 기술머신이 두 배** (숲 8시간 대성공 %d -> %d / 3000)" % (tm0, tm10),
+        X.tm_chance(8, "great", "forest", 10) == 2 * X.tm_chance(8, "great", "forest") and 1.6 < tm10 / float(tm0) < 2.5
+        and X.tm_chance(8, "great", "ruins", 10) < 0.6, (tm0, tm10))
+    chk("효과를 사람 말로", [X.stat_text(k, n) for k, n in (("speed", 4), ("luck", 10), ("haul", 1), ("lore", 3))]
+        == ["탐험 시간 -10%", "귀한 물건 확률 +50%", "물건마다 3% 로 하나 더", "기술머신 확률 +30%"]
+        and [X.time_text(X.duration(8, n)) for n in (0, 1, 10)] == ["8시간", "7시간 48분", "6시간"],
+        [X.stat_text(k, n) for k, n in (("speed", 4), ("luck", 10), ("haul", 1), ("lore", 3))])
+
+    print("\n=== 친화력: 그곳의 포켓몬을 데려온다 (1.10.5) ===")
+    chk("친화력 1점에 6%, 다 찍어도 60% (100% 가 아니다)", X.charm_chance(1) == 0.06 and abs(X.charm_chance(10) - 0.6) < 1e-9
+        and X.charm_chance(0) == 0 and X.charm_chance(99) == X.charm_chance(10)
+        and X.stat_text("charm", 10) == "포켓몬을 데려올 확률 60%" and X.STAT_KR["charm"] == "친화력", X.charm_chance(10))
+    spawn_ok = set(sp["internal"] for sp in dex.species if sp.get("spawnable"))
+    frng = random.Random(77)
+    seen_sp = {}
+    bad = []
+    for place in [p_["id"] for p_ in X.PLACES]:
+        good = set(X.place(place)["types"])
+        got_sp = set()
+        for _i in range(150):
+            m = E.roll_friend(frng, place, 40, 330 + 40 * 8)
+            types_ = set(dex.get(m["species"])["types"])
+            got_sp.add(m["species"])
+            if not (types_ & good) or m["level"] != 40 or dex.get(m["species"]).get("legendary") \
+                    or dex.get(m["species"]).get("mega"):
+                bad.append((place, m["species"], m["level"]))
+        seen_sp[place] = got_sp
+    chk("**데려오는 포켓몬은 그곳의 세 타입 가운데 하나다** (여섯 곳 x 150번, 레벨도 준 그대로)", not bad, bad[:5])
+    chk("  곳마다 여러 종이 나온다 (%s)" % " · ".join("%s %d종" % (X.place(k)["kr"], len(v)) for k, v in seen_sp.items()),
+        all(len(v) >= 12 for v in seen_sp.values()), dict((k, len(v)) for k, v in seen_sp.items()))
+    low_lv = [E.roll_friend(frng, "volcano", 5, 330 + 5 * 8) for _i in range(60)]
+    chk("  낮은 레벨에서는 그 레벨에 나올 수 있는 종만 (종족값 상한도 풀숲과 같다)",
+        all(m["level"] == 5 and sum(dex.get(m["species"])["base"].values()) <= 330 + 5 * 8 for m in low_lv),
+        [(m["species"], sum(dex.get(m["species"])["base"].values())) for m in low_lv][:4])
+    evolved = [m for m in (E.roll_friend(frng, "forest", 90, None) for _i in range(120))
+               if dex.get(m["species"]).get("evolvesFrom") or dex.get(m["species"]).get("prevo")]
+    chk("  레벨이 높으면 이미 진화한 모습으로 온다", len(evolved) >= 20, len(evolved))
+
+    fuid = mkuser("친화력")
+    f_lead = mkmon(fuid, "SNORLAX", 37, slot=0)
+    mkmon(fuid, "PIKACHU", 52, slot=1)
+    wild_lv = main._wild_levels(fuid)[1]
+    state0 = frng.getstate()
+    chk("친화력을 안 찍었으면 주사위도 안 굴린다", E._friend(frng, fuid, "forest", {"charm": 0}, T0) == (None, False)
+        and E._friend(frng, fuid, "forest", {}, T0) == (None, False) and frng.getstate() == state0)
+    n0 = db.q1("SELECT COUNT(*) c FROM pokemon WHERE user_id=?", (fuid,))["c"]
+    came, news = [], 0
+    for _i in range(400):
+        fr, full = E._friend(frng, fuid, "sea", {"charm": 10}, T0)
+        if fr:
+            came.append(fr)
+            news += fr["new"]
+    n1 = db.q1("SELECT COUNT(*) c FROM pokemon WHERE user_id=?", (fuid,))["c"]
+    chk("**친화력 10점: 열 번에 여섯 번 데려온다** (%d / 400)" % len(came), 0.52 < len(came) / 400.0 < 0.68
+        and n1 - n0 == len(came), (len(came), n1 - n0))
+    one = came[0]
+    row = db.q1("SELECT * FROM pokemon WHERE id=?", (one["id"],))
+    chk("  데려온 포켓몬은 박스에 들어간다 (데리고 다니는 것이 아니다)", row is not None and row["user_id"] == fuid
+        and row["on_desktop"] == 0 and row["species"] == one["species"] and row["level"] == one["level"], dict(row) if row else None)
+    chk("  화면이 읽는 칸: 이름·도감 번호·레벨·타입·색·처음인지", set(one) == {"id", "name", "species", "num", "level", "shiny",
+                                                                 "types", "new"}
+        and one["name"] == dex.get(one["species"])["kr"] and set(one["types"]) & set(X.place("sea")["types"]), one)
+    chk("  **레벨은 지금 풀숲에서 만나는 레벨이다** (데리고 다니는 것 중 가장 낮은 레벨 = %d)" % wild_lv,
+        wild_lv == 37 and all(f["level"] == 37 for f in came), sorted(set(f["level"] for f in came)))
+    per_box = [r["n"] for r in db.q("SELECT box, COUNT(*) n FROM pokemon WHERE user_id=? AND on_desktop=0 GROUP BY box", (fuid,))]
+    chk("  한 박스에 서른 마리를 넘기지 않는다 (자리 있는 박스로)", max(per_box) <= 30 and len(per_box) >= 2, per_box)
+    kinds = set(f["species"] for f in came)
+    caught_n = db.q1("SELECT COUNT(*) c FROM seen WHERE user_id=? AND caught=1", (fuid,))["c"]
+    chk("  **도감에 오른다** (%d종) · 처음 데려온 종에만 '새로' 가 붙는다" % len(kinds),
+        all(items.has_caught(fuid, k) for k in kinds) and news == len(kinds) and caught_n >= len(kinds), (news, len(kinds), caught_n))
+    st = db.q1("SELECT * FROM wild_state WHERE user_id=?", (fuid,))
+    chk("  잡은 것이 아니다 (잡은 수에는 안 든다)", st is None or not (st["caught"] if "caught" in st.keys() else 0),
+        dict(st) if st else None)
+
+    # 받기까지 통째로: 친화력 10점을 찍은 포켓몬을 보내고 받는다
+    f_mon = mkmon(fuid, "VENUSAUR", 80)
+    db.run("INSERT INTO expedition_mon (pokemon_id, user_id, xp, charm) VALUES (?,?,?,10)", (f_mon, fuid, X.XP_MAX))
+    got_friend = None
+    for k in range(12):
+        t_send = later(days=30 + 2 * k)
+        eid = E.send(fuid, f_mon, "forest", 2, t_send)["out"][0]["id"]
+        res = E.claim(fuid, eid, t_send + datetime.timedelta(hours=2), rng=random.Random(500 + k))
+        c0 = res["claimed"][0]
+        if c0["friend"]:
+            got_friend = (res, c0)
+            break
+    res, c0 = got_friend
+    saved = __import__("json").loads(db.q1("SELECT loot FROM expedition WHERE id=?", (c0["id"],))["loot"])
+    chk("**받을 때 포켓몬을 데려왔다**: 받은 답과 기록에 실리고, 알림 글에 적힌다", c0["friend"]["id"] > 0
+        and c0["friendFull"] is False and set(c0["friend"]["types"]) & set(X.place("forest")["types"])
+        and "포켓몬 1마리를 데려왔습니다" in res["message"] and saved["friend"]["id"] == c0["friend"]["id"]
+        and db.q1("SELECT on_desktop FROM pokemon WHERE id=?", (c0["friend"]["id"],))["on_desktop"] == 0, c0["friend"])
+    chk("  물건은 그대로 받는다 (포켓몬은 덤이다)", sum(i["count"] for i in c0["items"]) == X.item_count(2, c0["grade"]), c0["items"])
+    none = E.claim(uid, None, later(days=60))
+    chk("  친화력이 없는 포켓몬의 보따리에는 포켓몬이 없다", all(c.get("friend") is None for c in allgot["claimed"])
+        and "friend" in allgot["claimed"][0] and none["claimed"] == [])
+
+    real_max = E.config.MAX_BOX
+    E.config.MAX_BOX = db.q1("SELECT COUNT(*) c FROM pokemon WHERE user_id=?", (fuid,))["c"]
+    try:
+        n_before = E.config.MAX_BOX
+        outs = [E._friend(frng, fuid, "cave", {"charm": 10}, T0) for _i in range(40)]
+    finally:
+        E.config.MAX_BOX = real_max
+    chk("**보유 상한이 찼으면 못 데려온다** (그렇다고 알려 준다, 포켓몬은 안 늘어난다)",
+        all(fr is None for fr, _f in outs) and any(f for _fr, f in outs)
+        and db.q1("SELECT COUNT(*) c FROM pokemon WHERE user_id=?", (fuid,))["c"] == n_before, [f for _fr, f in outs][:6])
+
     print("\n=== 돈벌이가 아니다 ===")
     wild = sum(cat[i]["sell"] * w for i, w in items.data()["dropTable"]) / float(items.data()["dropTotal"])
     worth = {}
@@ -331,6 +614,43 @@ def main_():
     chk("  2시간 보통은 200원어치 안쪽 (%.0f원어치)" % low, low < 200, low)
     chk("  곳마다 값이 비슷하다 (어디가 유난히 벌이가 좋지 않다)", best < 1.25 * min(v for (p_, h, g), v in worth.items() if (h, g) == (8, "great")),
         dict((k, round(v)) for k, v in worth.items() if k[1:] == (8, "great")))
+    # **다 키워도 돈벌이가 아니다 (1.10.5).** 굴려서 재면 흔들리니 기대값을 셈한다.
+    def item_worth(place, h, g_, luck=0):
+        tot = 0.0
+        for tier, p_ in X.tier_odds(h, g_, luck):
+            table = pools[tier]
+            v = sum(cat[i]["sell"] * w for i, w in table) / sum(w for _i, w in table)
+            sp_ = E.special_pool(place, tier)
+            if sp_:
+                v = X.SPECIAL_RATE * sum(cat[i]["sell"] for i, _w in sp_) / len(sp_) + (1 - X.SPECIAL_RATE) * v
+            tot += p_ * v
+        return tot
+
+    def per_day(place, h, g_, st_):
+        """칸 셋을 쉬지 않고 돌릴 때 하루에 가져오는 값 (다 키운 포켓몬이 넉넉하다고 치고)."""
+        one_run = X.item_count(h, g_) * item_worth(place, h, g_, st_.get("luck", 0)) * (1 + X.haul_chance(st_.get("haul", 0)))
+        return X.SLOTS * 86400.0 / X.duration(h, st_.get("speed", 0)) * one_run
+
+    places = [p_["id"] for p_ in X.PLACES]
+    base_day = max(per_day(p_, 8, "great", {}) for p_ in places)
+    chk("기대값으로 셈한 하루 최대가 굴려서 잰 값과 같다 (%.0f원어치)" % base_day, abs(base_day - best * 9) < best * 9 * 0.08,
+        (base_day, best * 9))
+    builds = [{"speed": a, "luck": b, "haul": 10 - a - b} for a in range(11) for b in range(11 - a)]
+    top_day, top_build = max((per_day(p_, h, "great", st_), (p_, h, st_)) for p_ in places for h in X.HOURS for st_ in builds)
+    chk("**성장치 열 점을 어떻게 찍어도 하루 최대는 1만 3천 원어치 안쪽** (%.0f원어치 = 지금의 %.2f배, %s)"
+        % (top_day, top_day / base_day, " ".join("%s %d" % (X.STAT_KR[k], v) for k, v in top_build[2].items() if v)),
+        top_day < 13000 and top_day / base_day < 1.36, (top_day, top_build))
+    solo = dict((k, max(per_day(p_, 8, "great", {k: 10}) for p_ in places) / base_day) for k in ("speed", "luck", "haul"))
+    chk("  하나에 다 찍으면: 발걸음 +%.0f%% · 눈썰미 +%.0f%% · 주머니 +%.0f%% (어느 것도 버리는 패가 아니다)"
+        % tuple(100 * (solo[k] - 1) for k in ("speed", "luck", "haul")),
+        all(1.2 < v < 1.36 for v in solo.values()), solo)
+    # 포켓몬이 적으면 쉬는 시간 때문에 전보다 덜 번다: 한 마리는 (탐험 + 24시간)에 한 번 나간다
+    one_run = X.item_count(8, "great") * max(item_worth(p_, 8, "great") for p_ in places)
+    three = 3 * 24.0 / (8 + X.REST_HOURS) * one_run
+    chk("  세 마리만 돌리면 하루 %.0f원어치 (쉬는 시간이 없던 때의 넷에 하나)" % three, three < base_day * 0.26, three)
+    chk("  기술머신은 호기심을 다 찍어도 유적 8시간 대성공에서 열에 여섯이 안 된다",
+        X.tm_chance(8, "great", "ruins", 10) < 0.6, X.tm_chance(8, "great", "ruins", 10))
+
     uid2 = mkuser("많이받는사람")
     sizes, tm_n = collections.Counter(), 0
     for _i in range(400):
@@ -379,10 +699,39 @@ def main_():
     shares = [pct(round(sum(w for i, w in pools["held"] if cat[i]["rarity"] == r_) / hw, 5)) for r_ in X.HELD_RARITIES]
     chk("지닌 도구의 내용 비중 (%s)" % " · ".join(shares), all(x in sec for x in shares), shares)
 
+    # 쉬기와 성장 (1.10.5)
+    num = lambda x: ("%.3f" % x).rstrip("0").rstrip(".")                                      # noqa: E731
+    chk("쉬는 시간과 되돌리는 값", "다녀오면 %d시간 쉽니다" % X.REST_HOURS in sec and "돌아온 때부터 %d시간" % X.REST_HOURS in sec
+        and "<b>%s원</b>" % format(X.RESET_COST, ",") in sec, (X.REST_HOURS, X.RESET_COST))
+    stat_rows = [(X.STAT_KR["speed"], "-%s%%" % num(100 * X.SPEED_PER), "-%s%%" % num(100 * X.SPEED_PER * X.STAT_CAP)),
+                 (X.STAT_KR["luck"], "+%s%%" % num(100 * X.LUCK_PER), "+%s%%" % num(100 * X.LUCK_PER * X.STAT_CAP)),
+                 (X.STAT_KR["haul"], "%s%%" % num(100 * X.HAUL_PER), "%s%%" % num(100 * X.HAUL_PER * X.STAT_CAP)),
+                 (X.STAT_KR["lore"], "+%s%%" % num(100 * X.LORE_PER), "+%s%%" % num(100 * X.LORE_PER * X.STAT_CAP)),
+                 (X.STAT_KR["charm"], "%s%%" % num(100 * X.CHARM_PER), "%s%%" % num(100 * X.CHARM_PER * X.STAT_CAP))]
+    bad = [r for r in stat_rows if not __import__("re").search(
+        r'<tr><td>%s</td><td>[^<]+</td><td class="n">%s</td><td class="n">%s</td></tr>'
+        % tuple(__import__("re").escape(x) for x in r), sec)]
+    chk("성장치 다섯의 효과 (1점 · %d점)" % X.STAT_CAP, not bad and len(stat_rows) == len(X.STATS)
+        and "탐험 레벨은 %d 까지" % X.MAX_LEVEL in sec and "모두 %d점" % X.MAX_LEVEL in sec and "다섯 중" in sec, bad)
+    bad = [h for h in X.HOURS if '<tr><td>%d시간</td>%s</tr>' % (h, "".join(
+        '<td class="n">%s</td>' % X.time_text(X.duration(h, n)) for n in (0, 2, 4, 6, 8, 10))) not in sec]
+    chk("발걸음을 찍었을 때 걸리는 시간 세 줄", not bad, bad)
+    bad = [h for h in X.HOURS if '<tr><td>%d시간</td>%s</tr>' % (h, "".join(
+        '<td class="n">%d</td>' % X.xp_for(h, g_) for g_ in X.GRADES)) not in sec]
+    chk("탐험 경험치 세 줄", not bad, bad)
+    acc, tot = 0, []
+    for n_ in range(1, X.MAX_LEVEL + 1):
+        acc += X.level_need(n_)
+        tot.append('<td class="n">%s</td>' % format(acc, ","))
+    chk("레벨마다 드는 경험치와 그 합", '<tr><td>이 레벨이 되는 데</td>%s</tr>' % "".join(
+        '<td class="n">%d</td>' % X.level_need(n_) for n_ in range(1, X.MAX_LEVEL + 1)) in sec
+        and '<tr><td>처음부터 모두</td>%s</tr>' % "".join(tot) in sec, acc)
+
     print("\n=== 기록 ===")
     for i in range(E.KEEP_DONE + 8):
-        o = E.send(uid, pika, "sea", 2, later(days=2, hours=3 * i))
-        E.claim(uid, o["out"][0]["id"], later(days=2, hours=3 * i + 2), rng=rng)
+        # (한 번 다녀오면 24시간 쉰다 - 27시간마다 보낸다)
+        o = E.send(uid, pika, "sea", 2, later(days=5, hours=27 * i))
+        E.claim(uid, o["out"][0]["id"], later(days=5, hours=27 * i + 2), rng=rng)
     kept = db.q1("SELECT COUNT(*) c FROM expedition WHERE user_id=?", (uid,))["c"]
     chk("받은 기록은 최근 %d개만 남긴다" % E.KEEP_DONE, kept == E.KEEP_DONE, kept)
 

@@ -345,7 +345,7 @@ def safe_check(uid, now=None):
 
 
 def on_obtain(uid, mon, how, ball=None, now=None):
-    """포켓몬을 얻었다 (catch / hatch / evolve / starter). 새 업적 목록.
+    """포켓몬을 얻었다 (catch / hatch / evolve / starter / expedition). 새 업적 목록.
 
     이로치 수와 숨은 업적(자정·럭셔리볼 전설)은 **얻는 순간에만** 알 수
     있어서 여기서 적는다. 나머지는 도감(seen)으로 센다.
@@ -355,8 +355,8 @@ def on_obtain(uid, mon, how, ball=None, now=None):
         guild.note_safe(uid, "catch")
     try:
         _ensure_shiny(uid)
-        if mon.get("shiny") and how in ("catch", "hatch"):
-            _add_stat(uid, "shiny")
+        if mon.get("shiny") and how in ("catch", "hatch", "expedition"):
+            _add_stat(uid, "shiny")           # (expedition = 탐험에서 데려온 포켓몬, 1.10.5)
         if how == "catch":
             if _kst_hour(now) == 0:
                 _set_stat(uid, "midnight", 1)

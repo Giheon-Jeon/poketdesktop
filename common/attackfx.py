@@ -847,6 +847,12 @@ def end_turn(bt, ev, sides=("me", "foe"), field=True):
 def ai_mult(bt, k, md, user, target):
     """이 공격기의 점수에 곱할 값. 0 이면 지금 쓰면 실패한다."""
     uc = user.cond
+    if SM.first_turn_spent(bt, user, k):
+        return 0.0                          # 속이기·만나자마자: 나온 턴이 지났다 (쓰면 실패한다)
+    if (k in NEED_FOE_ATTACK or k == "UPPERHAND") and uc.get("lastMove") == k and uc.get("lastFailed"):
+        # 기습·선더클랩·선취: 상대가 공격 기술을 쓸 때만 통한다. 방금 실패했으면(상대가 공격하지
+        # 않았거나 먼저 움직였다) 같은 수를 바로 또 두지 않는다 - 한 번 다른 기술을 쓴다.
+        return 0.25
     if k == "DREAMEATER" and target.status != "sleep":
         return 0.0
     if k == "LASTRESORT":

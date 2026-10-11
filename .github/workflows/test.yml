@@ -57,6 +57,10 @@ jobs:
       - name: 부팅 직후 로그인 재시도
         run: python client/test_boot_retry.py
 
+      # 옛 exe 를 켜도 옆의 더 새 판 폴더를 지우지 않는다 (1.10.5)
+      - name: 지난 버전 폴더 치우기 (자기보다 낮은 버전만)
+        run: python client/test_update_cleanup.py
+
       - name: 걷는 범위
         run: |
           python client/test_walk_bounds.py

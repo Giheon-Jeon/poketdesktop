@@ -260,6 +260,14 @@ def main():
         st, g2 = call("GET", "/api/gym", token=token)
         mark = next(r2 for r2 in g2["regions"] if r2["region"] == b["region"])
         chk("요약에 이긴 곳으로 표시", mark["cleared"] and mark["wins"] == 1, mark)
+        # 오늘 클리어 (1.10.5): 처음 이긴 날도 '오늘 완료' 다
+        chk("이긴 날은 '오늘 완료' 로 온다", mark.get("today") is True and g2.get("today") == 1,
+            (mark.get("today"), g2.get("today")))
+        chk("다른 곳은 오늘 완료가 아니다",
+            not any(r2.get("today") for r2 in g2["regions"] if r2["region"] != b["region"]))
+        st, card = call("GET", "/api/gym/trainer/%s" % b["region"], token=token)
+        chk("트레이너 카드에도 오늘 완료", st == 200 and card.get("today") is True, card.get("today"))
+        chk("자정까지 남은 초가 온다", 0 < (g2.get("resetIn") or 0) <= 86400, g2.get("resetIn"))
 
         # 처음 이긴 날은 그날 몫을 이미 받은 것이다. 같은 날 다시 이기면 0원.
         st, s3 = call("POST", "/api/gym/%s/start" % b["region"], token=token)
@@ -272,10 +280,17 @@ def main():
                     (uid, b["region"]))
         con.commit()
         con.close()
+        st, gd = call("GET", "/api/gym", token=token)
+        mark = next(r2 for r2 in gd["regions"] if r2["region"] == b["region"])
+        chk("다음 날에는 이긴 곳이지만 오늘 완료는 아니다",
+            mark["cleared"] and mark.get("today") is False and gd.get("today") == 0, (mark, gd.get("today")))
         st, s4 = call("POST", "/api/gym/%s/start" % b["region"], token=token)
         st, last, _ = play(s4["id"], token, best_move)
         rw = (last or {}).get("reward") or {}
         chk("다음 날 다시 이기면 레벨 x 5 원", rw.get("prize") == b["level"] * 5, rw)
+        st, gd = call("GET", "/api/gym", token=token)
+        mark = next(r2 for r2 in gd["regions"] if r2["region"] == b["region"])
+        chk("다시 이기면 오늘 완료가 된다", mark.get("today") is True and gd.get("today") == 1, mark)
         st, s5b = call("POST", "/api/gym/%s/start" % b["region"], token=token)
         st, last, _ = play(s5b["id"], token, best_move)
         rw = (last or {}).get("reward") or {}

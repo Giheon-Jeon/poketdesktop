@@ -388,6 +388,11 @@ def cleanup_old(parent=None, keep=VERSION):
 
     새 버전으로 갈아탄 직후에는 옛 폴더가 아직 잠겨 있을 수 있다.
     못 지워도 그냥 넘어간다 — 다음에 켤 때 지워진다.
+
+    **자기보다 낮은 버전만 지운다 (1.10.5).** 예전에는 자기와 다른 버전을 전부 지웠다.
+    그래서 옛 바로가기로 옛 exe 를 켜면 옆에 있는 **더 새 판의 폴더까지** 지웠다 - 그 사람은
+    켤 때마다 새 판이 사라지고 다시 받았다 ("업데이트하면 프로그램이 사라진다"). 더 새 판이
+    옆에 있으면 그건 내가 치울 것이 아니다.
     """
     if IS_MAC:
         return 0
@@ -400,8 +405,8 @@ def cleanup_old(parent=None, keep=VERSION):
     gone = 0
     for n in names:
         m = pat.match(n)
-        if not m or m.group(1) == keep:
-            continue
+        if not m or not newer(keep, m.group(1)):
+            continue                    # 같은 판, 그리고 **더 새 판**은 건드리지 않는다
         p = os.path.join(parent, n)
         if not os.path.isdir(p):
             continue

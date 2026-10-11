@@ -15,6 +15,7 @@
 """
 import tkinter as tk
 
+from common import expedition as X
 from common.korean import natural
 
 from . import config, effects
@@ -226,6 +227,8 @@ class Desk(object):
             got = r.get("claimed") or []
             if not got:
                 return self.app.notify(r.get("message") or "아직 돌아온 포켓몬이 없습니다.")
+            if any(isinstance(g.get("friend"), dict) for g in got):
+                self._new_mons()             # 친화력으로 포켓몬이 늘었다 - 목록을 새로 받는다
             # 가방이 바뀌었다 - 열려 있는 가방·상점·관리 창이 새 값을 보게 한다
             self.app.balls = r.get("balls", self.app.balls)
             self.app.money = r.get("money", self.app.money)
@@ -250,6 +253,18 @@ class Desk(object):
                 pane.apply(state)
             except Exception as e:                          # noqa: BLE001
                 config.log("탐험 탭 갱신 오류: %s" % e)
+
+    def _new_mons(self):
+        """포켓몬이 늘었다 (친화력으로 데려왔다): 탐험 탭의 '누구를' 목록과 포켓몬 관리 창을 새로 받는다."""
+        hub = getattr(self.app, "hub", None)
+        pane = hub.panes.get("expedition") if hub is not None else None
+        for target in (pane, getattr(self.app, "box_window", None)):
+            if target is None:
+                continue
+            try:
+                target.reload()
+            except Exception as e:                          # noqa: BLE001
+                config.log("목록 갱신 오류: %s" % e)
 
     def clear(self):
         self._hide()
@@ -276,6 +291,76 @@ def loot_lines(claimed):
     return out
 
 
+def growth_note(g):
+    """보따리 아래에 적을 성장 두 줄 (1.10.5): (경험치·레벨, 쉬는 시간·더 주워 온 것, 레벨이 올랐나).
+
+    서버가 성장을 안 실어 보냈으면(옛 서버) None.
+    """
+    gr = (g or {}).get("growth")
+    if not isinstance(gr, dict):
+        return None
+    lv0, lv1 = int(gr.get("levelBefore") or 0), int(gr.get("level") or 0)
+    parts = ["탐험 경험치 +%d" % int(gr["xp"])] if gr.get("xp") else []
+    if lv1 > lv0:
+        parts.append("탐험 Lv.%d → Lv.%d (성장치 +%d점)" % (lv0, lv1, lv1 - lv0))
+    elif gr.get("need"):
+        parts.append("탐험 Lv.%d (다음 레벨까지 %d)" % (lv1, int(gr["need"]) - int(gr.get("into") or 0)))
+    else:
+        parts.append("탐험 Lv.%d (가장 높은 레벨)" % lv1)
+    tail = []
+    bonus = int((g or {}).get("bonus") or 0)
+    if bonus:
+        tail.append("주머니 덕에 %d개를 더 주워 왔습니다" % bonus)
+    rest = int(gr.get("rest") or 0)
+    if rest > 0:
+        tail.append("%s 동안 쉽니다" % X.hours_text(rest))
+    return " · ".join(parts), " · ".join(tail), lv1 > lv0
+
+
+def friend_line(g):
+    """친화력으로 데려온 포켓몬을 한 줄로 (1.10.5): (글, 꼬리표) 또는 None.
+
+    데려오려다 자리가 없어 못 데려왔으면 꼬리표가 None 이다 (글만 흐리게 적는다).
+    """
+    fr = (g or {}).get("friend")
+    if isinstance(fr, dict):
+        name = ("★ " if fr.get("shiny") else "") + (fr.get("name") or "?")
+        return (natural("Lv.%s %s 을(를) 데려왔습니다!" % (fr.get("level", "?"), name)),
+                "도감에 새로 등록" if fr.get("new") else "새 포켓몬")
+    if (g or {}).get("friendFull"):
+        return "포켓몬이 따라오려 했지만, 박스가 가득 차서 데려오지 못했습니다.", None
+    return None
+
+
+def _mon_thumb(win, app, label, mon, keep, tag, size=30):
+    """데려온 포켓몬의 도트를 칸에 넣는다 (없으면 받아서). 창을 늦게 띄우지 않는다 - 오면 채운다."""
+    num = mon.get("num")
+    if not num:
+        return
+    from common import tint as T
+    from . import sprite_cache, sprites
+    from PIL import ImageTk
+    skin = T.skin(mon)
+
+    def work():
+        path = sprite_cache.ensure(app.api, num, skin)
+        if not path:
+            return None
+        anim = sprites.load_animation(path, size, 0.2, 3.0, max_frames=1, max_size=(size, size))
+        return sprites.to_rgba(anim.frames[sprites.RIGHT][0], anim.key)
+
+    def done(img, err):
+        if err or img is None:
+            return
+        try:
+            ph = ImageTk.PhotoImage(img)
+            keep[tag] = ph
+            label.configure(image=ph)
+        except tk.TclError:
+            pass                             # 그사이 창을 닫았다
+    run_async(win, work, done)
+
+
 def show_loot(parent, app, claimed):
     """탐험에서 가져온 것을 보여 준다. 창은 내용만큼만 크고, 길면 안쪽이 굴러간다."""
     from . import ui_bag, ui_box
@@ -285,10 +370,11 @@ def show_loot(parent, app, claimed):
     keep = {}
     win, f = ui_box._shell(parent, "탐험", LOOT_W, U.h(260))
     total = sum(n for _h, _g, _k, rows in lines for _i, _t, n, _tier in rows)
+    friends = sum(1 for g in claimed if isinstance((g or {}).get("friend"), dict))
     tk.Label(f, text="탐험에서 돌아왔습니다", bg=U.BG, fg=U.ACCENT_TEXT,
              font=(U.FAMILY_BLACK, U.pt(20))).pack(anchor="w")
-    tk.Label(f, text="물건 %d개를 가져왔습니다." % total, bg=U.BG, fg=U.FG_DIM,
-             font=U.FONT_S).pack(anchor="w", pady=(4, 0))
+    tk.Label(f, text="물건 %d개를 가져왔습니다." % total + (" 포켓몬 %d마리를 데려왔습니다." % friends if friends else ""),
+             bg=U.BG, fg=U.FG_DIM, font=U.FONT_S).pack(anchor="w", pady=(4, 0))
 
     # **바닥 줄(확인 단추)을 먼저 잡는다.** 굴러가는 칸을 먼저 담으면 그 칸이 높이를 다 먹어서,
     # 물건이 많을 때 단추가 창 밖으로 밀려난다.
@@ -299,7 +385,7 @@ def show_loot(parent, app, claimed):
 
     inner, cv = ui_box.scroll_body(f)
     tag = 0
-    for head, grade, grade_kr, rows in lines:
+    for (head, grade, grade_kr, rows), one in zip(lines, claimed):
         box = tk.Frame(inner, bg=PANEL, highlightthickness=2, highlightbackground=U.LINE)
         box.pack(fill="x", pady=(12, 0), padx=(0, 2))
         top = tk.Frame(box, bg=PANEL)
@@ -312,6 +398,25 @@ def show_loot(parent, app, claimed):
         body.pack(fill="x", padx=14, pady=(0, 9))
         if not rows:
             tk.Label(body, text="아무것도 못 찾았다...", bg=PANEL, fg=U.FG_FAINT, font=U.FONT_S).pack(anchor="w")
+        # 친화력으로 데려온 포켓몬 (1.10.5). 물건보다 먼저, 금빛으로 적는다.
+        came = friend_line(one)
+        if came:
+            text, badge = came
+            row = tk.Frame(body, bg=PANEL)
+            row.pack(fill="x", pady=(0, 2))
+            if badge:
+                slot = tk.Frame(row, bg=PANEL, width=U.h(30), height=max(U.h(30), 32))
+                slot.pack(side="left", padx=(0, 8))
+                slot.pack_propagate(False)
+                art = tk.Label(slot, bg=PANEL, bd=0, highlightthickness=0)
+                art.pack(expand=True)
+                _mon_thumb(win, app, art, one["friend"], keep, "friend%d" % tag)
+                tag += 1
+                tk.Label(row, text=badge, bg=PANEL, fg=U.ACCENT, font=U.FONT_XS, anchor="e").pack(side="right")
+            lb = tk.Label(row, text=text, bg=PANEL, fg=U.ACCENT_TEXT if badge else U.FG_FAINT,
+                          font=U.FONT_B if badge else U.FONT_XS, anchor="w", justify="left",
+                          wraplength=LOOT_W - 2 * 18 - 2 * 14 - (U.h(30) + 8 + U.h(90) if badge else 8))
+            lb.pack(side="left", fill="x", expand=True)
         for item_id, text, n, tier in rows:
             row = tk.Frame(body, bg=PANEL, height=U.h(32))
             row.pack(fill="x")
@@ -330,6 +435,18 @@ def show_loot(parent, app, claimed):
             note = "새 기술머신" if tier == "tm" else TIER_KR.get(tier, "")
             tk.Label(row, text=note, bg=PANEL, fg=U.ACCENT if tier == "tm" else TIER_COLOR.get(tier, U.FG_FAINT),
                      font=U.FONT_XS, anchor="e").pack(side="right")
+        # 그 포켓몬이 얻은 탐험 경험치와 쉬는 시간 (1.10.5). 레벨이 올랐으면 금빛으로.
+        grown = growth_note(one)
+        if grown:
+            tk.Frame(box, bg=U.LINE, height=1).pack(fill="x", padx=14)
+            foot2 = tk.Frame(box, bg=PANEL)
+            foot2.pack(fill="x", padx=14, pady=(6, 8))
+            for text, color in ((grown[0], U.ACCENT_TEXT if grown[2] else U.FG_DIM), (grown[1], U.FG_FAINT)):
+                if text:
+                    lb = tk.Label(foot2, text=text, bg=PANEL, fg=color, font=U.FONT_XS, anchor="w", justify="left",
+                                  bd=0)
+                    lb.pack(fill="x", pady=(1, 0))
+                    U.wrap_to_width(lb)
 
     win.keep = keep
     # 내용만큼만 키운다. 화면 높이의 2/3 를 넘으면 안쪽이 굴러간다.

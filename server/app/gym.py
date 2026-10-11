@@ -54,6 +54,21 @@ def today_kst():
     return (datetime.datetime.utcnow() + datetime.timedelta(hours=9)).date().isoformat()
 
 
+def reset_in():
+    """한국 자정(하루 한 번 보상이 다시 열리는 때)까지 남은 초."""
+    kst = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
+    return int(86400 - (kst.hour * 3600 + kst.minute * 60 + kst.second))
+
+
+def paid_today(row, today=None):
+    """오늘 이곳에서 보상을 받았나 (처음 이긴 날도 든다).
+
+    gym_clear.paid_on 은 '마지막으로 상금을 준 날' 이다. 오늘이면 다시 이겨도 상금이 없다 -
+    화면이 '오늘 완료' 로 보여 주는 값이 이것이다 (1.10.5).
+    """
+    return bool(row) and row["paid_on"] == (today or today_kst())
+
+
 def public(t, dex, full=False):
     """화면에 보낼 트레이너. full 이면 팀(종·레벨)까지.
 

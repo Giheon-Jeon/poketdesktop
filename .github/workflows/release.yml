@@ -98,6 +98,7 @@ jobs:
           python client/test_gym_map.py
           python client/test_gym_ui.py
           python client/test_autostart.py
+          python client/test_update_cleanup.py
 
       # 폴더형(--onedir)으로 낸다. 단일 exe 는 실행할 때 자기를 임시
       # 폴더에 풀고 돌리는데, 그 동작이 악성코드 패커와 비슷해서 백신

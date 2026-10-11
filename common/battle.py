@@ -1986,6 +1986,7 @@ class Battle(object):
                 f.cond.pop(c, None)
         self.field.clear_turn_guards()
         self.field.clock = int(getattr(self.field, "clock", 0)) + 1    # 원수갚기가 '앞 턴' 을 센다
+        self.turn_open = True              # 이번 턴을 열었다 (고르는 쪽이 본다 - SM.first_turn_spent)
         AF.sky_drop_tick(self)             # 프리폴: 붙잡은 쪽이 없어졌으면 풀려난다
         self.pending = {}
         self.acted = set()
@@ -2154,6 +2155,7 @@ class Battle(object):
         날씨의 남은 턴도 그만큼 줄어든다. 첫 사람만 보스와 판(field)을 맡고
         나머지는 자기 쪽만 처리한다. 야생·관장·PvP 는 기본값 그대로다.
         """
+        self.turn_open = False             # 다음에 고르는 것은 다음 턴의 기술이다
         SM.end_turn_pre(self, ev, sides, field)
         if self.me.ability_on or self.foe.ability_on:
             A.settle_status(self, ev)         # 수포를 받았으면 화상은 데미지를 입기 전에 낫는다
