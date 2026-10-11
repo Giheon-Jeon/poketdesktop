@@ -308,7 +308,7 @@ class GymWindow(object):
         self.side.pack_propagate(False)
         tk.Frame(body, bg=U.LINE, width=1).pack(side="right", fill="y")
         self.crumb = tk.Frame(self.side, bg=U.BG2)
-        self.crumb.pack(fill="x", padx=16, pady=(12, 4))
+        self.crumb.pack(fill="x", padx=16, pady=(10, 4))
         # 도전 단추는 바닥에 **먼저** 붙인다. 카드가 길면 창 높이 700 에서
         # 64px, 허브 탭 안에서는 90px 넘게 모자라 단추가 통째로 잘렸다.
         # (카드를 볼 때만 담는다 - _show)
@@ -985,11 +985,13 @@ class GymWindow(object):
             chip.pack(side="right")
             cw, ch = U.h(7), U.h(11)        # (처음에는 9x14 였다 - 조금 크다는 말을 들었다)
             cv = tk.Canvas(chip, width=cw, height=ch, bg=U.BG3, highlightthickness=0, bd=0, cursor="hand2")
-            cv.pack(side="left", padx=(9, 5), pady=5)
+            cv.pack(side="left", padx=(9, 5), pady=2)
             cv.create_line(cw - 2, 2, 2, ch // 2, cw - 2, ch - 2, fill=U.ACCENT, width=2,
                            capstyle="round", joinstyle="round")
             lab = tk.Label(chip, text="목록", bg=U.BG3, fg=U.ACCENT, font=BACK_FONT, cursor="hand2", bd=0, pady=0)
-            lab.pack(side="left", padx=(0, 10), pady=4)
+            # 위아래 여백은 1px 만: 경로 줄이 높아지면 그만큼 카드가 짧아져서, 화면이 낮은 맥(1024x768)
+            # 에서 에이스 줄이 굴려야 보이는 자리로 밀렸다 (릴리스 빌드의 검사가 1px 차로 잡았다).
+            lab.pack(side="left", padx=(0, 10), pady=1)
             for w in (chip, cv, lab):
                 w.bind("<Button-1>", lambda _e: back())
                 w.bind("<Enter>", lambda _e, ws=(chip, cv, lab): [x.configure(bg=U.BG4) for x in ws])
