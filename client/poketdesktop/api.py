@@ -186,6 +186,24 @@ class Api(object):
         return self._call("POST", "/api/pokemon/%d/box" % int(pid),
                           {"box": int(no)})
 
+    def move_boxes(self, ids, no):
+        """박스의 포켓몬 여러 마리를 한 박스로 옮긴다 (1.10.6). 옮긴 수를 돌려준다.
+
+        **옛 서버에는 이 길이 없다** (404·405). 그때는 한 마리씩 옮긴다 - 클라이언트가 먼저 나가고
+        서버가 뒤따라 올라오는 사이에도 되게.
+        """
+        ids = [int(i) for i in ids]
+        try:
+            r = self._call("POST", "/api/pokemon/boxes/move", {"ids": ids, "box": int(no)})
+            return int(r.get("moved", len(ids)))
+        except ApiError as e:
+            # (새 서버의 404 는 "그런 포켓몬이 없습니다" 다 - 그건 그대로 올린다)
+            if e.status != 405 and not (e.status == 404 and "없습니다" not in (e.message or "")):
+                raise
+        for i in ids:
+            self.set_box(i, no)
+        return len(ids)
+
     def set_box_name(self, no, name):
         """박스 이름을 바꾼다. 빈 이름이면 기본 이름으로 돌아간다."""
         return self._call("POST", "/api/pokemon/boxes/name",

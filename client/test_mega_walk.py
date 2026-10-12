@@ -115,6 +115,16 @@ def mon(pid, species, held=None, moves=("TACKLE",), gender="M", name=None):
                      "types": []}}
 
 
+class BoxSpy(object):
+    """포켓몬 관리 창 대신. 그림을 다시 붙이라는 말을 들었는지만 적는다."""
+
+    def __init__(self):
+        self.asked = []
+
+    def refresh_look(self, pid=None):
+        self.asked.append(pid)
+
+
 class MiniApp(object):
     """App 에서 메가 걷기에 얽힌 메서드만 빌려 쓴다 (진짜 코드를 그대로 돌린다)."""
     mega_ids = App.mega_ids
@@ -124,6 +134,8 @@ class MiniApp(object):
     mega_menu_row = App.mega_menu_row
     toggle_mega_walk = App.toggle_mega_walk
     float_over_pet = App.float_over_pet
+    look_num = App.look_num                  # 포켓몬 관리 창의 그림이 따르는 모습 (1.10.6)
+    _box_look = App._box_look
 
     def __init__(self, root, ov):
         self.root = root
@@ -136,6 +148,7 @@ class MiniApp(object):
         self.battle = None
         self.notes = []
         self.fetched = []
+        self.box_window = BoxSpy()
 
     def notify(self, m):
         self.notes.append(m)
@@ -355,6 +368,19 @@ def toggle_part(root, ov, app, files, sheets):
         bool(ov.walks.get(MEGA_X)), list(ov.walks))
     ov.sync([dict(pet.mon)] + [p.mon for i, p in ov.pets.items() if i != 1], {})
     chk("  다음 동기화에서 그대로다", pet.look == MEGA_X and ov.pets[1] is pet)
+    # 포켓몬 관리 창의 그림은 바탕화면의 모습을 따른다 (1.10.6, 제보 #193)
+    on_desk = dict(pet.mon, onDesktop=True)
+    chk("**관리 창이 물으면 메가 폼의 번호를 준다** (바탕화면에서 그 모습으로 걷는 중이다)",
+        app.look_num(on_desk) == MEGA_X, app.look_num(on_desk))
+    chk("  바뀐 순간 관리 창에 그림을 다시 붙이라고 알린다", app.box_window.asked == [1], app.box_window.asked)
+    chk("  박스에 있는 포켓몬은 늘 원래 모습이다 (켜 둔 것이 남아 있어도)",
+        app.look_num(dict(pet.mon, onDesktop=False)) is None and app.look_num(dict(pet.mon)) is None)
+    chk("  알·없는 것은 None", app.look_num(None) is None and app.look_num({"id": -3, "onDesktop": True, "isEgg": True}) is None)
+    real_pets, ov.pets = ov.pets, {}
+    chk("  도트가 아직 안 떴으면 켜 둔 설정과 지닌 스톤으로 셈한다", app.look_num(on_desk) == MEGA_X
+        and app.look_num(dict(on_desk, held=None)) is None and app.look_num(dict(on_desk, id=77)) is None,
+        app.look_num(on_desk))
+    ov.pets = real_pets
 
     print("\n=== 끄기 ===")
     row = app.mega_menu_row(pet)
@@ -367,6 +393,8 @@ def toggle_part(root, ov, app, files, sheets):
     chk("  발밑 가운데가 그대로다", abs(feet(pet)[0] - before[0]) <= 1
         and abs(feet(pet)[1] - before[1]) <= 1, (before, feet(pet)))
     chk("  lookNum 이 없어진다", "lookNum" not in pet.mon, pet.mon)
+    chk("  관리 창의 그림도 원래 모습으로 (다시 붙이라고 알린다)", app.look_num(dict(pet.mon, onDesktop=True)) is None
+        and app.box_window.asked == [1, 1], app.box_window.asked)
 
     print("\n=== 도트를 못 받으면 ===")
     saved = dict(files), dict(sheets)
@@ -379,6 +407,8 @@ def toggle_part(root, ov, app, files, sheets):
     chk("끝나면 켠 것을 무른다", wait(root, lambda: not pet.evolving and app.mega_ids() == []),
         app.mega_ids())
     chk("  모습은 그대로", pet.look == LIZ and pet.fw == w_base)
+    chk("  관리 창도 원래 모습이다 (바탕화면이 실제로 입은 것을 따른다)",
+        app.look_num(dict(pet.mon, onDesktop=True)) is None and app.box_window.asked == [1, 1], app.box_window.asked)
     chk("  기록에 남긴다", any("받지 못했" in n for n in app.notes), app.notes)
     files.update(saved[0])
     sheets.update(saved[1])

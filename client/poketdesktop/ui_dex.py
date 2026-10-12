@@ -31,6 +31,29 @@ GENS = [(0, "전체"), (1, "1세대"), (2, "2세대"), (3, "3세대"), (4, "4세
 MODES = [("all", "전부"), ("caught", "잡은 것"), ("miss", "아직")]
 
 
+def _norm(s):
+    """비교용. 빈칸을 없애고 소문자로 (한글은 그대로다)."""
+    return "".join((s or "").split()).lower()
+
+
+def query_hit(sp, query):
+    """이 종이 찾는 글에 걸리나: **이름(한글·영어)이나 도감 번호** (포켓몬 탭의 찾기와 같다).
+
+    '피카', 'pika', '25', '0025' 가 다 피카츄를 찾는다. 숫자만 치면 번호로도 본다 - 번호는 앞에서부터
+    맞아야 한다 ('25' 는 25 와 250번대를 찾고, 125·1025 는 안 찾는다). 0 으로 시작하면 **그 번호
+    하나**다 - '025' 와 '0025' 는 25번만 찾는다 (칸에 적힌 모양대로 친 것이다).
+    """
+    q = _norm(query)
+    if not q:
+        return True
+    if q in _norm(sp.get("kr")) or q in _norm(sp.get("en")):
+        return True
+    if q.isdigit():
+        num = int(sp.get("num") or 0)
+        return num == int(q) if q.startswith("0") else str(num).startswith(q)
+    return False
+
+
 class DexWindow(object):
 
     def __init__(self, app, parent=None):
@@ -126,9 +149,12 @@ class DexWindow(object):
         tk.Label(row2, text="  이름 찾기", bg=U.BG, fg=U.FG_DIM,
                  font=U.FONT_XS).pack(side="left", padx=(10, 4))
         self.qv = tk.StringVar()
+        # **글자가 바뀔 때마다** 찾는다 (1.10.6). 예전에는 키를 뗄 때(<KeyRelease>)만 찾았는데, 한글은
+        # 조합이 끝나야 칸에 들어가서 마지막 글자가 빠진 채로 찾았다 - 붙여넣은 글도 안 찾아졌다
+        # (제보 #194: "포켓몬 탭처럼 검색이 되지 않는다"). 포켓몬 탭과 같은 방식이다.
+        self.qv.trace_add("write", lambda *_a: self.set_query(self.qv.get()))
         e = U.entry(row2, self.qv, width=14)
         e.pack(side="left")
-        e.bind("<KeyRelease>", lambda _e: self.set_query(self.qv.get()))
 
     # ---------------- 격자 ----------------
     def _grid(self):
@@ -212,7 +238,7 @@ class DexWindow(object):
                 continue
             if self.mode == "miss" and n in self.caught:
                 continue
-            if self.q and self.q not in (sp.get("kr") or ""):
+            if self.q and not query_hit(sp, self.q):
                 continue
             out.append(sp)
         return out

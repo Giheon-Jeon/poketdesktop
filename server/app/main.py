@@ -188,6 +188,11 @@ class BoxIn(BaseModel):
     box: int = Field(ge=0, lt=1000)
 
 
+class BoxMoveIn(BaseModel):
+    ids: list = Field(default_factory=list, max_length=200)
+    box: int = Field(ge=0, lt=1000)
+
+
 class BoxNameIn(BaseModel):
     no: int = Field(ge=0, lt=1000)
     name: str = Field(default="", max_length=20)
@@ -1356,6 +1361,49 @@ def set_box(pid: int, body: BoxIn, ctx=Depends(current)):
         raise HTTPException(409, "그 박스가 가득 찼습니다 (%d마리)." % config.BOX_SIZE)
     db.run("UPDATE pokemon SET box=?, on_desktop=0, slot=NULL WHERE id=?", (no, pid))
     return {"ok": True, "pokemon": _decorate(db.row_to_mon(_own(uid, pid)))}
+
+
+@app.post("/api/pokemon/boxes/move")
+def move_boxes(body: BoxMoveIn, ctx=Depends(current)):
+    """박스의 포켓몬 여러 마리를 한 박스로 옮긴다 (1.10.6, 제보 #194).
+
+    **다 옮기거나 하나도 안 옮긴다.** 자리가 모자라면 몇 칸이 모자란지 알려 주고 아무것도 안 건드린다 -
+    반만 옮겨지면 어느 것이 갔는지 다시 찾아야 한다. 이미 그 박스에 있는 것은 자리를 새로 먹지 않는다.
+
+    데리고 다니는 포켓몬은 받지 않는다 (한 마리씩 옮기는 길은 박스로 내려 준다 - set_box. 여기서
+    여섯 마리를 한꺼번에 내리면 바탕화면이 통째로 빈다).
+    """
+    uid = ctx["user"]["id"]
+    no = int(body.box)
+    if no >= config.BOX_COUNT:
+        raise HTTPException(400, "박스는 %d개까지입니다." % config.BOX_COUNT)
+    ids = []
+    for x in body.ids:
+        try:
+            x = int(x)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "옮길 포켓몬을 알 수 없습니다.")
+        if x > 0 and x not in ids:
+            ids.append(x)
+    if not ids:
+        raise HTTPException(400, "옮길 포켓몬을 골라 주세요.")
+    marks = ",".join("?" * len(ids))
+    rows = db.q("SELECT id, on_desktop, box FROM pokemon WHERE user_id=? AND id IN (%s)" % marks,
+                tuple([uid] + ids))
+    if len(rows) != len(ids):
+        raise HTTPException(404, "그런 포켓몬이 없습니다.")
+    if any(r["on_desktop"] for r in rows):
+        raise HTTPException(409, "데리고 다니는 포켓몬은 한꺼번에 옮길 수 없습니다. 먼저 박스에 넣어 주세요.")
+    coming = [r["id"] for r in rows if int(r["box"] or 0) != no]
+    used = db.q1("SELECT COUNT(*) AS n FROM pokemon WHERE user_id=? AND on_desktop=0 AND box=?", (uid, no))
+    room = config.BOX_SIZE - (used["n"] if used else 0)
+    if len(coming) > room:
+        raise HTTPException(409, "그 박스에 자리가 모자랍니다 (남은 칸 %d, 옮길 포켓몬 %d마리)."
+                            % (max(0, room), len(coming)))
+    if coming:
+        db.run("UPDATE pokemon SET box=? WHERE user_id=? AND on_desktop=0 AND id IN (%s)"
+               % ",".join("?" * len(coming)), tuple([no, uid] + coming))
+    return {"ok": True, "moved": len(coming), "box": no}
 
 
 @app.post("/api/pokemon/boxes/name")

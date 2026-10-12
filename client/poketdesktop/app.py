@@ -2081,6 +2081,35 @@ class App(object):
             return None
         return form
 
+    def look_num(self, mon):
+        """이 포켓몬이 **지금 바탕화면에서 입고 있는 모습**의 번호 (메가 모습으로 걷는 중이면 그 폼). 아니면 None.
+
+        포켓몬 관리 창의 그림이 이것을 따른다 (1.10.6, 제보 #193: 바탕화면에서는 메가 모습인데 관리 창은
+        원래 모습이었다). 바탕화면의 그 도트가 실제로 입고 있는 것을 먼저 보고(도트를 못 받아 원래 모습으로
+        걷는 중이면 관리 창도 원래 모습이다), 도트가 아직 안 떴으면 켜 둔 설정과 지닌 스톤으로 셈한다.
+        데리고 다니지 않는 포켓몬은 늘 원래 모습이다.
+        """
+        pid = (mon or {}).get("id")
+        if not pid or not mon.get("onDesktop") or mon.get("isEgg"):
+            return None
+        pet = self.overlay.pets.get(pid) if self.overlay else None
+        if pet is not None:
+            n = getattr(pet, "look", None) or 0
+            return n if n >= 10000 else None
+        if pid in self.mega_ids():
+            form = self.mega_form(mon)
+            return form["num"] if form else None
+        return None
+
+    def _box_look(self, pid):
+        """바탕화면의 모습이 바뀌었다: 포켓몬 관리 창이 그 포켓몬을 보고 있으면 그림을 다시 붙인다."""
+        box = getattr(self, "box_window", None)
+        if box is not None:
+            try:
+                box.refresh_look(pid)
+            except Exception as e:                          # noqa: BLE001
+                config.log("관리 창 그림 갱신 오류: %s" % e)
+
     def dress_megas(self, mons, keystone=None):
         """켜 둔 포켓몬에 lookNum(메가 폼의 번호)을 붙인다. 받아야 할 도트 목록을 준다."""
         ids = set(self.mega_ids())
@@ -2136,7 +2165,8 @@ class App(object):
             ids = [i for i in ids if i != pet.id]
             self.settings["megaWalk"] = ids
             config.save_settings(self.settings)
-            mega_fx.play(self, pet, pet.mon.get("num"), revert=True)
+            mega_fx.play(self, pet, pet.mon.get("num"), revert=True,
+                         on_done=lambda: self._box_look(pet.id))
             return
         form = self.mega_form(pet.mon)
         if not form:
@@ -2150,6 +2180,7 @@ class App(object):
         def done():
             if getattr(pet, "look", None) == num:
                 self._prefetch_anims([pet.mon])
+                self._box_look(pet.id)       # 관리 창의 그림도 메가 모습으로
                 return
             # 도트를 못 받았다. 켜 둔 것을 무르고 알린다 (화면에 아무 자국이 없다).
             self.settings["megaWalk"] = [i for i in self.mega_ids() if i != pet.id]

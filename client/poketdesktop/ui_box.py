@@ -54,6 +54,14 @@ KEEP_CHUNK = 12
 ART_H = 92
 ART_KEEP = 8
 
+# 여러 마리 고르기(1.10.6)로 고른 줄의 바탕. 고른 한 줄(금색)과 헷갈리지 않게 초록 쪽이다.
+CHECK_BG = "#15261c"
+# 머리글을 누르면 그 기준으로 줄 세워 본다 (1.10.6). 머리글 제목 -> 기준 (box_filter.SORTS)
+SORT_OF = {"도감": "num", "이름": "name", "Lv": "level", "개체값": "bst"}
+# 기준 -> (꺼져 있을 때의 머리글, 켜졌을 때의 머리글, 말로 부를 때의 이름)
+SORT_HEAD = {"num": ("도감▾", "도감▲", "도감"), "name": ("이름▾", "이름▲", "이름"),
+             "level": ("Lv▾", "Lv▼", "Lv"), "bst": ("개체값▾", "종족값▼", "종족값")}
+
 # (제목, x, 너비, 정렬)
 COLS = [("도감", 12, 50, "w"), ("이름", 66, 168, "w"), ("Lv", 240, 34, "center"),
         ("타입", 282, 118, "w"), ("성격", 404, 56, "center"),
@@ -216,6 +224,7 @@ class Row(object):
         # 것인지 그냥 누른 것인지 구분할 수 있다.
         self.dnd = dnd or {}
         self.selected = False
+        self.checked = False          # 여러 마리 고르기로 골랐다 (1.10.6)
         self.iv_cell = None           # 개체값 칸 (알 줄에는 없다)
         self._bst_on = False
         info = mon.get("info", {})
@@ -245,8 +254,8 @@ class Row(object):
         g = None if self.egg else U.gender_mark(mon.get("gender"))
 
         self.cells = []
-        self._cell("알" if self.egg else "%04d" % mon.get("num", 0), COLS[0],
-                   U.FG_FAINT, U.FONT_XS)
+        self._num_text = "알" if self.egg else "%04d" % mon.get("num", 0)
+        self.num_cell = self._cell(self._num_text, COLS[0], U.FG_FAINT, U.FONT_XS)
         self.name_cell = self._cell(
             name, COLS[1],
             self._egg_fg() or (U.SHINY if shiny else
@@ -373,19 +382,41 @@ class Row(object):
 
     def _hover_in(self, _e):
         if not self.selected:
-            self._paint(U.BG2, U.LINE)
+            self._paint(U.BG2, U.GOOD if self.checked else U.LINE)
 
     def _hover_out(self, _e):
         if not self.selected:
+            self._rest()
+
+    def _rest(self):
+        """마우스가 안 올라가 있을 때의 바탕: 고른 한 줄(금색) > 여러 마리로 고른 줄(초록) > 기본."""
+        if self.selected:
+            self._paint("#2b2417", U.GOOD if self.checked else U.ACCENT)
+        elif self.checked:
+            self._paint(CHECK_BG, U.GOOD)
+        else:
             self._paint(self.base, self.base)
+
+    def set_checked(self, on):
+        """여러 마리 고르기의 표시 (1.10.6): 도감 번호 자리에 ✓, 왼쪽 막대와 바탕이 초록."""
+        on = bool(on)
+        if on == self.checked:
+            return
+        self.checked = on
+        try:
+            self.num_cell.configure(text="✓" if on else self._num_text, fg=U.GOOD if on else U.FG_FAINT,
+                                    font=U.FONT_B if on else U.FONT_XS)
+        except tk.TclError:
+            return
+        self._rest()
 
     def set_selected(self, on):
         self.selected = on
         if on:
-            self._paint("#2b2417", U.ACCENT)
+            self._rest()
             self.name_cell.configure(fg=U.ACCENT_TEXT, font=U.FONT_B)
         else:
-            self._paint(self.base, self.base)
+            self._rest()
             # 고르기를 풀 때도 **전설·환상 색을 잃지 않는다.**
             self.name_cell.configure(
                 fg=self._egg_fg() or (U.SHINY if self.mon.get("shiny")
@@ -403,11 +434,18 @@ class BoxWindow(object):
         self._shown = {"party": [], "box": []}   # 지금 담긴 줄 id, 화면 순서대로
         self._by_id = {}         # {id: 포켓몬} — 받은 목록
         self.box_no = 0          # 지금 보고 있는 PC 박스
-        # 종족값 높은 순으로 보기 (1.10.1, 1.10.0 에서는 개체값 순이었다). 켜면 **박스를 넘어
-        # 전부**를 종족값 순으로 줄 세워 한 박스 크기씩(rank_page) 보여 준다. 서버의 박스는
-        # 그대로다 - 보는 순서만 바뀐다. 켜져 있는 동안 '개체값' 칸은 종족값 합계를 적는다.
-        self.sort_bst = False
+        # 줄 세워 보기 (1.10.1 종족값, 1.10.6 도감 번호·이름·레벨). 켜면 **박스를 넘어 전부**를 그
+        # 기준으로 줄 세워 한 박스 크기씩(rank_page) 보여 준다. 서버의 박스는 그대로다 - 보는 순서만
+        # 바뀐다. None 이면 박스 순서다. 종족값으로 보는 동안은 '개체값' 칸에 종족값 합계를 적는다.
+        self.sort = None
         self.rank_page = 0
+        # 여러 마리 고르기 (1.10.6, 제보 #194: 열 마리를 옮기려면 쉰 번을 눌러야 했다). 켜면 줄을
+        # 누를 때마다 고름이 붙었다 떨어지고, 고른 것을 한 박스로 한꺼번에 옮긴다. 고름은 박스를
+        # 넘기거나 찾기·줄 세우기를 바꿔도 남는다 (id 로 든다).
+        self.multi = False
+        self.checked = set()
+        self._last_check = None  # 방금 고른 줄 (Shift 로 사이를 한꺼번에 고를 때의 한쪽 끝)
+        self._page_ids = []      # 지금 박스 칸에 보일 줄 (순서대로, 아직 안 만든 것도)
         self.boxes = {}          # 서버가 준 박스 정보 (size/count/names/used)
         self.party = None        # 서버가 준 파티 프리셋 (active/presets ...). 옛 서버면 None
         self._party_busy = False # 갈아타는 중 (답이 오기 전에 또 누르지 못하게)
@@ -451,6 +489,15 @@ class BoxWindow(object):
         self._detail(body)
 
         self.reload()
+
+    @property
+    def sort_bst(self):
+        """종족값 순으로 보는 중인가 (1.10.1 부터 있던 이름 - 지금은 self.sort 가 기준을 든다)."""
+        return self.sort == "bst"
+
+    @sort_bst.setter
+    def sort_bst(self, on):
+        self.sort = "bst" if on else (None if self.sort == "bst" else self.sort)
 
     # ---------------- 머리 ----------------
     def _header(self):
@@ -542,16 +589,19 @@ class BoxWindow(object):
         head = tk.Frame(wrap, bg=U.INK, height=U.h(26))
         head.pack(fill="x")
         head.pack_propagate(False)
+        self.heads = {}          # 기준 -> 그 머리글 (누르면 그 기준으로 줄 세워 본다)
         for title, x, w, anchor in COLS:
             lb = tk.Label(head, text=title, bg=U.INK, fg=U.FG_FAINT, font=U.FONT_XS,
                           anchor=anchor if anchor != "center" else "center")
             lb.place(x=x, y=0, width=w, relheight=1.0)
-            if title == "개체값":
-                # 이 머리글을 누르면 종족값 높은 순으로 본다 (이 칸도 종족값 합계로 바뀐다).
+            key = SORT_OF.get(title)
+            if key:
+                # 머리글을 누르면 박스를 넘어 그 기준으로 줄 세워 본다. 다시 누르면 박스로 돌아온다.
                 # 위 막대에는 단추를 더 넣을 자리가 없다 (지금도 윈도우에서 꽉 찬다).
-                self.head_iv = lb
+                self.heads[key] = lb
                 lb.configure(cursor="hand2")
-                lb.bind("<Button-1>", lambda _e: self.toggle_sort())
+                lb.bind("<Button-1>", lambda _e, k=key: self.set_sort(k))
+        self.head_iv = self.heads["bst"]     # (종족값 순으로 볼 때 이 칸에 종족값 합계가 적힌다)
         self._paint_sort()
         tk.Frame(wrap, bg=U.LINE, height=U.h(2)).pack(fill="x")
 
@@ -912,25 +962,39 @@ class BoxWindow(object):
         inner.pack(fill="both", expand=True, padx=16)
         # 단추(38) + 위아래 10 = 58 = 줄 높이. 11 이면 윈도우 배율에서 2px 눌린다.
 
-        self.btn_party = U.PushButton(inner, "데리고 다니기", self.toggle_party,
+        # 단추 묶음이 둘이다: 평소의 것과, 여러 마리 고르기를 켰을 때의 것 (1.10.6). 한쪽만 담긴다.
+        self.bar_normal = normal = tk.Frame(inner, bg=U.INK)
+        normal.pack(side="left", fill="y")
+        self.btn_party = U.PushButton(normal, "데리고 다니기", self.toggle_party,
                                       height=34)
         self.btn_party.pack(side="left", pady=10)
-        self.btn_nick = U.ghost_button(inner, "별명 짓기", self.do_nickname,
+        self.btn_nick = U.ghost_button(normal, "별명 짓기", self.do_nickname,
                                        height=34)
         self.btn_nick.pack(side="left", padx=8, pady=10)
-        self.btn_move = U.ghost_button(inner, "박스 옮기기", self.move_box,
+        self.btn_move = U.ghost_button(normal, "박스 옮기기", self.move_box,
                                        height=34)
         self.btn_move.pack(side="left", padx=(0, 8), pady=10)
         # 이로치만 누를 수 있다 (1.8.0). 고른 색은 모든 사람의 화면에 보인다.
-        self.btn_tint = U.ghost_button(inner, "색 고르기", self.do_tint,
+        self.btn_tint = U.ghost_button(normal, "색 고르기", self.do_tint,
                                        height=34)
         self.btn_tint.pack(side="left", padx=(0, 8), pady=10)
-        self.btn_release = U.PushButton(inner, "놓아주기", self.do_release,
+        self.btn_release = U.PushButton(normal, "놓아주기", self.do_release,
                                         fill=U.DANGER_BG, fg=U.DANGER,
                                         shadow="#1a1013", hover="#3a2028",
                                         height=34, border=U.DANGER_LINE,
                                         font=U.FONT_S)
         self.btn_release.pack(side="left", pady=10)
+
+        self.bar_multi = multi = tk.Frame(inner, bg=U.INK)
+        self.btn_multi_move = U.PushButton(multi, "옮기기 (0마리)", self.move_checked, height=34)
+        self.btn_multi_move.pack(side="left", pady=10)
+        self.btn_multi_all = U.ghost_button(multi, "이 화면 전부", self.check_all_shown, height=34)
+        self.btn_multi_all.pack(side="left", padx=8, pady=10)
+        self.btn_multi_clear = U.ghost_button(multi, "고르기 풀기", self.clear_checks, height=34)
+        self.btn_multi_clear.pack(side="left", padx=(0, 8), pady=10)
+        self.btn_multi_done = U.ghost_button(multi, "그만", self.exit_multi, height=34)
+        self.btn_multi_done.pack(side="left", pady=10)
+
         self.status = tk.Label(inner, text="", bg=U.INK, fg=U.FG_FAINT,
                                font=U.FONT_S)
         self.status.pack(side="right")
@@ -1167,33 +1231,42 @@ class BoxWindow(object):
 
     def toggle_sort(self):
         """'개체값' 머리글을 눌렀다: 종족값 높은 순 ↔ 박스 순서."""
-        self.sort_bst = not self.sort_bst
+        self.set_sort("bst")
+
+    def set_sort(self, key):
+        """머리글을 눌렀다: 그 기준으로 줄 세워 본다. 같은 머리글을 다시 누르면 박스 순서로 돌아간다."""
+        if key not in SORT_HEAD:
+            return
+        self.sort = None if self.sort == key else key
         self.rank_page = 0
         self._paint_sort()
-        self.say("PC 박스 전체를 종족값 높은 순으로 봅니다. '종족값' 머리글을 다시 누르면 박스로 "
-                 "돌아갑니다." if self.sort_bst else "박스 순서로 돌아왔습니다.", U.FG_DIM)
+        self.say("PC 박스 전체를 %s으로 봅니다. '%s' 머리글을 다시 누르면 박스로 돌아갑니다."
+                 % (box_filter.SORT_KR[key], SORT_HEAD[key][2]) if self.sort else "박스 순서로 돌아왔습니다.",
+                 U.FG_DIM)
         self._show(self.sel)
 
     def _paint_sort(self):
         """머리글과 그 칸의 표시.
 
-        꺼져 있으면 '개체값▾' (흐린 ▾ 는 누를 수 있다는 표시), 켜면 '종족값▼' 이 금색이 되고
-        줄마다 그 칸에 종족값 합계가 적힌다 - 머리글은 늘 그 칸에 적힌 것의 이름이다.
+        누를 수 있는 머리글에는 흐린 ▾ 가 붙는다. 켜면 금색이 되고 화살표가 차례를 가리킨다
+        (▲ 낮은 것부터, ▼ 높은 것부터). 종족값으로 볼 때는 '개체값' 칸이 '종족값▼' 이 되고 줄마다
+        그 칸에 종족값 합계가 적힌다 - 머리글은 늘 그 칸에 적힌 것의 이름이다.
         """
-        try:
-            self.head_iv.configure(text="종족값▼" if self.sort_bst else "개체값▾",
-                                   fg=U.ACCENT if self.sort_bst else U.FG_FAINT)
-        except (AttributeError, tk.TclError):
-            pass
+        for key, lb in getattr(self, "heads", {}).items():
+            on = self.sort == key
+            try:
+                lb.configure(text=SORT_HEAD[key][1 if on else 0], fg=U.ACCENT if on else U.FG_FAINT)
+            except tk.TclError:
+                pass
         for row in list(getattr(self, "rows", {}).values()):
-            row.show_bst(self.sort_bst)
+            row.show_bst(self.sort == "bst")
 
     def rank_pages(self, total):
-        """종족값 순으로 볼 때의 쪽 수 (한 쪽 = 한 박스 크기)."""
+        """줄 세워 볼 때의 쪽 수 (한 쪽 = 한 박스 크기)."""
         return max(1, -(-int(total) // self.box_size()))
 
     def _page(self, delta):
-        if self.sort_bst and not self._searching():
+        if self.sort and not self._searching():
             total = sum(1 for m in self.mons if not m.get("onDesktop"))
             no = max(0, min(self.rank_page + delta, self.rank_pages(total) - 1))
             if no == self.rank_page:
@@ -1213,11 +1286,12 @@ class BoxWindow(object):
             for b in (self.btn_prev, self.btn_next, self.btn_rename):
                 b.configure(state="disabled")
             return
-        if self.sort_bst:
-            # 박스 대신 순위로 넘긴다: "1~30위 / 412"
+        if self.sort:
+            # 박스 대신 차례로 넘긴다: "1~30위 / 412" (종족값), "1~30 / 412마리" (그 밖)
             size, pages = self.box_size(), self.rank_pages(total)
             first = self.rank_page * size + 1
-            self.lbl_page.configure(text=("%d~%d위 / %d" % (first, min(total, first + size - 1), total))
+            form = "%d~%d위 / %d" if self.sort == "bst" else "%d~%d / %d마리"
+            self.lbl_page.configure(text=(form % (first, min(total, first + size - 1), total))
                                     if total else "0마리")
             self.btn_rename.configure(state="disabled")
             self.btn_prev.configure(state="normal" if self.rank_page > 0 else "disabled")
@@ -1249,9 +1323,9 @@ class BoxWindow(object):
         if self._searching():
             return self.say("찾는 중에는 박스를 고를 수 없습니다. 거르기를 먼저 지워 주세요.",
                             U.DANGER)
-        if self.sort_bst:
-            return self.say("종족값 순으로 보는 중입니다. '종족값' 머리글을 다시 누르면 박스로 "
-                            "돌아갑니다.", U.DANGER)
+        if self.sort:
+            return self.say("%s으로 보는 중입니다. '%s' 머리글을 다시 누르면 박스로 돌아갑니다."
+                            % (box_filter.SORT_KR[self.sort], SORT_HEAD[self.sort][2]), U.DANGER)
         return self._menu(self.lbl_page, self._box_rows(), below=True)
 
     def goto_box(self, no):
@@ -1259,8 +1333,8 @@ class BoxWindow(object):
 
     def rename_box(self):
         """박스 이름 바꾸기. 비우면 기본 이름으로 돌아간다."""
-        if self._searching() or self.sort_bst:
-            return self.say("찾는 중이거나 종족값 순으로 보는 중에는 박스 이름을 바꿀 수 없습니다.",
+        if self._searching() or self.sort:
+            return self.say("찾는 중이거나 줄 세워 보는 중에는 박스 이름을 바꿀 수 없습니다.",
                             U.DANGER)
         no = self.box_no
         cur = (self.boxes.get("names") or {}).get(str(no), "")
@@ -1284,15 +1358,20 @@ class BoxWindow(object):
         U.run_async(self.root, work, done)
 
     def move_box(self):
-        """고른 포켓몬을 다른 박스로. 어디로 보낼지 물어본다."""
+        """고른 포켓몬을 다른 박스로. 어디로 보낼지 물어본다.
+
+        맨 위 줄은 '여러 마리 한꺼번에 옮기기' 다 (1.10.6) - 누르면 고르기가 켜진다.
+        """
         m = self.current()
         if not m:
             return
+        rows = [{"text": "여러 마리 한꺼번에 옮기기…", "checked": False, "command": self.enter_multi}]
         if m.get("isEgg"):
-            return self.say("알은 박스를 옮길 수 없습니다.", U.DANGER)
+            self.say("알은 박스를 옮길 수 없습니다.", U.DANGER)
+            return self._menu(self.btn_move, rows)
+        rows.append(None)
         pid = m["id"]
         here = int(m.get("box") or 0)
-        rows = []
         for no in range(self.box_count()):
             used = self.box_used(no)
             full = used >= self.box_size() and no != here
@@ -1315,6 +1394,128 @@ class BoxWindow(object):
                 return self.say(getattr(err, "message", str(err)), U.DANGER)
             self._note = ("%s 로 옮겼습니다." % self.box_name(no), U.GOOD)
             self.box_no = no
+            self.reload()
+        U.run_async(self.root, work, done)
+
+    # ---------------- 여러 마리 고르기 (1.10.6) ----------------
+    @staticmethod
+    def _can_check(m):
+        """여러 마리 옮기기에 넣을 수 있나: 박스에 있는 포켓몬만 (알과 데리고 다니는 것은 안 된다)."""
+        return bool(m) and not m.get("isEgg") and not m.get("onDesktop") and int(m.get("id") or 0) > 0
+
+    def enter_multi(self):
+        if self.multi:
+            return
+        self.multi = True
+        self._last_check = None
+        self.bar_normal.pack_forget()
+        self.bar_multi.pack(side="left", fill="y", before=self.status)
+        self._paint_multi()
+        self.say("옮길 포켓몬을 눌러 고르세요. Shift 를 누른 채 누르면 사이의 것까지 고릅니다.", U.FG_DIM)
+
+    def exit_multi(self):
+        if not self.multi:
+            return
+        self.multi = False
+        self.checked = set()
+        self._last_check = None
+        self._sync_checks()
+        self.bar_multi.pack_forget()
+        self.bar_normal.pack(side="left", fill="y", before=self.status)
+        self.say("")
+        if self.sel is not None:
+            self.select(self.sel)            # 평소 단추의 글·잠금을 고른 줄에 맞춘다
+
+    def _sync_checks(self):
+        """만들어 둔 줄의 표시를 고름(self.checked)에 맞춘다."""
+        for pid, row in self.rows.items():
+            row.set_checked(pid in self.checked)
+
+    def _paint_multi(self):
+        n = len(self.checked)
+        self.btn_multi_move.configure(text="옮기기 (%d마리)" % n, state="normal" if n else "disabled")
+        self.btn_multi_clear.configure(state="normal" if n else "disabled")
+
+    def toggle_check(self, pid, shift=False):
+        """여러 마리 고르기에서 줄을 눌렀다. shift 면 방금 고른 줄부터 이 줄까지를 한꺼번에 고른다."""
+        m = self._by_id.get(pid)
+        if not self._can_check(m):
+            return self.say("알과 데리고 다니는 포켓몬은 한꺼번에 옮길 수 없습니다 (박스의 포켓몬만 고릅니다).",
+                            U.DANGER)
+        order = self._page_ids
+        if shift and self._last_check in order and pid in order:
+            a, b = sorted((order.index(self._last_check), order.index(pid)))
+            for i in order[a:b + 1]:
+                if self._can_check(self._by_id.get(i)):
+                    self.checked.add(i)
+        elif pid in self.checked:
+            self.checked.discard(pid)
+        else:
+            self.checked.add(pid)
+        self._last_check = pid
+        self._sync_checks()
+        self._paint_multi()
+        self.say("%d마리를 골랐습니다. 박스를 넘기거나 찾아서 더 고를 수 있습니다." % len(self.checked)
+                 if self.checked else "옮길 포켓몬을 눌러 고르세요.", U.FG_DIM)
+
+    def check_all_shown(self):
+        """지금 박스 칸에 보이는 것을 전부 고른다 (한 박스, 또는 찾은 것 전부)."""
+        add = [i for i in self._page_ids if self._can_check(self._by_id.get(i))]
+        if not add:
+            return self.say("이 화면에는 고를 포켓몬이 없습니다.", U.DANGER)
+        self.checked.update(add)
+        self._sync_checks()
+        self._paint_multi()
+        self.say("%d마리를 골랐습니다." % len(self.checked), U.FG_DIM)
+
+    def clear_checks(self):
+        self.checked = set()
+        self._last_check = None
+        self._sync_checks()
+        self._paint_multi()
+        self.say("고르기를 풀었습니다.", U.FG_DIM)
+
+    def move_checked(self):
+        """고른 것들을 어느 박스로 보낼지 물어본다. 자리가 모자란 박스는 고를 수 없다."""
+        ids = [i for i in self.checked if self._can_check(self._by_id.get(i))]
+        if not ids:
+            return self.say("옮길 포켓몬을 먼저 골라 주세요.", U.DANGER)
+        rows = []
+        for no in range(self.box_count()):
+            used = self.box_used(no)
+            # 이미 그 박스에 있는 것은 자리를 새로 먹지 않는다
+            coming = sum(1 for i in ids if int(self._by_id[i].get("box") or 0) != no)
+            room = self.box_size() - used
+            if not coming:
+                note, ok = "  이미 여기", False
+            elif coming > room:
+                note, ok = "  자리 부족 (%d칸)" % max(0, room), False
+            else:
+                note, ok = "", True
+            rows.append({
+                "text": "%s  (%d/%d)%s" % (self.box_name(no), used, self.box_size(), note),
+                "checked": False,
+                "command": (lambda x=no: self._do_move_many(ids, x)) if ok else (lambda: None),
+            })
+        self._menu(self.btn_multi_move, rows)
+
+    def _do_move_many(self, ids, no):
+        ids = list(ids)
+        self.say("옮기는 중...")
+
+        def work():
+            return self.app.api.move_boxes(ids, no)
+
+        def done(r, err):
+            if err:
+                return self.say(getattr(err, "message", str(err)), U.DANGER)
+            # 고르기는 켜 둔 채로, 고름만 비운다 - 박스를 정리할 때는 이어서 또 고른다.
+            # 보던 자리도 그대로다 (한 마리 옮기기와 달리 옮긴 박스로 넘어가지 않는다).
+            self.checked = set()
+            self._last_check = None
+            self._sync_checks()
+            self._paint_multi()
+            self._note = ("%d마리를 %s 로 옮겼습니다." % (len(ids), self.box_name(no)), U.GOOD)
             self.reload()
         U.run_async(self.root, work, done)
 
@@ -1365,8 +1566,8 @@ class BoxWindow(object):
                 self.f_type = None
                 self.f_query.set("")
                 self._show_type()
-            if self.sort_bst:
-                self.sort_bst = False            # 그 포켓몬이 든 박스를 보여 줘야 한다
+            if self.sort:
+                self.sort = None                 # 그 포켓몬이 든 박스를 보여 줘야 한다
                 self._paint_sort()
             if not m.get("onDesktop"):
                 self.box_no = int(m.get("box") or 0)
@@ -1398,6 +1599,8 @@ class BoxWindow(object):
         self._stop_rows()
         dex = self.app.dex
         self._by_id = dict((m["id"], m) for m in self.mons)
+        # 여러 마리 고르기: 없어졌거나 그사이 데리고 다니게 된 것은 고름에서 뺀다
+        self.checked = set(i for i in self.checked if self._can_check(self._by_id.get(i)))
         for pid, row in list(self.rows.items()):
             m = self._by_id.get(pid)
             if m is None or row.dex is not dex or _row_sig(m) != row.sig:
@@ -1426,14 +1629,14 @@ class BoxWindow(object):
                                           self.f_query.get())
         box_all = len(self.mons) - len(party)
         filtered = bool(self.f_type or self.f_query.get().strip())
-        if self.sort_bst:
-            box = box_filter.sort_bst(box, self.app.dex)
+        if self.sort:
+            box = box_filter.sort_by(box, self.app.dex, self.sort)
         # **한 박스만 그린다.** 줄 하나에 위젯이 열서너 개라 수백 마리를 다
         # 만들면 창이 느려진다. 거르기가 걸려 있으면 박스를 넘어 다 뒤진다.
         if self._searching():
             page_box = box
-        elif self.sort_bst:
-            # 종족값 순: 박스를 넘어 전부를 줄 세우되, 한 번에 한 박스 크기만큼만 그린다.
+        elif self.sort:
+            # 줄 세워 보기: 박스를 넘어 전부를 줄 세우되, 한 번에 한 박스 크기만큼만 그린다.
             size = self.box_size()
             self.rank_page = max(0, min(self.rank_page, self.rank_pages(len(box)) - 1))
             page_box = box[self.rank_page * size:(self.rank_page + 1) * size]
@@ -1442,6 +1645,7 @@ class BoxWindow(object):
         self._paint_page(len(box))
         want = {"party": [m["id"] for m in party],
                 "box": [m["id"] for m in page_box]}
+        self._page_ids = list(want["box"])
 
         for sec in ("party", "box"):
             order = self._shown[sec]
@@ -1462,7 +1666,7 @@ class BoxWindow(object):
                 # 이 박스에 몇 마리인지는 위 막대(박스 이름표)가 보여준다.
                 text=("PC 박스 · %d마리 중 %d마리" % (box_all, len(box)) if filtered
                       else "PC 박스 · %d마리" % box_all)
-                + (" · 종족값 높은 순" if self.sort_bst else ""))
+                + (" · " + box_filter.SORT_KR[self.sort] if self.sort else ""))
             if not self._sep_on:
                 # 박스가 비어 있었으니 담긴 박스 줄이 없다. 끝에 붙이면 된다.
                 self._sep.pack(fill="x")
@@ -1522,7 +1726,9 @@ class BoxWindow(object):
             # 고름은 만들 때 칠한다. 다 만든 뒤 이백 줄을 다시 칠하지 않는다.
             row = Row(self.inner, m, self.app.dex, self.select, self._dnd,
                       selected=(pid == self.sel))
-            row.show_bst(self.sort_bst)     # 종족값 순으로 보는 중에 새로 만든 줄
+            row.show_bst(self.sort == "bst")    # 종족값 순으로 보는 중에 새로 만든 줄
+            if pid in self.checked:
+                row.set_checked(True)           # 여러 마리 고르기로 골라 둔 것 (다른 박스에 다녀왔다)
             self.rows[pid] = row
         if sec is None:
             return                          # 안 보일 줄. 만들어만 둔다
@@ -1602,8 +1808,8 @@ class BoxWindow(object):
 
     def _drag_move(self, e):
         d = getattr(self, "_drag", None)
-        if not d:
-            return
+        if not d or self.multi:
+            return                         # 여러 마리 고르기 중에는 끌어서 바꾸지 않는다
         if not d["moved"]:
             if abs(e.y_root - d["y"]) < self.DRAG_SLOP:
                 return
@@ -1626,6 +1832,9 @@ class BoxWindow(object):
             return
         if not d["moved"]:
             # 그냥 누른 것이다. 예전처럼 고르기만 한다.
+            if self.multi:
+                # 여러 마리 고르기: 고름을 붙였다 뗀다 (상세 칸도 그 포켓몬으로 바꾼다)
+                self.toggle_check(d["pid"], shift=bool(getattr(e, "state", 0) & 0x0001))
             return self.select(d["pid"])
         dst = self._row_at(e)
         if dst is None or dst == d["pid"]:
@@ -2277,7 +2486,10 @@ class BoxWindow(object):
         # 둘 돌아서 두 배로 빨라진다.
         self._art_gen += 1
         gen = self._art_gen
-        key = (m.get("num"), T.skin(m), ART_H)
+        # **바탕화면에서 입고 있는 모습을 따른다** (1.10.6). 메가진화한 모습으로 걷는 중이면 여기도
+        # 그 모습이다 - 바탕화면에서는 메가인데 이 창만 원래 모습이었다 (제보 #193).
+        num = self.look_num(m)
+        key = (num, T.skin(m), ART_H)
         got = self._art.get(key)
         if got is not None:
             self._art.move_to_end(key)
@@ -2286,7 +2498,10 @@ class BoxWindow(object):
         api = self.app.api
 
         def work():
-            path = sprite_cache.ensure(api, m.get("num"), T.skin(m))
+            path = sprite_cache.ensure(api, num, T.skin(m))
+            if not path and num != m.get("num"):
+                # 메가 폼의 그림을 못 받았다. 원래 모습으로라도 보여 준다.
+                path = sprite_cache.ensure(api, m.get("num"), T.skin(m))
             if not path:
                 return None
             anim = sprites.load_animation(path, target_height=ART_H,
@@ -2310,6 +2525,21 @@ class BoxWindow(object):
                 self._art.popitem(last=False)   # 가장 오래 안 본 것부터
             self._show_art(photos, r[1])
         U.run_async(self.root, work, done)
+
+    def look_num(self, m):
+        """상세 칸에 그릴 모습의 번호: 바탕화면에서 메가 모습으로 걷는 중이면 그 폼, 아니면 제 번호."""
+        fn = getattr(self.app, "look_num", None)
+        try:
+            n = fn(m) if fn else None
+        except Exception:                                   # noqa: BLE001
+            n = None
+        return n or m.get("num")
+
+    def refresh_look(self, pid=None):
+        """바탕화면의 모습이 바뀌었다 (메가 모습으로 걷기를 켰다·껐다). 그 포켓몬을 보고 있으면 다시 그린다."""
+        m = self.current()
+        if m and not m.get("isEgg") and (pid is None or m.get("id") == pid):
+            self.load_art(m)
 
     def _show_art(self, photos, durations):
         self.photos = photos

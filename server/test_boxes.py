@@ -11,6 +11,8 @@
   2. 옮기면 그 박스에 들어가고, **가득 찬 박스에는 못 넣는다.**
   3. 데리고 다니던 애를 옮기면 바탕화면에서 내려온다.
   4. 이름은 비우면 기본 이름으로 돌아간다. 남의 박스는 못 건드린다.
+  5. **여러 마리를 한꺼번에 옮긴다 (1.10.6).** 다 옮기거나 하나도 안 옮긴다 - 자리가 모자라면
+     아무것도 안 건드린다. 데리고 다니는 포켓몬과 남의 포켓몬은 못 넣는다.
 """
 import json
 import os
@@ -244,6 +246,43 @@ def main_():
         chk("남의 포켓몬은 못 옮긴다", False, "옮겨졌다")
     except HTTPException as e:
         chk("남의 포켓몬은 못 옮긴다", e.status_code == 404, e.status_code)
+
+    print("\n=== 여러 마리를 한꺼번에 옮긴다 (1.10.6) ===")
+    many, mids = mkuser("여럿", mons=size + 12)
+    main.assign_boxes(many)                              # 0번에 서른, 1번에 열둘
+
+    def refused(code, ids_, box_, who=None):
+        try:
+            main.move_boxes(main.BoxMoveIn(ids=ids_, box=box_), ctx(who or many))
+        except HTTPException as e:
+            return e.status_code == code and e.detail
+        return False
+
+    r = main.move_boxes(main.BoxMoveIn(ids=mids[:5], box=3), ctx(many))
+    chk("다섯 마리를 3번으로", r["ok"] and r["moved"] == 5 and counts(many) == {0: size - 5, 1: 12, 3: 5}, (r, counts(many)))
+    r = main.move_boxes(main.BoxMoveIn(ids=mids[:5] + mids[5:8], box=3), ctx(many))
+    chk("이미 거기 있는 것은 세지 않는다 (여덟을 보냈는데 셋만 옮겨진다)", r["moved"] == 3 and counts(many)[3] == 8, r)
+    r = main.move_boxes(main.BoxMoveIn(ids=[mids[8], mids[8], str(mids[9])], box=3), ctx(many))
+    chk("같은 것을 두 번 적어도 한 번, 글자로 온 번호도 받는다", r["moved"] == 2 and counts(many)[3] == 10, r)
+    # 1번에는 열둘이 있다 (남은 칸 열여덟). 0번의 스무 마리를 보내면 두 칸이 모자란다.
+    before = boxes_of(many)
+    why = refused(409, mids[10:30], 1)
+    chk("**자리가 모자라면 하나도 안 옮긴다** (몇 칸이 모자란지 알려 준다)", why and "남은 칸 18" in why and "20마리" in why
+        and boxes_of(many) == before, why)
+    r = main.move_boxes(main.BoxMoveIn(ids=mids[10:28], box=1), ctx(many))
+    chk("딱 맞게는 들어간다 (1번이 가득 찬다)", r["moved"] == 18 and counts(many)[1] == size, counts(many))
+    chk("  가득 찬 박스에는 한 마리도 더 못 넣는다", refused(409, [mids[28]], 1) and counts(many)[1] == size)
+    chk("  거기 이미 있는 것만 보내면 아무 일도 없다 (오류가 아니다)",
+        main.move_boxes(main.BoxMoveIn(ids=mids[10:13], box=1), ctx(many))["moved"] == 0)
+    db.run("UPDATE pokemon SET on_desktop=1, slot=0 WHERE id=?", (mids[29],))
+    before = boxes_of(many)
+    why = refused(409, [mids[28], mids[29]], 5)
+    chk("**데리고 다니는 포켓몬이 섞여 있으면 거절** (하나도 안 옮긴다)", why and "데리고 다니는" in why
+        and boxes_of(many) == before and db.q1("SELECT on_desktop FROM pokemon WHERE id=?", (mids[29],))["on_desktop"] == 1, why)
+    chk("남의 포켓몬이 섞여 있으면 404 (하나도 안 옮긴다)", refused(404, [mids[28], oids[0]], 5) and boxes_of(many) == before)
+    chk("고른 것이 없으면 400", refused(400, [], 5) and refused(400, [0, -3], 5) and refused(400, ["x"], 5))
+    chk("없는 박스는 400", refused(400, [mids[28]], config.BOX_COUNT))
+    chk("남의 박스를 건드리지 않는다", counts(uid) == counts(uid) and refused(404, mids[:2], 2, who=other))
 
     print("\n=== 박스 이름 ===")
     r = main.set_box_name(main.BoxNameIn(no=2, name="불꽃방"), ctx(uid))

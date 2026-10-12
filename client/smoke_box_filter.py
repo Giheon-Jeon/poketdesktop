@@ -132,6 +132,14 @@ def mon(dex, num, pid, on=False, nickname=None, held=None):
     return m
 
 
+class _Refused(Exception):
+    """서버가 거절했다 (api.ApiError 와 같은 모양 - 화면은 message 를 읽는다)."""
+
+    def __init__(self, message, status=409):
+        Exception.__init__(self, message)
+        self.message, self.status = message, status
+
+
 class FakeApi(object):
     def __init__(self, mons):
         self.box_size = 30
@@ -168,6 +176,22 @@ class FakeApi(object):
                 m["box"] = int(no)
                 m["onDesktop"] = False
         return {"ok": True}
+
+    def move_boxes(self, ids, no):
+        """서버 /api/pokemon/boxes/move 와 같은 규칙: 다 옮기거나 하나도 안 옮긴다 (1.10.6)."""
+        ids = [int(i) for i in ids]
+        self.calls.append(("boxes", sorted(ids), int(no)))
+        by = dict((m["id"], m) for m in self.mons)
+        if any(by[i].get("onDesktop") for i in ids):
+            raise _Refused("데리고 다니는 포켓몬은 한꺼번에 옮길 수 없습니다. 먼저 박스에 넣어 주세요.")
+        coming = [i for i in ids if int(by[i].get("box") or 0) != int(no)]
+        used = sum(1 for m in self.mons if not m.get("onDesktop") and int(m.get("box") or 0) == int(no))
+        if len(coming) > self.box_size - used:
+            raise _Refused("그 박스에 자리가 모자랍니다 (남은 칸 %d, 옮길 포켓몬 %d마리)."
+                           % (self.box_size - used, len(coming)))
+        for i in coming:
+            by[i]["box"] = int(no)
+        return len(coming)
 
     def set_box_name(self, no, name):
         self.calls.append(("boxname", no, name))

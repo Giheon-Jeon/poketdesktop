@@ -97,6 +97,50 @@ def sort_bst(mons, dex):
     return sorted(mons, key=key)
 
 
+# 박스를 넘어 줄 세워 보는 기준 (1.10.6). 종족값만 있었는데 도감 번호·이름·레벨이 붙었다 (제보 #194).
+# 서버의 박스는 그대로다 - 보는 순서만 바뀐다.
+SORTS = ("num", "name", "level", "bst")
+SORT_KR = {"num": "도감 번호 순", "name": "이름 순", "level": "레벨 높은 순", "bst": "종족값 높은 순"}
+
+
+def _level(m):
+    try:
+        return int(m.get("level") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def name_of(m):
+    """목록에 적히는 이름 (별명이 있으면 별명)."""
+    return (m.get("info") or {}).get("name") or m.get("nickname") or m.get("species") or ""
+
+
+def sort_by(mons, dex, key):
+    """key 순서로 줄 세운 새 목록 (받은 목록은 그대로). 모르는 기준이면 그대로 돌려준다.
+
+        num    도감 번호 낮은 것부터 (같은 종이면 레벨 높은 것 먼저)
+        name   이름 가나다 순 (목록에 적힌 이름 - 별명이 있으면 별명. 영어는 한글보다 앞에 선다)
+        level  레벨 높은 것부터 (같으면 종족값 높은 것 먼저)
+        bst    종족값 높은 것부터 (sort_bst)
+
+    **알은 늘 맨 뒤다.** 끝까지 가도 순서가 갈리지 않으면 먼저 잡은 것(id)이 앞이다 - 늘 같은 순서가
+    나와야 다시 불러올 때마다 줄이 뒤바뀌지 않는다.
+    """
+    if key == "bst":
+        return sort_bst(mons, dex)
+
+    def num(m):
+        return int(m.get("num") or 0)
+
+    keys = {
+        "num": lambda m: (bool(m.get("isEgg")), num(m), -_level(m), m.get("id") or 0),
+        "name": lambda m: (bool(m.get("isEgg")), name_of(m).casefold(), num(m), -_level(m), m.get("id") or 0),
+        "level": lambda m: (bool(m.get("isEgg")), -_level(m), -bst_of(m, dex), num(m), m.get("id") or 0),
+    }
+    fn = keys.get(key)
+    return sorted(mons, key=fn) if fn else list(mons)
+
+
 def egg_row(egg):
     """알 하나를 목록의 한 줄감으로 (1.4.1 - 알도 포켓몬처럼 관리한다).
 

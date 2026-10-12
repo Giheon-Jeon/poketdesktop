@@ -213,6 +213,50 @@ def main():
         bad = squeezed(dw.win)
         chk("머리줄 눌림 없음", not bad, bad[:3])
 
+        print("\n=== 도감 탭의 이름 찾기 (1.10.6) ===")
+        # (위의 창은 도감 자료 없이 띄웠다. 찾기는 진짜 도감으로 본다.)
+        import json
+        from common import pokelogic as P
+        with open(os.path.join(os.path.dirname(HERE), "server", "data", "pokedex.json"), encoding="utf-8") as f:
+            real_dex = P.Pokedex(json.load(f))
+        app3 = FakeApp(root)
+        app3.api = DexApi()
+        app3.dex = real_dex
+        dq = ui_dex.DexWindow(app3)
+        pump(root, lambda: len(dq.rows) > 900)
+        root.update()
+        total = len(dq.rows)
+        # **칸의 글이 바뀌면 바로 찾는다** - 키를 뗀 때가 아니다. 한글은 조합이 끝나야 칸에 들어가고
+        # 그때는 키 이벤트가 안 온다 (제보 #194: 도감 탭에서 검색이 안 된다).
+        dq.qv.set("피카")
+        root.update()
+        got = [sp["kr"] for sp in dq.rows]
+        chk("글이 들어가면 키를 누르지 않아도 걸러진다 (피카 -> 피카츄)", dq.q == "피카" and "피카츄" in got
+            and 0 < len(got) < 10 and all("피카" in n for n in got), got)
+        dq.qv.set("25")
+        root.update()
+        nums = [sp["num"] for sp in dq.rows]
+        chk("도감 번호로도 찾는다 (25 -> 25번과 250번대)", 25 in nums and 250 in nums and 125 not in nums
+            and 1025 not in nums, nums[:14])
+        dq.qv.set("0025")
+        root.update()
+        chk("  네 자리로 치면 그 번호만", [sp["num"] for sp in dq.rows] == [25], [sp["num"] for sp in dq.rows])
+        dq.qv.set(" PIKA chu ")
+        root.update()
+        chk("영어 이름으로도 (대소문자·빈칸은 안 가린다)", [sp["kr"] for sp in dq.rows] == ["피카츄"], [sp["kr"] for sp in dq.rows])
+        dq.qv.set("없는포켓몬이름")
+        root.update()
+        chk("맞는 것이 없으면 빈 격자", dq.rows == [])
+        dq.qv.set("")
+        root.update()
+        chk("지우면 전부 돌아온다", len(dq.rows) == total and total > 900, (len(dq.rows), total))
+        Q = ui_dex.query_hit
+        pika = {"kr": "피카츄", "en": "Pikachu", "num": 25}
+        chk("찾기 규칙: 이름의 일부 · 번호의 앞부분", Q(pika, "카츄") and Q(pika, "2") and Q(pika, "025") and Q(pika, "")
+            and not Q(pika, "5") and not Q(pika, "125") and not Q(pika, "꼬부기") and not Q({"kr": None, "num": 0}, "x"))
+        dq.close()                                  # (아래 휠 검사가 화면의 그 자리를 본다 - 창을 남기지 않는다)
+        root.update()
+
         # ---- 칭호 목록 (1.8.1): 칭호마다 얻는 조건 ----
         print("\n=== 도감 탭의 칭호 목록 ===")
         chk("'칭호' 단추가 있다", dw.title_btn.label.cget("text") == "칭호",

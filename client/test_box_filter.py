@@ -172,6 +172,35 @@ def main():
         and F.bst_of({"species": "NOPE"}, dex) == 0 and len(F.sort_bst(pool, None)) == len(pool))
     chk("개체값 순 정렬은 없앴다 (1.10.0 의 것)", not hasattr(F, "sort_iv"))
 
+    print("-- 도감 번호 · 이름 · 레벨 순 (1.10.6)")
+    pool = [mon(dex, n, pid=100 + i) for i, n in enumerate((129, 3, 150, 25, 6, 143))]
+    for m, lv in zip(pool, (40, 12, 70, 99, 5, 40)):
+        m["level"] = lv
+    chk("도감 번호 낮은 것부터", [m["num"] for m in F.sort_by(pool, dex, "num")] == [3, 6, 25, 129, 143, 150],
+        [m["num"] for m in F.sort_by(pool, dex, "num")])
+    chk("레벨 높은 것부터 (같으면 종족값 높은 것 먼저: 잠만보 540 > 잉어킹 200)",
+        [m["num"] for m in F.sort_by(pool, dex, "level")] == [25, 150, 143, 129, 3, 6],
+        [(m["num"], m["level"]) for m in F.sort_by(pool, dex, "level")])
+    names = [F.name_of(m) for m in F.sort_by(pool, dex, "name")]
+    chk("이름 가나다 순", names == sorted(names) and names[0] == "리자몽" and names[-1] == "피카츄", names)
+    nick = mon(dex, 25, pid=200)
+    nick["info"]["name"] = "가가"
+    eng = mon(dex, 25, pid=201)
+    eng["info"]["name"] = "Zed"
+    got = [F.name_of(m) for m in F.sort_by(pool + [nick, eng], dex, "name")]
+    chk("  별명이 있으면 별명으로 (영어는 한글보다 앞에 선다)", got[0] == "Zed" and got[1] == "가가", got[:3])
+    twin_a, twin_b = mon(dex, 25, pid=301), mon(dex, 25, pid=300)
+    twin_a["level"], twin_b["level"] = 10, 60
+    chk("같은 종은 레벨 높은 것 먼저 (도감 번호 순)", [m["id"] for m in F.sort_by([twin_a, twin_b], dex, "num")] == [300, 301])
+    same = [mon(dex, 25, pid=9), mon(dex, 25, pid=4), mon(dex, 25, pid=7)]
+    chk("끝까지 같으면 먼저 잡은 것부터 (늘 같은 순서가 나온다)",
+        all([m["id"] for m in F.sort_by(same, dex, k)] == [4, 7, 9] for k in ("num", "name", "level")))
+    chk("알은 어느 기준에서도 맨 뒤", all(F.sort_by([egg_row] + pool, dex, k)[-1] is egg_row for k in F.SORTS))
+    chk("받은 목록은 그대로 두고, 종족값은 예전 그대로다", [m["num"] for m in pool] == [129, 3, 150, 25, 6, 143]
+        and F.sort_by(pool, dex, "bst") == F.sort_bst(pool, dex))
+    chk("모르는 기준이면 순서를 안 바꾼다", F.sort_by(pool, dex, "nope") == pool and F.sort_by(pool, dex, None) == pool)
+    chk("기준마다 사람 말이 있다", set(F.SORT_KR) == set(F.SORTS) and F.SORT_KR["num"] == "도감 번호 순")
+
     print("-- 도감이 없어도 안 터진다")
     chk("dex None 이면 타입 거르기는 전부 걸러진다", F.apply(mons, None, type_id="FIRE") == [])
     chk("dex None 이어도 이름으로는 찾는다", [m["num"] for m in F.apply(mons, None, query="불꽃이")] == [4])

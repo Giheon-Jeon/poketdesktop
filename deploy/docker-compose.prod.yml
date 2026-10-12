@@ -35,6 +35,10 @@ services:
       # /api/errors 로 역추적을 볼 때 쓰는 열쇠. .env 에 넣는다.
       # 비어 있으면 그 경로는 아예 없는 것처럼 군다.
       POKET_ADMIN_KEY: ${POKET_ADMIN_KEY:-}
+      # 게시판 운영자의 닉네임들 (쉼표로 나눈다). 공지를 쓰고, 남의 글·댓글을 지우고, 글 옆에
+      # '운영자' 표시가 붙는다. **누구인지는 저장소가 아니라 서버의 .env 에 적는다** -
+      # 안 적으면 기본값이다. 맨 앞 사람의 이름으로 패치노트 글이 올라간다.
+      POKET_BOARD_ADMINS: ${POKET_BOARD_ADMINS:-나여조경석}
       # Caddy 뒤에 있으므로 X-Forwarded-For 를 믿어도 된다
       POKET_TRUST_PROXY: "1"
       POKET_REQUIRE_IP: "1"

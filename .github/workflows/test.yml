@@ -340,6 +340,9 @@ jobs:
           python client/test_walk_shiny.py
       - name: PC 박스 거르기·지닌 도구 칸 (진짜 Tk)
         run: python client/smoke_box_filter.py
+      # 머리글로 줄 세우기(도감 번호·이름·레벨) · 여러 마리 한꺼번에 옮기기 (1.10.6)
+      - name: 포켓몬 관리 창의 줄 세우기·여러 마리 옮기기 (진짜 Tk)
+        run: python client/test_box_multi.py
       # 기술머신 창의 포켓몬 도트가 잘려 있었다 (Label width=3 이 3px 로 읽혔다).
       - name: 기술머신 창 도트·목록 (진짜 Tk)
         run: python client/smoke_tms.py
@@ -462,6 +465,9 @@ jobs:
           python client/test_walk_shiny.py
       - name: PC 박스 거르기·지닌 도구 칸 (진짜 Tk)
         run: python client/smoke_box_filter.py
+      # 머리글로 줄 세우기(도감 번호·이름·레벨) · 여러 마리 한꺼번에 옮기기 (1.10.6)
+      - name: 포켓몬 관리 창의 줄 세우기·여러 마리 옮기기 (진짜 Tk)
+        run: python client/test_box_multi.py
       - name: 기술머신 창 도트·목록 (진짜 Tk)
         run: python client/smoke_tms.py
       - name: 기술 떠올리기 창·포켓몬 관리 단추 (진짜 Tk)

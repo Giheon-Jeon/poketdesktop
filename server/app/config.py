@@ -116,6 +116,8 @@ ADMIN_KEY = os.environ.get("POKET_ADMIN_KEY", "")
 
 # 게시판에 공지를 쓰고 남의 글을 지울 수 있는 닉네임들 (쉼표로 나눈다).
 # 닉네임은 계정마다 하나뿐이라 이름으로 정해도 남이 차지할 수 없다.
+# 운영 서버는 deploy/.env 의 POKET_BOARD_ADMINS 로 정한다 (docker-compose.prod.yml 이 넘겨 준다).
+# **이름이 정확히 같아야 한다** ('지우' 를 넣어도 '한지우' 는 운영자가 아니다).
 BOARD_ADMINS = tuple(x.strip() for x in
                      os.environ.get("POKET_BOARD_ADMINS", "나여조경석").split(",")
                      if x.strip())

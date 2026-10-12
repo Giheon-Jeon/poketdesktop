@@ -30,7 +30,7 @@ os.environ["POKET_ITEMS"] = os.path.join(HERE, "data", "items.json")
 
 from fastapi import HTTPException                            # noqa: E402
 
-from app import board, board_routes, db, season              # noqa: E402
+from app import board, board_routes, config, db, season      # noqa: E402
 
 OK = FAIL = 0
 T0 = datetime.datetime(2026, 10, 2, 3, 0, 0, tzinfo=datetime.timezone.utc)
@@ -386,9 +386,51 @@ def main():
     chk("목록 라우트", board_routes.listing("all", 1, ctx={"user": a})["total"] >= 1)
 
     t_190(op, a, b)
+    t_admins(op, a, fake)
 
     print("\n%d개 통과, %d개 실패" % (OK, FAIL))
     return 1 if FAIL else 0
+
+
+def t_admins(op, a, fake):
+    """운영자를 여럿 둔다 (POKET_BOARD_ADMINS 에 닉네임을 쉼표로 적는다)."""
+    import subprocess
+    print("\n=== 운영자를 여럿 두기 ===")
+    env = dict(os.environ, POKET_BOARD_ADMINS=" 나여조경석 , 지우 ,, ")
+    out = subprocess.run([sys.executable, "-c", "from app import config; print('|'.join(config.BOARD_ADMINS))"],
+                         cwd=HERE, env=env, capture_output=True, text=True, encoding="utf-8").stdout.strip()
+    chk("쉼표로 나눠 적는다 (빈칸·빈 칸은 버린다)", out == "나여조경석|지우", out)
+    env.pop("POKET_BOARD_ADMINS")
+    out = subprocess.run([sys.executable, "-c", "from app import config; print('|'.join(config.BOARD_ADMINS))"],
+                         cwd=HERE, env=env, capture_output=True, text=True, encoding="utf-8").stdout.strip()
+    chk("안 적으면 기본값 하나", out == "나여조경석", out)
+
+    near = mkuser("한지우")
+    real = config.BOARD_ADMINS
+    config.BOARD_ADMINS = ("나여조경석", "지우")
+    try:
+        chk("목록에 든 닉네임은 운영자다 (이름이 정확히 같아야 한다 - '한지우' 는 아니다)",
+            board.is_admin(op) and board.is_admin(a) and not board.is_admin(near) and not board.is_admin(fake))
+        n = board.create(a, "notice", "둘째 운영자의 공지", "안녕하세요.")
+        chk("둘째 운영자도 공지를 쓴다", n > 0 and raises(PermissionError, board.create, near, "notice", "가짜", "x"))
+        p = board.detail(near, n)
+        chk("  글 옆에 '운영자' 표시가 붙는다", p["authorAdmin"] is True and p["author"] == "지우", p.get("authorAdmin"))
+        c1 = board.comment(near, n, "남의 댓글")
+        board.remove_comment(a, c1)
+        chk("  남의 댓글을 지울 수 있다", not [c for c in board.detail(a, n)["commentList"] if c["id"] == c1
+                                           and not c.get("deleted")])
+        for i in range(3):
+            board.create(a, "free", "연달아 %d" % i, "x")
+        chk("  운영자는 연달아 써도 막히지 않는다", True)
+        from app import deps, mypage
+        chk("  마이페이지에도 운영자 표시", mypage.build(a, deps.dex())["user"]["admin"] is True
+            and mypage.build(near, deps.dex())["user"]["admin"] is False)
+        chk("패치노트 글은 맨 앞 운영자의 이름으로 올라간다",
+            set(r["author"] for r in db.q("SELECT author FROM board_post WHERE kind='patch'")) <= {"나여조경석"})
+    finally:
+        config.BOARD_ADMINS = real
+    chk("목록에서 빼면 다시 보통 사람이다", not board.is_admin(a)
+        and raises(PermissionError, board.create, a, "notice", "가짜 공지", "x"))
 
 
 if __name__ == "__main__":
