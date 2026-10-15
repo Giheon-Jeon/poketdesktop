@@ -280,7 +280,8 @@ def main():
         and got[0][2]["t"] == "chat" and got[0][2]["m"]["body"] == "밀어 주세요"
         and got[0][2]["m"]["userId"] == a and got[0][2]["m"]["name"] == "가"
         and got[0][2]["m"]["system"] is False, got)
-    chk("  줄 번호가 폴링으로 받는 것과 같다", got[0][2]["m"]["id"] == guild.chat(a)["last"])
+    # 같은 시각으로 묻는다 - 실제 시계로 물으면 T0 에서 일주일이 지난 날(10/13~)부터 그 줄이 '일주일 지난 줄' 로 빠진다
+    chk("  줄 번호가 폴링으로 받는 것과 같다", got[0][2]["m"]["id"] == guild.chat(a, now=T0)["last"])
     del got[:]
     before = guild._stamp(gid)
     guild.update(a, intro="밀리는 소개", now=T0)
