@@ -441,10 +441,18 @@ def guest_part(root, ov, app):
     chk("  Enter 면 닫고 말풍선으로 말한다, 상대에게 보낸다", inp.dead and vis.input is None
         and btext(vis, lead) == "반가워"
         and sent_now(vis, root, {"t": "say", "text": "반가워"}))
-    vis.open_input(lead)
-    vis.input.entry.event_generate("<Escape>")
+    inp = vis.open_input(lead)
     settle(root, 0.1)
-    chk("  Esc 면 그냥 닫는다", vis.input is None)
+    if root.focus_get() is not None:
+        inp.entry.event_generate("<Escape>")
+        settle(root, 0.1)
+        chk("  Esc 면 그냥 닫는다", vis.input is None)
+    else:
+        # 앱이 화면 포커스를 못 가진 곳(CI 의 윈도우 러너)에서는 만든 키 이벤트가 어느 창에도 안 간다 -
+        # 실제로는 포켓몬을 누르는 순간 앞으로 나온다. 여기서는 Esc 가 말풍선 칸과 창에 묶였는지만 본다.
+        chk("  Esc 면 그냥 닫는다 (포커스가 없는 곳: 칸·창에 묶인 키)", "<Key-Escape>" in inp.entry.bind()
+            and "<Key-Escape>" in inp.win.bind(), (inp.entry.bind(), inp.win.bind()))
+        inp.close()
     chk("  남의 포켓몬에게는 안 열린다", vis.open_input(m50) is None)
     # 윈도우가 말풍선에 글자 포커스를 안 주면 글자는 포켓몬 창으로 간다 - 그때도 말풍선 일로 읽는다
     inp = vis.open_input(lead)
