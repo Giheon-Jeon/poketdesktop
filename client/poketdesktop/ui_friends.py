@@ -409,6 +409,18 @@ class FriendsWindow(object):
             tk.Label(row, text="수락을 기다리는 중...", bg=U.BG3, fg=U.ACCENT,
                      font=U.FONT_S).pack(side="right", padx=(0, 8))
             return
+        # 친구 집에 놀러 가기 (1.11.0): 앱이 켜져 있고 다른 친구와 연결돼 있지 않은 친구에게만.
+        visit = getattr(self.app, "visit", None)
+        if visit is not None and visit.active and visit.partner_id() == uid:
+            # 지금 이 친구와 연결돼 있다 - 채팅 창이 없으니 끝내는 단추를 여기에도 둔다 (도트 우클릭에도 있다)
+            U.ghost_button(row, "돌아오기" if visit.guest else "돌려보내기", lambda: self.end_visit(),
+                           height=28).pack(side="right", padx=(0, 6))
+        elif f.get("visitable") and visit is not None and not visit.active:
+            U.ghost_button(row, "놀러 가기", lambda: self.open_visit(f),
+                           height=28, fill=U.ACCENT_DARK, fg=U.ACCENT).pack(side="right", padx=(0, 6))
+        elif f.get("visitBusy"):
+            tk.Label(row, text="친구와 노는 중", bg=U.BG3, fg=U.FG_FAINT,
+                     font=U.FONT_XS).pack(side="right", padx=(0, 8))
         # 실시간 배틀은 **둘 다 켜 있어야** 한다. 접속 중인 친구에게만 띄운다 -
         # 꺼져 있는 친구 옆에 눌러도 거절당할 단추를 두지 않는다.
         if f.get("online"):
@@ -416,6 +428,21 @@ class FriendsWindow(object):
                            lambda: self.app.live_invite(uid, f.get("name")),
                            height=28, fill=U.ACCENT_DARK,
                            fg=U.ACCENT).pack(side="right", padx=(0, 6))
+
+    def end_visit(self):
+        visit = getattr(self.app, "visit", None)
+        if visit is not None:
+            visit.end_visit()
+        self.draw()
+
+    def open_visit(self, f):
+        """놀러 가기 창 (보낼 도구를 고른다)."""
+        visit = getattr(self.app, "visit", None)
+        why = visit.can_go() if visit is not None else "친구 채팅을 쓸 수 없습니다."
+        if why:
+            return self.say(why, U.DANGER)
+        from .ui_visit import SendDialog
+        self.visit_dialog = SendDialog(self.app, {"id": f["id"], "name": f.get("name")})
 
     def _request_row(self, x):
         row = self._card()

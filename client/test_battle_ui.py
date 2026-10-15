@@ -177,12 +177,14 @@ def t_교체하면_새_포켓몬_체력으로_바뀐다():
 
     real = DB.run_async
     DB.run_async = lambda _root, work, done: done({"battle": 새배틀}, None)
+    d.finish = True                       # 앞 포켓몬 때 '끝까지 싸우기' 로 바뀌어 있었다
     try:
         d.switch_to({"id": 2})
     finally:
         DB.run_async = real
 
     chk("다음 포켓몬으로 바뀌었다", d.mine is 다음애)
+    chk("새 포켓몬은 다시 잡기 모드로 싸운다 ('끝까지 싸우기' 를 푼다, 게시판 #222)", d.finish is False)
     chk("체력바가 가득 찼다", d.bars[0].ratio == 1.0, d.bars[0].ratio)
     # 스르륵 차오르면 새로 나온 포켓몬이 회복하는 것처럼 보인다
     chk("차오르지 않고 곧바로 맞는다",
@@ -415,6 +417,7 @@ class 가짜판(object):
     after = DB.DesktopBattle.after
     _safe = DB.DesktopBattle._safe
     abort = DB.DesktopBattle.abort
+    left_party = DB.DesktopBattle.left_party
     begin = DB.DesktopBattle.begin
     finish_cleanup = DB.DesktopBattle.finish_cleanup
     close = DB.DesktopBattle.close
@@ -462,6 +465,32 @@ def t_배틀_동안_이름표를_막고_끝나면_한_번_푼다():
     d.finish_cleanup()
     d.close()
     chk("끝내기를 여러 번 불러도 한 번만 푼다", ov.푼수 == 1, ov.푼수)
+
+
+def t_싸우던_포켓몬이_파티에서_빠지면_바로_접는다():
+    """게시판 #218: 배틀 중에 파티를 바꿔 싸우던 포켓몬이 박스로 가면, 그 도트가 없어진 채 연출이 돌다
+    터져서야 접혔고, 다시 '대결' 을 누르면 서버가 그 판을 이어 줘서 영영 못 싸웠다.
+    이제 동기화 직후 앱이 보고 바로 접는다 (서버는 그 판을 이어 주지 않는다 - test_battle)."""
+    from poketdesktop import app as APP
+
+    class 앱(object):
+        _check_battle_mine = APP.App._check_battle_mine
+
+        def __init__(self, d):
+            self.battle, self.overlay = d, d.app.overlay
+
+    d = 판_시작()
+    ov = d.app.overlay
+    ov.pets = {1: d.mine}
+    a = 앱(d)
+    chk("싸우던 도트가 그대로 있으면 아무것도 안 한다", a._check_battle_mine() is False and not d.closed)
+    ov.pets = {2: 가짜도트(2)}                    # 파티를 바꿨다 - 1번은 박스로
+    chk("빠졌으면 바로 접는다", a._check_battle_mine() is True and d.closed and d.app.battle is None)
+    chk("  까닭을 알린다 (다시 누르면 지금 파티 맨 앞이 싸운다)", any("파티에서 빠져" in m for m in d.app.말), d.app.말)
+    chk("  이름표도 푼다", ov.푼수 == 1, ov.푼수)
+    chk("이미 접힌 배틀이면 다시 안 접는다", a._check_battle_mine() is False)
+    a.battle = None
+    chk("배틀이 없으면 아무것도 안 한다", a._check_battle_mine() is False)
 
 
 def t_막기_전에_끝나면_안_푼다():
@@ -827,6 +856,60 @@ def t_멈춘_채_던졌다가_놓치면_10초를_새로_센다():
         undo()
 
 
+def t_볼이_흔들리는_동안_왼쪽_클릭은_싸우기가_아니다():
+    """게시판 #222: 볼이 날아가거나 흔들리는 동안 '바로 싸우기' 가 먹으면 놓친 뒤에 그대로 쓰러뜨린다."""
+    d, _m, undo = 잡기_준비()
+    try:
+        d.app.api.move_answers = [{"events": [], "hold": "low", "battle": {"id": 7, "over": False}}]
+        d.next_turn()
+        d.playing = True                                # 볼이 흔들리는 중
+        d.fight_on()
+        chk("흔들리는 동안에는 멈춘 그대로 ('끝까지 싸우기' 로 안 바뀐다)", d.holding and not d.finish,
+            (d.holding, d.finish))
+        d.playing = False
+        d.pending_ball = "POKEBALL"                     # 던질 볼이 줄 서 있다
+        d.fight_on()
+        chk("  던질 볼이 줄 서 있어도 마찬가지", d.holding and not d.finish, (d.holding, d.finish))
+        d.pending_ball = None
+        d.fight_on()
+        chk("  아무 일 없을 때의 왼쪽 클릭은 그대로 '바로 싸우기'", not d.holding and d.finish)
+    finally:
+        undo()
+
+
+def t_두_번_클릭의_두_번째_뗌은_싸우기가_아니다():
+    """게시판 #222: 멈춰 있을 때 두 번 클릭(바로 던지기)하면, 두 번째 클릭을 뗄 때 '왼쪽 클릭 = 바로 싸우기' 가
+    또 예약돼서 볼이 날아가는 사이 '끝까지 싸우기' 로 바뀌었다."""
+    import time as _time
+    from poketdesktop import wild_ui as W
+    배틀 = 가짜던지는배틀()
+    배틀.holding = True
+    ctl = 가짜야생조종(배틀)
+    pet = W.WildPet.__new__(W.WildPet)
+    pet.ctl = ctl
+    pet._battle_job = None
+    real_press, real_release = W.Pet.on_press, W.Pet.on_release
+    W.Pet.on_press = lambda self, e: None
+    W.Pet.on_release = lambda self, e: None
+    ev = 이벤트()
+    try:
+        pet.on_press(ev)
+        pet.on_release(ev)
+        chk("첫 클릭은 '바로 싸우기' 를 조금 뒤로 예약한다 (두 번 클릭을 기다린다)", len(ctl.app.root.예약) == 1)
+        pet.on_press(ev)
+        pet.on_double(ev)
+        chk("  두 번째 클릭은 그 예약을 지우고 볼을 던진다", not ctl.app.root.예약 and 배틀.메뉴 == [None],
+            (ctl.app.root.예약, 배틀.메뉴))
+        pet.on_release(ev)
+        chk("  두 번째 클릭을 떼도 '바로 싸우기' 를 다시 예약하지 않는다", not ctl.app.root.예약, ctl.app.root.예약)
+        pet._double_at = _time.time() - 5
+        pet.on_press(ev)
+        pet.on_release(ev)
+        chk("  한참 뒤의 한 번 클릭은 그대로 '바로 싸우기'", len(ctl.app.root.예약) == 1)
+    finally:
+        W.Pet.on_press, W.Pet.on_release = real_press, real_release
+
+
 def t_잡으면_끝낸다():
     d, _m, undo = 잡기_준비()
     try:
@@ -992,11 +1075,13 @@ def main():
                t_틱은_창_순서를_안_올린다, t_투기장_틱도_창_순서를_안_올린다,
                t_배틀_동안_이름표를_막고_끝나면_한_번_푼다,
                t_막기_전에_끝나면_안_푼다, t_연출이_터져도_배틀을_접는다,
+               t_싸우던_포켓몬이_파티에서_빠지면_바로_접는다,
                t_내_도트_창이_없어져도_정리는_끝난다, t_쓰러지면_이름표도_치운다,
                t_투기장은_제자리로_돌아온_뒤에_한_번_푼다,
                t_턴마다_잡기_설정을_보낸다, t_멈추라고_하면_10초_기다렸다가_끝까지_싸운다,
                t_왼쪽_클릭하면_바로_싸운다, t_볼_메뉴가_열린_동안은_싸우지_않는다,
                t_바쁠_때_던진_볼은_턴이_끝나고_던진다, t_멈춘_채_던졌다가_놓치면_10초를_새로_센다,
+               t_볼이_흔들리는_동안_왼쪽_클릭은_싸우기가_아니다, t_두_번_클릭의_두_번째_뗌은_싸우기가_아니다,
                t_잡으면_끝낸다, t_상대_이름표는_두_줄이다,
                t_배틀이_걸려_있으면_배틀_안에서_던진다, t_볼_메뉴를_열면_예약해_둔_배틀을_취소한다):
         print("-- %s" % fn.__name__[2:])

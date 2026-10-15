@@ -18,6 +18,7 @@
 다시 배운다 - 한 번 잊은 기술(자력기 포함)을 되찾을 길이 이것뿐이다.
 """
 import json
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -86,6 +87,7 @@ def my_tms(me=Depends(deps.current)):
     """
     uid = me["user"]["id"]
     got = tms.owned(uid)
+    fresh = tms.unseen(uid) & got
     out = []
     for no, t in sorted(tms.all_tms().items()):
         out.append({
@@ -93,8 +95,23 @@ def my_tms(me=Depends(deps.current)):
             "type": t["type"], "cat": t["cat"],
             "label": tms.label(no),
             "have": no in got,
+            "new": no in fresh,            # 1.11.0: 받고 아직 안 본 것 (가방에 노란 점)
         })
-    return {"tms": out, "haveCount": len(got), "total": tms.count()}
+    return {"tms": out, "haveCount": len(got), "total": tms.count(),
+            "newCount": len(fresh)}
+
+
+class SeenIn(BaseModel):
+    nos: Optional[List[int]] = None     # 빈 값이면 전부 본 것으로
+
+
+@router.post("/api/tms/seen")
+def seen(body: SeenIn, me=Depends(deps.current)):
+    """새 기술머신을 봤다 (가방에서 그 줄을 눌렀다). 노란 점을 끈다."""
+    uid = me["user"]["id"]
+    if body.nos is not None and len(body.nos) > tms.count():
+        raise HTTPException(400, "너무 많습니다.")
+    return {"newCount": tms.mark_seen(uid, body.nos)}
 
 
 @router.get("/api/tms/{pid}")

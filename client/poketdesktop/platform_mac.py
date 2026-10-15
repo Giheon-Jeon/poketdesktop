@@ -885,6 +885,91 @@ def accept_first_click():
     return False
 
 
+_keyable = set()             # 글자를 받아도 되는 테두리 없는 창 (NSWindow 포인터)
+_key_patch = None
+
+
+def _patch_keys():
+    """TKWindow 의 canBecomeKeyWindow 를 갈아 끼운다 (한 번만). 됐으면 True.
+
+    Tk 은 테두리 없는 창(overrideredirect)이 **키 창이 되지 못하게** 한다 - 그 창에는 글자가 안 간다.
+    도트 창이 누를 때마다 쓰던 앱의 포커스를 뺏으면 안 되니 평소에는 맞다. 그런데 친구 채팅(1.11.0)의
+    입력 말풍선과 포커스를 준 도트는 글자(Enter)를 받아야 한다.
+
+    그래서 **_keyable 에 적어 둔 창만** 키 창이 될 수 있게 하고, 나머지는 Tk 이 하던 대로 둔다:
+    제목 막대가 있는 창은 되고, 테두리 없는 창은 안 된다 (2026-10-15 이 맥에서 바꾸기 전 값을 읽어
+    같음을 확인했다). 원래 메서드를 불러 쓰는 맞바꾸기는 keep_focus 때 안 먹었다 - 그래서 같은 판단을
+    여기서 다시 한다.
+    """
+    global _key_patch
+    if _key_patch is not None:
+        return _key_patch
+    _key_patch = False
+    if not _ok:
+        return False
+    try:
+        cls = objc.lookUpClass("TKWindow")
+    except Exception:                                       # noqa: BLE001
+        _key_patch = None       # 아직 Tk 창이 없다. 다음에 다시.
+        return False
+
+    def canBecomeKeyWindow(self):
+        try:
+            if objc.pyobjc_id(self) in _keyable:
+                return True
+            return bool(self.styleMask() & AppKit.NSWindowStyleMaskTitled)
+        except Exception:                                   # noqa: BLE001
+            return False
+
+    for sig in (b"Z@:", b"c@:"):
+        try:
+            objc.classAddMethods(cls, [objc.selector(
+                canBecomeKeyWindow, selector=b"canBecomeKeyWindow", signature=sig)])
+            _key_patch = True
+            return True
+        except Exception:                                   # noqa: BLE001
+            continue
+    return False
+
+
+def take_keys(win):
+    """이 창이 글자를 받게 한다: 고른 창으로 적고, 앱을 앞으로 꺼내 그 창을 키 창으로. 됐으면 True.
+
+    누른 사람이 '이 포켓몬에게 말하겠다' 고 한 때만 부른다 (앞으로 나오는 것이라 쓰던 앱의 포커스가 간다).
+    """
+    try:
+        win.update_idletasks()
+    except Exception:                                       # noqa: BLE001
+        return False
+    ns = nswindow(win)
+    ok = False
+    if ns is not None and _patch_keys():
+        try:
+            _keyable.add(objc.pyobjc_id(ns))
+            activate()
+            ns.makeKeyWindow()
+            ok = True
+        except Exception:                                   # noqa: BLE001
+            ok = False
+    try:
+        win.focus_force()
+    except Exception:                                       # noqa: BLE001
+        pass
+    return ok
+
+
+def drop_keys(win):
+    """take_keys 를 거둔다 (그 창을 다시 글자를 못 받는 창으로). 창이 이미 없으면 그냥 지나간다."""
+    if not _keyable:
+        return
+    try:
+        ns = nswindow(win)
+        if ns is not None:
+            _keyable.discard(objc.pyobjc_id(ns))
+    except Exception:                                       # noqa: BLE001
+        pass
+
+
 _rclick = []
 _rclick_mon = None
 

@@ -97,13 +97,43 @@ def has(uid, no):
 
 
 def give(uid, no, now=None):
-    """준다. 이미 있으면 False (같은 것을 두 번 세지 않는다)."""
+    """준다. 이미 있으면 False (같은 것을 두 번 세지 않는다).
+
+    새로 받은 것은 seen=0 이다 - 가방에서 눌러 볼 때까지 '새 기술머신' 이다 (1.11.0).
+    """
     if has(uid, no):
         return False
-    db.run("INSERT INTO tm_owned (user_id, no, got_at) VALUES (?,?,?)"
+    db.run("INSERT INTO tm_owned (user_id, no, got_at, seen) VALUES (?,?,?,0)"
            " ON CONFLICT(user_id, no) DO NOTHING",
            (uid, int(no), now or _now()))
     return True
+
+
+# ---------------------------------------------------------------- 새 기술머신 (1.11.0)
+# 잡다가·배틀에서·탐험에서 기술머신을 얻어도 알림 한 줄이 지나가면 끝이었다. 무엇을 얻었는지
+# 가방을 열어 358줄을 훑어야 알았다. 이제 받은 것은 seen=0 으로 두고, 가방에서 그 줄을 눌러
+# 볼 때까지 노란 점을 찍는다. **서버에 적는다** - PC 를 두 대 쓰는 사람도 한쪽에서 보면 둘 다 꺼진다.
+def unseen(uid):
+    """아직 안 본 기술머신 번호 집합."""
+    rows = db.q("SELECT no FROM tm_owned WHERE user_id=? AND seen=0", (uid,))
+    return set(int(r["no"]) for r in rows)
+
+
+def new_count(uid):
+    """/api/me 에 싣는 '안 본 기술머신' 수. 90초마다 오므로 세기만 한다."""
+    r = db.q1("SELECT COUNT(*) n FROM tm_owned WHERE user_id=? AND seen=0", (uid,))
+    return int(r["n"]) if r else 0
+
+
+def mark_seen(uid, nos=None):
+    """봤다. nos 가 None 이면 전부. 남은 '안 본 것' 수를 돌려준다."""
+    if nos is None:
+        db.run("UPDATE tm_owned SET seen=1 WHERE user_id=? AND seen=0", (uid,))
+    else:
+        for no in set(int(n) for n in nos):
+            db.run("UPDATE tm_owned SET seen=1 WHERE user_id=? AND no=? AND seen=0",
+                   (uid, no))
+    return new_count(uid)
 
 
 def roll_drop(rng, species_num=None, shiny=False, uid=None):

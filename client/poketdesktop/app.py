@@ -90,6 +90,7 @@ class App(object):
         self.tray = None
         self.wild = None
         self.expedition = None     # 탐험 파견의 바탕화면 쪽 (돌아온 보따리, 1.10.4)
+        self.visit = None          # 친구 집에 놀러 가기 · 친구 채팅 (1.11.0, visit.Visit)
         self._syncing = False
         self.hub = None            # 탭 창 하나
         self.box_window = None
@@ -129,6 +130,9 @@ class App(object):
         self._board_seen = set()     # 이미 알린 알림 번호
         self._board_first = True
         self.mypage_window = None
+        # 새 기술머신 (1.11.0): 받고 가방에서 아직 안 본 수 (서버가 /api/me 의 tmNew 로 준다).
+        # 있으면 가방 탭과 [기술머신] 에 점을 찍는다. 끄는 것은 기술머신 줄을 눌러 볼 때다.
+        self.tm_new = 0
         # 키스톤이 있나 (서버가 /api/me 에 실어 준다). 메가진화한 모습으로
         # 걸어다니게 할 수 있는지를 이걸로 본다 (1.8.0).
         self.keystone = False
@@ -420,6 +424,10 @@ class App(object):
         if self.expedition is None:
             from . import expedition_ui
             self.expedition = expedition_ui.Desk(self)
+        if self.visit is None:
+            # 앱이 켜져 있는 동안 늘 붙어 있다 - 붙어 있는 것이 '지금 놀러 올 수 있다' 는 뜻이다 (1.11.0)
+            from . import visit as visit_mod
+            self.visit = visit_mod.Visit(self).start()
         self._watch_right_click()
         # 다시 로그인했으면 알림 기록을 비운다. 다른 계정의 요청을
         # "이미 알렸다" 고 여기면 새 계정의 첫 요청을 놓친다.
@@ -542,6 +550,9 @@ class App(object):
         if view is not None and getattr(view, "win_number", None) == num:
             return True
         try:
+            win = getattr(obj, "win", None)
+            if win is not None and not win.winfo_viewable():
+                return False          # 숨긴 도트 (친구 집에 놀러 가 있는 동안 잠시 빠진 내 포켓몬)
             return (obj.x <= x < obj.x + obj.fw
                     and obj.y <= y < obj.y + obj.fh)
         except Exception:                                   # noqa: BLE001
@@ -690,6 +701,9 @@ class App(object):
                 self.user_id = (me.get("user") or {}).get("id", self.user_id)
                 # 길드 채팅 (1.10.1): 안 읽은 줄이 있으면 길드 탭에 점
                 self.note_guild(me.get("guild"))
+                # 새 기술머신 (1.11.0): 안 본 것이 있으면 가방 탭에 점
+                if "tmNew" in me:
+                    self.note_tms(me.get("tmNew"))
                 # 탐험 파견 (1.10.4): 돌아온 것이 있으면 바탕화면에 보따리를 놓는다
                 if self.expedition is not None and "expedition" in me:
                     self.expedition.note(me.get("expedition"))
@@ -703,6 +717,7 @@ class App(object):
                     self.check_live()
             if self.overlay:
                 added = self.overlay.sync(mons or [], paths or {}, walks or {})
+                self._check_battle_mine()          # 싸우던 포켓몬이 파티에서 빠졌나 (게시판 #218)
                 # 빛나는 돌 표식. 새로 올라온 도트에도 붙어야 하므로 sync 뒤에.
                 if me is not None and "bond" in me:
                     self.bond_stones.sync(me.get("bond"))
@@ -736,7 +751,8 @@ class App(object):
         self.notify("로그인이 만료되었습니다. 다시 로그인해 주세요.")
         config.clear_session()
         # 투기장을 먼저 접는다. overlay.clear() 만 하면 locked 가 남아서
-        # 다시 로그인해도 바탕화면이 영영 빈 채로 있는다.
+        # 다시 로그인해도 바탕화면이 영영 빈 채로 있는다. 놀러 가기도 같다 (1.11.0).
+        self._stop_visit()
         self.close_arena()
         if self.wild:
             self.wild.stop()
@@ -777,6 +793,7 @@ class App(object):
             self._paint_guild()
             if self.expedition is not None:
                 self.expedition._badge()       # 돌아온 보따리가 있으면 탐험 탭에 점
+            self._paint_tms()                  # 안 본 기술머신이 있으면 가방 탭에 점
         self.hub.show(key)
         return self.hub.panes.get(key)
 
@@ -851,6 +868,51 @@ class App(object):
             self.hub.set_badge("board", self.notice_unseen or self.patch_unseen
                                or self.board_unseen > 0)
         self.refresh_tray()
+
+    # ---------------- 새 기술머신 (1.11.0) ----------------
+    # 잡다가·배틀에서·탐험에서 기술머신을 얻어도 알림 한 줄이 지나가면 끝이었다. 무엇을 얻었는지
+    # 가방을 열어 358줄을 훑어야 알았다. 받은 것은 서버가 '안 봄' 으로 적어 두고(tm_owned.seen),
+    # 여기서는 그 수로 가방 탭과 [기술머신] 에 점을 찍는다. 줄의 노란 점은 ui_tms 가 찍는다.
+    def _tm_pane(self):
+        """떠 있는 기술머신 칸 (가방 탭 안). 없으면 None."""
+        bag = self.hub.panes.get("bag") if self.hub else None
+        pane = getattr(bag, "tms", None) if bag is not None else None
+        return pane if pane is not None and getattr(pane, "alive", False) else None
+
+    def note_tms(self, n, reload=True):
+        """안 본 기술머신 수. 늘었으면 떠 있는 기술머신 칸을 새로 읽는다 (새 줄이 '가진 것' 이 된다)."""
+        try:
+            n = max(0, int(n or 0))
+        except (TypeError, ValueError):
+            return
+        grew = n > self.tm_new
+        self.tm_new = n
+        self._paint_tms()
+        pane = self._tm_pane() if (grew and reload) else None
+        if pane is not None:
+            try:
+                pane.reload()
+            except Exception:                               # noqa: BLE001
+                pass
+
+    def got_tm(self, n=1):
+        """방금 기술머신을 주웠다 (잡기·배틀·탐험 결과). 다음 동기화를 기다리지 않고 점을 켠다."""
+        self.note_tms(self.tm_new + max(0, int(n or 0)))
+
+    def _paint_tms(self):
+        on = self.tm_new > 0
+        if not self.hub:
+            return
+        try:
+            self.hub.set_badge("bag", on)
+        except Exception:                                   # noqa: BLE001
+            pass
+        bag = self.hub.panes.get("bag")
+        if bag is not None and hasattr(bag, "badge_tms"):
+            try:
+                bag.badge_tms(on)
+            except Exception:                               # noqa: BLE001
+                pass
 
     # ---------------- 길드 채팅 표시 (1.10.1) ----------------
     # 1.10.0 에서는 길드 탭을 한 번 열어야 점이 찍혔다 (그 탭의 웹소켓이 듣는 것이라).
@@ -974,6 +1036,15 @@ class App(object):
                 self.guild_sock = ui_guild.make_socket(self, self._on_guild_ws)
             except Exception:                               # noqa: BLE001
                 self.guild_sock = None
+
+    def _stop_visit(self):
+        """놀러 가기를 끝내고(손님이었으면 내 도트를 되살린다) 소켓을 뗀다. 몇 번 불러도 된다."""
+        v, self.visit = self.visit, None
+        if v is not None:
+            try:
+                v.stop()
+            except Exception:                               # noqa: BLE001
+                pass
 
     def _stop_guild_sock(self):
         sock, self.guild_sock = self.guild_sock, None
@@ -1567,6 +1638,9 @@ class App(object):
         """
         if self.arena or not self.api:
             return
+        if self.visit is not None and self.visit.guest:
+            # 놀러 가 있는 동안 바탕화면은 친구 집이다 - 투기장이 그 위에 판을 펴면 섞인다
+            return self.notify("친구 집에 놀러 가 있는 동안에는 대전을 볼 수 없습니다. 돌아온 뒤에 봐 주세요.")
         def work():
             view = self.api.pvp_match(mid)
             # 상대 팀 도트를 여기서 받아 둔다. overlay.walks 에는 내 팀
@@ -1894,6 +1968,22 @@ class App(object):
                     pass
             setattr(self, name, None)
 
+    def _check_battle_mine(self):
+        """배틀 중에 파티를 바꿔 싸우던 포켓몬이 바탕화면에서 빠졌으면 그 판을 접는다 (게시판 #218).
+
+        그 도트는 방금 sync 가 없앴다. 예전에는 다음 연출이 없어진 창을 건드리다 터져서야 '배틀을
+        이어가지 못해 멈췄습니다' 로 접혔다. 바로 접고 까닭을 알린다 - 야생을 다시 누르면 서버가 옛 판을
+        이어 주지 않고 지금 파티 맨 앞 포켓몬으로 새로 시작한다 (battle_routes.start).
+        """
+        b = self.battle
+        if b is None or getattr(b, "closed", True) or getattr(b, "mine", None) is None or not self.overlay:
+            return False
+        mid = ((getattr(b, "b", None) or {}).get("me") or {}).get("id")
+        if self.overlay.pets.get(mid) is b.mine:
+            return False
+        b.left_party()
+        return True
+
     def open_battle(self, battle, intro=None, options=None):
         """바탕화면에서 배틀을 시작한다. 창은 안 뜬다.
 
@@ -1946,6 +2036,13 @@ class App(object):
         # 돋울 수 있다.
         if self.arena:
             return
+        # 친구 집에 놀러 가기 (1.11.0): 남의 포켓몬은 그쪽 메뉴, 내 포켓몬에는 '말하기' 와 끝내기를 더한다.
+        # 놀러 가 있는 포켓몬은 박스로 못 거둔다 (친구 화면에 서 있다).
+        vis = self.visit if (self.visit is not None and self.visit.active) else None
+        if vis is not None and (getattr(pet, "id", 0) or 0) < 0:
+            return vis.open_menu(pet, event)
+        visit_rows = vis.menu_rows(pet) if vis is not None else []
+        recall = not (vis is not None and vis.guest and pet is vis.lead)
         info = pet.mon.get("info", {})
         title = "%s   Lv.%s" % (info.get("name", "?"), info.get("level", "?"))
         # 메가진화한 모습으로 걷기 (1.8.0). 될 수 있는 포켓몬에게만 줄이 생긴다.
@@ -1959,9 +2056,10 @@ class App(object):
                 {"text": title, "enabled": False},
                 None,
                 {"text": "정보 보기", "command": lambda: self.pet_open(pet)},
-                {"text": "박스로 거두기",
-                 "command": lambda: self._recall(pet.id)},
-            ]
+            ] + visit_rows
+            if recall:
+                rows.append({"text": "박스로 거두기",
+                             "command": lambda: self._recall(pet.id)})
             if mega:
                 rows.append(mega)
             if tint:
@@ -1973,7 +2071,7 @@ class App(object):
                 {"text": "종료", "command": self.quit},
             ]
             U.PopupMenu(self.root, rows, event.x_root, event.y_root,
-                        width=230 if mega else 190)
+                        width=230 if (mega or visit_rows) else 190)
             return
         m = tk.Menu(self.root, tearoff=0, bg=U.BG2, fg=U.FG,
                     activebackground=U.BG4, activeforeground=U.FG,
@@ -1981,7 +2079,10 @@ class App(object):
         m.add_command(label=title, state="disabled")
         m.add_separator()
         m.add_command(label="정보 보기", command=lambda: self.pet_open(pet))
-        m.add_command(label="박스로 거두기", command=lambda: self._recall(pet.id))
+        for r in visit_rows:
+            m.add_command(label=r["text"], command=r["command"])
+        if recall:
+            m.add_command(label="박스로 거두기", command=lambda: self._recall(pet.id))
         if mega:
             m.add_command(label=mega["text"], command=mega.get("command"),
                           state="normal" if mega.get("enabled", True) else "disabled")
@@ -2225,6 +2326,8 @@ class App(object):
         if self.overlay:
             self.overlay.refresh_visuals()
             self.bond_stones.apply()       # 도트를 새로 만들었다 - 표식도 다시
+            if self.visit is not None:     # 친구 집에 놀러 가 있으면 그 화면도 다시 세운다 (남의 도트·잠금·보따리)
+                self.visit.overlay_rebuilt()
         self.refresh_tray()
 
     def set_area(self, w, h):
@@ -2587,6 +2690,8 @@ class App(object):
         self._stop_guild_sock()
         self.guild_friendly(False)
         self.guild_id, self.guild_chat, self._guild_dot = None, 0, None
+        self.tm_new = 0                        # 다른 계정으로 들어오면 그 계정의 수를 다시 받는다
+        self._stop_visit()                     # 놀러 가기를 끝내고 내 도트를 되살린 뒤에 지운다
         self.close_arena()
         if self.wild:
             self.wild.stop()
@@ -2647,6 +2752,7 @@ class App(object):
             pass
         self._stop_guild_sock()
         self.guild_friendly(False)
+        self._stop_visit()
         if self._update_job is not None:
             try:
                 self.root.after_cancel(self._update_job)

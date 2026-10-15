@@ -759,6 +759,31 @@ class Api(object):
         """이 포켓몬에게 지금 쓸 수 있는 기술머신."""
         return self._call("GET", "/api/tms/%d" % int(pokemon))
 
+    # ---------------- 친구 집에 놀러 가기 · 친구 채팅 (1.11.0) ----------------
+    def visit_state(self):
+        return self._call("GET", "/api/visit")
+
+    def visit_start(self, friend, items=None, look=0):
+        """items = [{"id", "count"}] - 들고 가는 것 (보여 주기만 한다). look = 보낸 포켓몬이 메가진화한 모습이면 그 번호."""
+        return self._call("POST", "/api/visit/start",
+                          {"friend": int(friend), "items": list(items or []), "look": int(look or 0)})
+
+    def visit_drop(self, items):
+        """놀러 간 쪽: 들고 온 것 중 items = [{"id", "count"}] 를 보따리로 싸서 친구 바탕화면에 둔다."""
+        return self._call("POST", "/api/visit/drop", {"items": list(items or [])})
+
+    def visit_claim(self, bundle):
+        """집주인: 보따리를 받는다 (내 가방으로)."""
+        return self._call("POST", "/api/visit/claim", {"bundle": int(bundle)})
+
+    def visit_end(self):
+        return self._call("POST", "/api/visit/end", {})
+
+    def tms_seen(self, nos=None):
+        """새 기술머신을 봤다 (1.11.0). nos 가 None 이면 전부. 남은 수를 돌려준다."""
+        body = {"nos": [int(n) for n in nos]} if nos is not None else {}
+        return self._call("POST", "/api/tms/seen", body=body)
+
     def tm_learners(self, no):
         """이 기술머신을 배울 수 있는 내 포켓몬. **한 번에 받는다** -
         마리마다 물어보면 예순 마리면 예순 번이 된다."""

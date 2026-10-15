@@ -274,15 +274,18 @@ class Pet(object):
         야생 포켓몬 표식(wild_ui.place_badge)은 처음부터 이렇게 하고
         있었고, 그래서 거기서는 이 일이 안 났다.
         """
-        h = 0
+        h = w = 0
         try:
             self.name_win.update_idletasks()
             h = int(self.name_win.winfo_height())
+            # 폭은 '바라는 폭' 으로 잰다 - 화면에 올라가기 전에도 글자 폭대로 나온다 (가운데 맞추기, place)
+            w = int(self.name_win.winfo_reqwidth())
         except Exception:                                   # noqa: BLE001
-            h = 0
+            h = w = 0
         # 아직 화면에 안 올라갔으면 winfo_height 가 1 이다. 그때는 글꼴
         # 높이로 어림잡는다 - 다음 place() 에서 다시 잰다.
         self.name_h = h if h > 4 else 25
+        self.name_w = w if w > 4 else 0
 
     def drop_nameplate(self):
         """이름표만 없앤다. 도트는 그대로 둔다 (이름표를 껐을 때)."""
@@ -489,10 +492,14 @@ class Pet(object):
         self.win.geometry("+%d+%d" % (int(self.x), int(self.y)))
         if self.name_win:
             # **도트 창을 한 픽셀도 덮으면 안 된다** (measure_nameplate).
-            if getattr(self, "name_h", 0) <= 4:
+            if getattr(self, "name_h", 0) <= 4 or not getattr(self, "name_w", 0):
                 self.measure_nameplate()
+            # **몸 가운데에 맞춘다** (10/15 사용자 지적: 가운데가 안 맞았다). 예전에는 도트 창의 왼쪽
+            # 끝에 붙여서, 창이 이름표보다 넓은 종(대부분)은 이름표가 왼쪽으로 쏠렸다. 가운데는 창의
+            # 가운데가 아니라 몸의 기준점(ax)이다 - 동작마다 칸 크기가 달라도 몸은 그 자리에 있다.
+            cx = self.x + getattr(self, "ax", self.fw / 2.0)
             self.name_win.geometry(
-                "+%d+%d" % (int(self.x),
+                "+%d+%d" % (int(round(cx - getattr(self, "name_w", 0) / 2.0)),
                             int(self.y) - self.name_h - NAME_GAP))
         if self.stone_badge is not None:
             self.stone_badge.place()

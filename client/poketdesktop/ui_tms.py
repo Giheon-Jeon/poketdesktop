@@ -14,6 +14,12 @@
 배울 수 있는지는 **서버가 정한다.** 여기서 걸러 보여주는 것은 편의일
 뿐이고, 실제 판정은 /api/tms/use 가 한다.
 
+## 새 기술머신 (1.11.0)
+
+받고 아직 안 본 기술머신은 줄 앞에 **노란 점**을 찍는다. 그 줄을 누르면 꺼진다 (서버에도
+적는다 - /api/tms/seen). 358줄에서 점을 찾아 굴리지 않게, 아래 줄의 [새 기술머신 N개] 를
+누르면 다음 새 것으로 가서 골라 준다. 가방 탭·[기술머신] 의 점은 app.note_tms 가 칠한다.
+
 ## 빨리 그리기
 
 줄은 358개를 **한 번 만들어 두고** '가진 것만/전부' 는 담았다 뺐다만
@@ -88,6 +94,9 @@ class TmWindow(object):
         self._empty = None       # '아직 하나도 없습니다'
         self._mon_job = None     # 오른쪽 줄을 나눠 만드는 일
         self._mon_gen = 0        # 오른쪽 목록의 세대. 바뀌면 늦게 온 답은 버린다
+        self.fresh = set()       # 받고 아직 안 본 기술머신 번호 (노란 점)
+        self._seen_here = set()  # 여기서 눌러 본 것 - 서버에 적기 전에 다시 읽어도 점이 되살지 않게
+        self.dots = {}           # {번호: 노란 점 Label} - 새 것만 만든다
 
         self.win = U.panel(parent, root, "포스크탑 — 기술머신",
                            1000, 664, 950, 600, self.close)
@@ -155,9 +164,13 @@ class TmWindow(object):
         self.status = tk.Label(f, text="", bg=U.BG2, fg=U.FG_FAINT,
                                font=U.FONT_S, anchor="w")
         self.status.pack(side="left", padx=14)
+        # 위아래 여백은 5px: 단추는 그림자까지 34px 이라, 7px 이면 윈도우(줄 44px)에서
+        # 그림자 아래 4px 가 잘렸다. 단추는 줄 가운데에 놓이므로 맥에서는 달라 보이지 않는다.
         self.use_btn = U.PushButton(f, "가르치기", self.teach, height=30,
                                     font=U.FONT_B)
-        self.use_btn.pack(side="right", padx=14, pady=7)
+        self.use_btn.pack(side="right", padx=14, pady=5)
+        # 새 기술머신이 있을 때만 담는다 (_paint_fresh). 누르면 다음 새 것으로 간다.
+        self.fresh_btn = U.ghost_button(f, "", self.next_fresh, height=30)
         tk.Frame(self.win, bg=U.LINE, height=U.h(1)).pack(fill="x", side="bottom")
 
     def say(self, msg, color=None):
@@ -227,11 +240,18 @@ class TmWindow(object):
                 return self.say("불러오지 못했습니다. %s" % err, U.RED)
             data = r
             self.tms = data.get("tms") or []
+            self.fresh = set(t["no"] for t in self.tms
+                             if t.get("have") and t.get("new")) - self._seen_here
             self.count_lbl.configure(
                 text="%d / %d 개" % (data.get("haveCount", 0),
                                      data.get("total", 0)))
             self._paint_list()
+            self._paint_fresh()
             self._paint_detail()
+            # 가방 탭의 점도 이 수에 맞춘다 (방금 받은 목록이 가장 새것이다). 다시 읽게 하지는 않는다.
+            note = getattr(self.app, "note_tms", None)
+            if note:
+                note(len(self.fresh), reload=False)
             if self._msg:
                 self.say(*self._msg)
                 self._msg = None
@@ -348,6 +368,7 @@ class TmWindow(object):
         for w in self.list_inner.winfo_children():
             w.destroy()
         self.rows = {}
+        self.dots = {}
         self._packed = set()
         self._empty = None
         self._list_key = key
@@ -379,6 +400,8 @@ class TmWindow(object):
                       fg=U.ACCENT_TEXT if on else (U.FG if have else U.FG_FAINT),
                       font=U.FONT if have else U.FONT_S, anchor="w")
         nm.pack(side="left")
+        if t["no"] in self.fresh:
+            self._add_dot(t["no"], f, nm, bg)
         ty = tk.Label(f, text=TYPE_KR.get(t["type"], t["type"]), bg=bg,
                       fg=U.FG_FAINT if have else U.LINE2,
                       font=U.FONT_XS, anchor="e")
@@ -466,8 +489,80 @@ class TmWindow(object):
         bg = U.ACCENT_SOFT if on else U.BG
         for w in (f, no, nm, ty, ct):
             w.configure(bg=bg)
+        if n in self.dots:
+            self.dots[n].configure(bg=bg)
         nm.configure(fg=U.ACCENT_TEXT if on
                      else (U.FG if have else U.FG_FAINT))
+
+    # ---------------- 새 기술머신의 노란 점 ----------------
+    def _add_dot(self, n, f, nm, bg):
+        """n 번 줄의 이름 앞에 노란 점. 누르면 그 줄을 누른 것과 같다."""
+        dot = tk.Label(f, text="●", bg=bg, fg=U.ACCENT, font=U.FONT_XS)
+        dot.pack(side="left", before=nm, padx=(0, 4))
+        dot.bind("<Button-1>", lambda _e: self.pick(n))
+        self.dots[n] = dot
+
+    def _paint_fresh(self):
+        """점을 지금의 '안 본 것' 에 맞춘다 (다시 읽었을 때). 아래 줄의 단추도."""
+        for n in [n for n in self.dots if n not in self.fresh]:
+            try:
+                self.dots.pop(n).destroy()
+            except tk.TclError:
+                pass
+        for n in self.fresh:
+            got = self.rows.get(n)
+            if got is not None and n not in self.dots:
+                f, _no, nm = got[0], got[1], got[2]
+                self._add_dot(n, f, nm, f.cget("bg"))
+        if self.fresh:
+            self.fresh_btn.configure(text="새 기술머신 %d개" % len(self.fresh))
+            if not self.fresh_btn.holder.winfo_manager():
+                self.fresh_btn.pack(side="right", padx=(0, 4), pady=5)
+        else:
+            self.fresh_btn.pack_forget()
+
+    def _seen(self, n):
+        """n 번을 봤다. 점을 끄고 서버에 적는다 (실패해도 다음에 또 뜰 뿐이다)."""
+        if n not in self.fresh:
+            return
+        self.fresh.discard(n)
+        self._seen_here.add(n)
+        self._paint_fresh()
+        note = getattr(self.app, "note_tms", None)
+        if note:
+            note(len(self.fresh), reload=False)
+        api = self.app.api
+        U.run_async(self.root, lambda: api.tms_seen([n]), lambda _r, _e: None)
+
+    def next_fresh(self):
+        """다음 새 기술머신으로 가서 고른다. 거르기에 가려져 있으면 거르기를 푼다."""
+        if not self.fresh:
+            return
+        n = min(self.fresh)
+        if self.f_type or self.f_cat:
+            vis = set(t["no"] for t in self._visible())
+            if n not in vis:
+                self._set_type(None)
+                self._set_cat(None)
+        self.pick(n)
+        self._scroll_to(n)
+
+    def _scroll_to(self, n):
+        """n 번 줄이 목록 가운데쯤 오게 굴린다."""
+        for job in (self._list_job, self._show_job):
+            if job is not None and job.pending:
+                job.flush()              # 아직 안 담은 줄이 있으면 자리가 안 나온다
+        got = self.rows.get(n)
+        if got is None:
+            return
+        try:
+            self.list_inner.update_idletasks()
+            total = max(self.list_inner.winfo_height(), 1)
+            view = self.list_canvas.winfo_height()
+            y = got[0].winfo_y() - max(0, (view - ROW_H) // 2)
+            self.list_canvas.yview_moveto(max(0.0, y / float(total)))
+        except tk.TclError:
+            pass
 
     def pick(self, no):
         prev, self.no = self.no, no
@@ -478,6 +573,7 @@ class TmWindow(object):
         # 바뀐 두 줄만 칠한다. 고른 줄은 늘 하나다.
         for n in set((prev, no)):
             self._mark(n)
+        self._seen(no)                  # 새 기술머신이었으면 이제 봤다 (1.11.0)
         self._paint_detail()
 
     # ---------------- 오른쪽 ----------------

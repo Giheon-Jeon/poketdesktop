@@ -11,6 +11,7 @@
 클라이언트는 보여주기만 한다.
 """
 import random
+import time
 import tkinter as tk
 
 from . import ball_menu, config, effects, item_icons, sprite_cache, sprites
@@ -194,6 +195,11 @@ class WildPet(Pet):
         Pet.on_release(self, e)
         if moved:
             return
+        # **두 번 클릭의 두 번째 '뗌' 은 따로 치지 않는다** (게시판 #222). 두 번 클릭은 on_double 이 이미
+        # 볼을 던졌다. 이 뗌을 왼쪽 클릭으로 읽으면, 멈춰 있을 때(잡기 모드) '바로 다시 싸우기' 가 예약돼서
+        # 볼이 날아가는 사이에 '끝까지 싸우기' 로 바뀌고 놓친 뒤에 그대로 쓰러뜨렸다.
+        if time.time() - getattr(self, "_double_at", 0.0) < max(0.5, _double_ms() / 1000.0):
+            return
         battle = self.ctl.app.battle
         if battle:
             # 잡기 모드로 멈춰 있으면 왼쪽 클릭 = 바로 다시 싸우기. 두 번 클릭(바로
@@ -244,6 +250,7 @@ class WildPet(Pet):
         # 두 번 누르면 곧바로 마지막에 쓴 볼로 던진다. 한 마리씩 잡을 때
         # 메뉴를 매번 여는 건 번거롭다.
         # 첫 클릭이 예약해 둔 배틀 열기를 먼저 취소한다.
+        self._double_at = time.time()                     # 이어서 오는 '뗌' 은 왼쪽 클릭이 아니다 (on_release)
         self._cancel_battle_job()
         if self.ctl.app.battle:
             return self.ctl.app.battle.throw_ball()
@@ -933,6 +940,9 @@ class WildController(object):
                 if msgs:
                     text += "  " + " ".join(msgs)
                 self.app.notify(text)
+                got_tm = getattr(self.app, "got_tm", None)
+                if r.get("tmDrop") and got_tm:
+                    got_tm()                 # 가방 탭에 새 기술머신 점 (1.11.0)
                 if main:
                     self.app.float_over_pet(main.get("id"), "+%d exp" % main["gained"])
                 if evolves:

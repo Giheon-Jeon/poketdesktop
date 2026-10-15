@@ -1268,8 +1268,9 @@ def main():
     app6.guild_unseen = True                     # 앱이 안다: 안 읽은 줄이 남았다
     w6.show_tab("members")
     settle(root, 0.3)
-    chk("다른 칸에 있을 때 안 읽은 채팅이 남았으면 '채팅 ●'",
-        w6.seg.cells["chat"].cget("text") == "채팅 ●", w6.seg.cells["chat"].cget("text"))
+    chk("다른 칸에 있을 때 안 읽은 채팅이 남았으면 '채팅' 옆에 점 (그림)",
+        w6.seg.cells["chat"].cget("text") == "채팅" and w6.seg.has_badge("chat")
+        and str(w6.seg.cells["chat"].cget("image") or ""), (w6.seg.cells["chat"].cget("text"), w6.seg.dots))
     bad = squeezed(top6)
     chk("  눌린 위젯 없음", not bad, bad[:3])
     app6.guild_unseen = False

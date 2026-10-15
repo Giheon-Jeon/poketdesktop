@@ -35,7 +35,7 @@ from . import (achievements, auth, avatar, battle_routes, board, board_routes, m
                errors, friendly, items, live, live_routes, migrations, mypage, party, pvp, pvp_routes,
                raid, raid_routes,
                guild, guild_routes, guild_ws,
-               gym_routes, social_routes, tm_routes, tms, walk)
+               gym_routes, social_routes, tm_routes, tms, visit, walk)
 
 app = FastAPI(title="poketdesktop", version=config.VERSION)
 app.include_router(battle_routes.router)
@@ -53,6 +53,7 @@ app.include_router(party.router)
 app.include_router(friendly.router)
 app.include_router(guild_routes.router)
 app.include_router(guild_ws.router)
+app.include_router(visit.router)               # 친구 집에 놀러 가기 · 친구 채팅 (1.11.0)
 app.include_router(expedition.router)
 
 RNG = deps.RNG
@@ -94,6 +95,13 @@ def _startup():
     except Exception as e:                                  # noqa: BLE001
         print("[board] 패치노트 글을 올리지 못했습니다: %s" % e)
     auth.purge_expired()
+    # 친구 집에 놀러 가기 (1.11.0) 는 메모리에만 있어서 다시 켜면 다 끝났다 - 안 받은 보따리를 돌려준다.
+    try:
+        n = visit.return_open()
+        if n:
+            print("[visit] 안 받은 보따리 %d개를 준 사람에게 돌려줬습니다" % n)
+    except Exception as e:                                  # noqa: BLE001
+        print("[visit] 보따리를 돌려주지 못했습니다: %r" % (e,))
     # 양쪽이 다 본 오래된 대전 로그를 치운다. 한 판에 수십 KB 라
     # 그냥 두면 Turso 용량을 제일 먼저 먹는다. 전적은 그대로 남는다.
     try:
@@ -1195,6 +1203,8 @@ def me(ctx=Depends(current)):
         # 탐험 파견 (1.10.4): 나가 있는 수·돌아온 수·다음 것이 돌아오기까지 남은 초.
         # 돌아온 것이 있으면 화면이 바탕화면에 보따리를 놓는다.
         "expedition": expedition.me_card(uid),
+        # 새 기술머신 (1.11.0): 받고 가방에서 아직 안 본 수. 화면이 가방 탭에 점을 찍는다
+        "tmNew": tms.new_count(uid),
         "session": {"ip": ctx["session"]["ip"], "expiresAt": ctx["session"]["expires_at"]},
     }
 

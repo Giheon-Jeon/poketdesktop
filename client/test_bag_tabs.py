@@ -103,6 +103,20 @@ def settle(root, sec=0.4):
         time.sleep(0.01)
 
 
+def tab_width(nb, idx):
+    """탭 하나의 폭 (px). 탭 줄을 가로로 훑어 그 탭이 걸리는 x 를 센다."""
+    nb.update_idletasks()
+    y = 6 + 12                       # tabmargins 위 6 + 탭 안쪽
+    n = 0
+    for x in range(0, nb.winfo_width()):
+        try:
+            if nb.index("@%d,%d" % (x, y)) == idx:
+                n += 1
+        except tk.TclError:
+            pass
+    return n
+
+
 def spot(seg, top):
     """고르는 단추가 창 안에서 어디에 있는지 (x, y)."""
     seg.frame.update_idletasks()
@@ -204,10 +218,26 @@ def main():
 
     print("\n=== 새 공지 점 ===")
     idx = hub.order.index("board")
+    plain = tab_width(hub.nb, idx)
+    hub.nb.tab(idx, text="  게시판 ●  ")                    # 1.10.x 의 점 (글자) - 견주려고 잠깐
+    settle(root, 0.1)
+    old = tab_width(hub.nb, idx)
     hub.set_badge("board", True)
-    chk("게시판 탭에 점", "●" in hub.nb.tab(idx, "text"), hub.nb.tab(idx, "text"))
+    settle(root, 0.1)
+    new = tab_width(hub.nb, idx)
+    chk("게시판 탭에 점 (그림 - 글자는 그대로)", bool(hub.nb.tab(idx, "image"))
+        and hub.nb.tab(idx, "text").strip() == "게시판", (hub.nb.tab(idx, "text"), hub.nb.tab(idx, "image")))
+    chk("  점을 달아도 탭이 옛 글자 점보다 넓어지지 않는다", plain < new <= old, (plain, new, old))
+    img = str(hub.nb.tab(idx, "image")[0])
+    chk("  그림은 탭 글줄 높이 그대로 (글자와 한 줄에 앉는다)",
+        int(root.tk.call("image", "height", img)) == U.font_px(hub.nb, U.FONT)[1])
+    spec = [str(x) for x in hub.nb.tab(idx, "image")]
+    chk("  고른 탭·마우스를 올린 탭은 글자색을 따라 다른 점", spec[1::2] == ["selected", "active"]
+        and len(set(spec[0::2])) == 3, spec)
     hub.set_badge("board", False)
-    chk("끄면 사라진다", "●" not in hub.nb.tab(idx, "text") and "게시판" in hub.nb.tab(idx, "text"))
+    settle(root, 0.1)
+    chk("끄면 사라진다", not hub.nb.tab(idx, "image") and hub.nb.tab(idx, "text") == "  게시판  "
+        and tab_width(hub.nb, idx) == plain, (hub.nb.tab(idx, "text"), tab_width(hub.nb, idx), plain))
 
     hub.close()
     settle(root, 0.3)

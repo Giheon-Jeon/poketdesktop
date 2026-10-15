@@ -21,7 +21,7 @@ from .platform_base import (NATIVE_MENU, RIGHT_CLICK,   # noqa: F401
                             bind_right, data_dir, mouse_buttons_down,
                             take_right_clicks, watch_right_click,
                             hide_from_dock, show_again,
-                            own_dialog, surface)
+                            own_dialog, surface, take_keys, drop_keys)
 
 
 def raise_above(win):

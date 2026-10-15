@@ -1389,15 +1389,16 @@ class GuildWindow(object):
         허브의 길드 탭에 점이 켜진 까닭이 채팅이라는 것을 여기서 알 수 있어야 한다.
         """
         seg = getattr(self, "seg", None)
-        text = "채팅"
+        text, dot = "채팅", False
         if self.tab != "chat":
             if self.unread:
                 text = "채팅 %d" % self.unread
             elif getattr(self.app, "guild_unseen", False):
-                text = "채팅 ●"
+                dot = True                   # 점은 그림이다 (1.11.0, Segmented.badge - 허브 탭과 같은 점)
         try:
             if seg is not None and "chat" in seg.cells:
                 seg.cells["chat"].configure(text=text)
+                seg.badge("chat", dot)
         except tk.TclError:
             pass
 

@@ -74,6 +74,16 @@ def settle_rows(root, win):
     settle(root)
 
 
+ARROW_CH = {"hint": "▾", "up": "▲", "down": "▼"}
+
+
+def head(lb):
+    """머리글을 '글자+화살표' 로 읽는다 (화살표는 1.11.0 부터 그림 - lb.arrow 가 무엇을 그렸는지 적어 둔다).
+    그림이 안 붙어 있으면 '?' 를 붙여 틀리게 한다."""
+    pic = str(lb.cget("image") or "")
+    return lb.cget("text") + (ARROW_CH.get(getattr(lb, "arrow", None), "?") if pic else "?")
+
+
 def shown(win):
     """지금 목록에 담긴 포켓몬 id, 화면 순서대로 (숨긴 줄은 빠진다)."""
     by_frame = dict((str(r.f), pid) for pid, r in win.rows.items())
@@ -649,8 +659,8 @@ def sort_by_bst(root, dex):
     try:
         chk("처음에는 박스 순서 (첫 박스의 서른 마리)", shown(win) == party_ids + first_box,
             shown(win)[:5])
-        chk("머리글에 누를 수 있다는 표시(▾)", win.head_iv.cget("text") == "개체값▾"
-            and win.head_iv.cget("cursor") == "hand2", win.head_iv.cget("text"))
+        chk("머리글에 누를 수 있다는 표시(▾)", head(win.head_iv) == "개체값▾"
+            and win.head_iv.cget("cursor") == "hand2", head(win.head_iv))
         top = want[0]
         chk("  그 칸에는 개체값이 적혀 있다", win.rows[first_box[0]].iv_cell.cget("text").endswith("%"),
             win.rows[first_box[0]].iv_cell.cget("text"))
@@ -659,8 +669,8 @@ def sort_by_bst(root, dex):
         chk("머리글을 누르면 박스를 넘어 종족값 높은 순", win.sort_bst
             and shown(win) == party_ids + want_ids[:30], shown(win)[:6])
         chk("  데리고 다니는 포켓몬은 그대로 맨 위", shown(win)[:2] == party_ids)
-        chk("  머리글이 '종족값▼' 로 바뀐다", win.head_iv.cget("text") == "종족값▼"
-            and str(win.head_iv.cget("fg")) == U.ACCENT, win.head_iv.cget("text"))
+        chk("  머리글이 '종족값▼' 로 바뀐다", head(win.head_iv) == "종족값▼"
+            and str(win.head_iv.cget("fg")) == U.ACCENT, head(win.head_iv))
         chk("  그 칸에 종족값 합계가 적힌다 (데리고 다니는 줄도)",
             win.rows[top["id"]].iv_cell.cget("text") == str(bst(top))
             and win.rows[party_ids[0]].iv_cell.cget("text") == str(bst(party[0])),
@@ -703,7 +713,7 @@ def sort_by_bst(root, dex):
         win.toggle_sort()
         settle_rows(root, win)
         chk("다시 누르면 박스 순서로 돌아온다", not win.sort_bst and shown(win) == party_ids + first_box
-            and win.head_iv.cget("text") == "개체값▾" and "위" not in win.lbl_page.cget("text"),
+            and head(win.head_iv) == "개체값▾" and "위" not in win.lbl_page.cget("text"),
             (shown(win)[:4], win.lbl_page.cget("text")))
         chk("  그 칸은 다시 개체값", all(win.rows[i].iv_cell.cget("text").endswith("%") for i in shown(win)),
             [win.rows[i].iv_cell.cget("text") for i in shown(win)][:4])

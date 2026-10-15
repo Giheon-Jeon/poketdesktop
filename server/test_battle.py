@@ -288,6 +288,25 @@ def main():
     party = [m for m in p["pokemon"] if m["onDesktop"]]
     print("       파티 %d마리 / 보유 %d마리" % (len(party), len(p["pokemon"])))
     if len(party) >= 2:
+        # 게시판 #218: 배틀 중에 파티를 바꿔 싸우던 포켓몬이 빠지면, 같은 야생에 다시 걸어도 옛 판을
+        # 이어 주지 않는다 (화면이 그 도트를 못 찾아 '대결' 이 영영 안 됐다) - 지금 파티 맨 앞으로 새로.
+        wd = fresh_wild()
+        if wd:
+            st, r = call("POST", "/api/wild/%d/battle" % wd["id"], {})
+            lead = r["battle"]["me"]["id"] if st == 200 else None
+            st2, _ = call("POST", "/api/pokemon/%d/desktop" % lead, {"on": False}) if lead else (0, None)
+            st3, r3 = call("POST", "/api/wild/%d/battle" % wd["id"], {}) if st2 == 200 else (0, {})
+            chk("배틀 중 싸우던 포켓몬을 내리면 다시 걸 때 이어 주지 않고 새로 시작한다",
+                st3 == 200 and r3.get("resumed") is False and r3["battle"]["me"]["id"] != lead
+                and r3["battle"]["id"] != r["battle"]["id"], (st, st2, st3, r3.get("resumed")))
+            st4, r4 = call("GET", "/api/battle")
+            chk("  옛 판은 닫혔다 (진행 중인 판은 새 판 하나)", r4.get("battle", {}).get("id") == r3["battle"]["id"]
+                if st3 == 200 else False, r4)
+            if lead:
+                call("POST", "/api/pokemon/%d/desktop" % lead, {"on": True})
+            # (새 판은 그대로 둔다 - 아래에서 다른 야생에 걸면 서버가 닫는다)
+        st, p = call("GET", "/api/pokemon")
+        party = [m for m in p["pokemon"] if m["onDesktop"]]
         before = dict((m["id"], m["info"]["expInLevel"] + m["level"] * 100000)
                       for m in party)
         wd = fresh_wild()

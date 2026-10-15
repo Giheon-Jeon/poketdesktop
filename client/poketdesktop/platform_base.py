@@ -337,6 +337,21 @@ def accept_first_click():
     return True
 
 
+def take_keys(win):
+    """이 창이 글자를 받게 한다 (테두리 없는 창도 - 친구 채팅의 입력 말풍선·포커스 받은 도트, 1.11.0).
+    윈도우는 focus_force 로 된다."""
+    try:
+        win.focus_force()
+        return True
+    except Exception:                                       # noqa: BLE001
+        return False
+
+
+def drop_keys(win):
+    """take_keys 를 거둔다. 여기서는 할 일이 없다."""
+    pass
+
+
 def keep_focus():
     """창을 띄울 때 쓰던 앱의 포커스를 뺏지 않게. 윈도우는 원래 안 뺏는다."""
     return True

@@ -129,15 +129,33 @@ class HubWindow(object):
         return pane
 
     def set_badge(self, key, on):
-        """탭 이름 옆에 점을 찍는다 (새 공지·새 패치노트·새 댓글). 켜고 끄는 것만 한다."""
+        """탭 이름 옆에 점을 찍는다 (새 공지·새 패치노트·새 댓글). 켜고 끄는 것만 한다.
+
+        점은 글자(●)가 아니라 그림이다 (1.11.0, U.mark_image) - 글자 ● 는 탭 글자만큼 커서 컸다.
+        색은 탭 글자를 따른다: 평소 흐린 회색, 고른 탭은 금색, 마우스를 올리면 밝게 (TNotebook.Tab 의 map).
+        """
         row = next((t for t in TABS if t[0] == key), None)
         if not row or key not in self.order:
             return
         try:
-            self.nb.tab(self.order.index(key),
-                        text="  %s%s  " % (row[1], " ●" if on else ""))
+            if on:
+                self.nb.tab(self.order.index(key), text="  %s" % row[1],
+                            image=self._dot_spec(), compound="right")
+            else:
+                self.nb.tab(self.order.index(key), text="  %s  " % row[1], image="")
         except tk.TclError:
             pass
+
+    def _dot_spec(self):
+        """탭의 점 그림 (상태마다 색이 다르다). 뒤에 점이 없을 때의 끝 빈칸 둘을 붙인다.
+
+        앞에는 빈칸을 안 넣는다 - ttk 탭은 글자와 그림 사이를 스스로 4px(space) 띄운다 (빈칸 하나 폭).
+        """
+        sp = U.space_px(self.nb, U.FONT)
+
+        def img(color):
+            return U.mark_image(self.nb, U.FONT, color, "dot", right=2 * sp)
+        return (img(U.FG_DIM), "selected", img(U.ACCENT), "active", img(U.FG))
 
     def show(self, key):
         """그 탭으로 옮기고 창을 앞으로 꺼낸다."""

@@ -92,6 +92,10 @@ class Cell(object):
 class Seg(object):
     def __init__(self):
         self.cells = {"chat": Cell()}
+        self.dots = set()            # 이름 옆에 그린 점 (1.11.0 부터 글자가 아니라 그림 - U.Segmented.badge)
+
+    def badge(self, key, on):
+        (self.dots.add if on else self.dots.discard)(key)
 
 
 class Api(object):
@@ -339,14 +343,14 @@ def main():
     win.tab, win.chat_box, win.shown, win.unread = "shop", None, True, 0
     win._paint_unread()
     chk("안 읽은 줄이 남았으면 '채팅' 칸 이름에 점 (무엇이 안 읽혔는지 알 수 있다)",
-        win.seg.cells["chat"].text == "채팅 ●", win.seg.cells["chat"].text)
+        win.seg.cells["chat"].text == "채팅" and "chat" in win.seg.dots, (win.seg.cells["chat"].text, win.seg.dots))
     win.unread = 2
     win._paint_unread()
-    chk("  세어 둔 수가 있으면 수를 쓴다", win.seg.cells["chat"].text == "채팅 2")
+    chk("  세어 둔 수가 있으면 수를 쓴다 (점 대신)", win.seg.cells["chat"].text == "채팅 2" and not win.seg.dots)
     me.mark_guild_chat_seen(127)
     win.unread = 0
     win._paint_unread()
-    chk("  다 읽었으면 그냥 '채팅'", win.seg.cells["chat"].text == "채팅")
+    chk("  다 읽었으면 그냥 '채팅'", win.seg.cells["chat"].text == "채팅" and not win.seg.dots)
 
     print("\n=== 탭을 옮기면 점을 바로 다시 그린다 ===")
     # 1.10.1 은 길드 탭에서 나와도 다음 동기화(최대 90초 뒤)에야 점을 다시 찍었다 -

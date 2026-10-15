@@ -299,12 +299,33 @@ CREATE INDEX IF NOT EXISTS idx_gift_user ON gift(user_id, claimed_at);
 
 -- 기술머신은 개수가 없다. 한 번 얻으면 계속 쓰고, 팔지도 사지도 못한다.
 -- 그래서 가방(bag)에 안 넣는다 - 거기는 개수를 세는 곳이다.
+-- seen (1.11.0): 가방에서 확인했는지. 0 이면 '새 기술머신' 이라 노란 점이 찍힌다.
 CREATE TABLE IF NOT EXISTS tm_owned (
     user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     no       INTEGER NOT NULL,
     got_at   TEXT NOT NULL,
+    seen     INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (user_id, no)
 );
+
+-- 친구 집에 놀러 가서 둔 보따리 (1.11.0, visit.py). 손님이 '여기에 두기' 를 하면 open 으로 생기고 손님
+-- 가방에서 빠진다. 주인이 누르면 taken (주인 가방으로), 안 받은 채 끝나거나 서버를 다시 켜면 returned
+-- (손님에게 돌려준다). 받는 사람은 하루(KST)에 RECEIVE_PER_DAY 번까지 - open·taken 으로 센다
+-- (부계정으로 돈·도구를 몰아주는 길이 되지 않게).
+CREATE TABLE IF NOT EXISTS visit_bundle (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    giver_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    items       TEXT NOT NULL,          -- JSON [{id, kr, count}]
+    count       INTEGER NOT NULL,       -- 모두 몇 개
+    day         TEXT NOT NULL,          -- KST 날짜
+    state       TEXT NOT NULL,          -- open / taken / returned
+    at          TEXT NOT NULL,
+    done_at     TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_visit_bundle_g ON visit_bundle(giver_id, day);
+CREATE INDEX IF NOT EXISTS idx_visit_bundle_r ON visit_bundle(receiver_id, day);
+CREATE INDEX IF NOT EXISTS idx_visit_bundle_s ON visit_bundle(state);
 
 -- 관장 도전 한 판. 턴마다 TrainerBattle.dump() 를 data 에 통째로 쓴다.
 -- rev 는 같은 턴이 두 번 들어오는 것(창을 두 개 띄웠거나 요청이 겹친 것)을
@@ -979,6 +1000,8 @@ MIGRATIONS = [
      "ALTER TABLE expedition_mon ADD COLUMN charm INTEGER NOT NULL DEFAULT 0"),
     # 1.10.3: 채팅에 놓이는 카드 (길드 친선전). 빈 글이면 보통 줄이다
     ("guild_chat", "card", "ALTER TABLE guild_chat ADD COLUMN card TEXT NOT NULL DEFAULT ''"),
+    # 1.11.0: 새 기술머신 표시. 옛 행은 1 = 이미 본 것 - 올리자마자 가진 것 전부에 점이 뜨면 안 된다
+    ("tm_owned", "seen", "ALTER TABLE tm_owned ADD COLUMN seen INTEGER NOT NULL DEFAULT 1"),
 ]
 
 

@@ -58,9 +58,10 @@ ART_KEEP = 8
 CHECK_BG = "#15261c"
 # 머리글을 누르면 그 기준으로 줄 세워 본다 (1.10.6). 머리글 제목 -> 기준 (box_filter.SORTS)
 SORT_OF = {"도감": "num", "이름": "name", "Lv": "level", "개체값": "bst"}
-# 기준 -> (꺼져 있을 때의 머리글, 켜졌을 때의 머리글, 말로 부를 때의 이름)
-SORT_HEAD = {"num": ("도감▾", "도감▲", "도감"), "name": ("이름▾", "이름▲", "이름"),
-             "level": ("Lv▾", "Lv▼", "Lv"), "bst": ("개체값▾", "종족값▼", "종족값")}
+# 기준 -> (꺼져 있을 때의 머리글, 켜졌을 때의 머리글, 말로 부를 때의 이름, 켜졌을 때의 화살표)
+# 화살표는 글자가 아니라 그림이다 (1.11.0, U.mark_image): 글자 ▾ 는 너무 작고 ▲▼ 는 너무 컸다.
+SORT_HEAD = {"num": ("도감", "도감", "도감", "up"), "name": ("이름", "이름", "이름", "up"),
+             "level": ("Lv", "Lv", "Lv", "down"), "bst": ("개체값", "종족값", "종족값", "down")}
 
 # (제목, x, 너비, 정렬)
 COLS = [("도감", 12, 50, "w"), ("이름", 66, 168, "w"), ("Lv", 240, 34, "center"),
@@ -1248,14 +1249,21 @@ class BoxWindow(object):
     def _paint_sort(self):
         """머리글과 그 칸의 표시.
 
-        누를 수 있는 머리글에는 흐린 ▾ 가 붙는다. 켜면 금색이 되고 화살표가 차례를 가리킨다
-        (▲ 낮은 것부터, ▼ 높은 것부터). 종족값으로 볼 때는 '개체값' 칸이 '종족값▼' 이 되고 줄마다
+        누를 수 있는 머리글에는 흐린 아래 화살표가 붙는다. 켜면 금색이 되고 화살표가 차례를 가리킨다
+        (위: 낮은 것부터, 아래: 높은 것부터). 종족값으로 볼 때는 '개체값' 칸이 '종족값' 이 되고 줄마다
         그 칸에 종족값 합계가 적힌다 - 머리글은 늘 그 칸에 적힌 것의 이름이다.
+
+        화살표는 켜져 있든 꺼져 있든 **같은 크기**로 그린다 (U.mark_image). lb.arrow 에 무엇을
+        그렸는지 적어 둔다: 'hint'(꺼짐, 흐린 아래) · 'up' · 'down'.
         """
         for key, lb in getattr(self, "heads", {}).items():
             on = self.sort == key
+            arrow = SORT_HEAD[key][3] if on else "down"
+            color = U.ACCENT if on else U.FG_FAINT
             try:
-                lb.configure(text=SORT_HEAD[key][1 if on else 0], fg=U.ACCENT if on else U.FG_FAINT)
+                lb.configure(text=SORT_HEAD[key][1 if on else 0], fg=color, compound="right",
+                             image=U.mark_image(lb, U.FONT_XS, color, arrow, left=U.h(2)))
+                lb.arrow = arrow if on else "hint"
             except tk.TclError:
                 pass
         for row in list(getattr(self, "rows", {}).values()):

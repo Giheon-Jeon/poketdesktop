@@ -240,6 +240,84 @@ def icon_button(parent, icon, command, tip=None, hover=None):
     return icon
 
 
+# ---------------- 작은 표시 그림: 탭의 점, 머리글의 화살표 ----------------
+# 글자(●, ▲, ▾)로 쓰면 크기가 글꼴마다 제각각이다. 같은 10px 글줄에서 맑은 고딕·애플 고딕의
+# ▲ 는 7px 인데 ▾ 는 그 글꼴에 없어서 다른 글꼴에서 빌려 와 3px 이 됐고, 탭의 ● 는 글자만큼
+# 컸다. 그래서 **정한 크기로 직접 그린다** (글꼴 크기에 맞춰 같이 커진다 - em 의 몇 배).
+MARK_DOT_EM = 0.55      # 탭·칸 이름 옆의 점 지름 (1.11.0: 글자 ● 는 0.7em 쯤이라 컸다)
+MARK_TRI_W_EM = 0.5     # 머리글 화살표의 폭 (작던 ▾ 0.29em 과 크던 ▲ 0.71em 의 가운데)
+MARK_TRI_H_EM = 0.43    #               높이 (정삼각형)
+MARK_MID_EM = 0.37      # 한글 글자의 세로 가운데 (기준선 위). 여기에 맞춰야 글자와 나란히 앉는다
+_MARK_SS = 4            # 크게 그려 줄인다 (가장자리를 부드럽게)
+
+
+def _rgb(color):
+    c = color.lstrip("#")
+    return tuple(int(c[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def mark_pil(em, line, ascent, color, shape="dot", left=0, right=0):
+    """mark_image 의 그림 (PIL RGBA). em·line·ascent 는 그 글꼴의 px 크기 - 검사도 이것으로 잰다."""
+    from PIL import Image, ImageDraw
+    # 크기와 자리는 **온 픽셀**로 맞춘다. 6px 남짓한 것이 픽셀 사이에 걸리면 한쪽만 흐려져서
+    # 위·아래 화살표가 1px 씩 달라 보였다.
+    if shape == "dot":
+        w = hgt = max(3, int(round(em * MARK_DOT_EM)))
+    else:
+        w = max(3, int(round(em * MARK_TRI_W_EM)))
+        hgt = max(2, int(round(w * MARK_TRI_H_EM / MARK_TRI_W_EM)))     # 폭에서 정한다 (늘 정삼각형 꼴)
+    box_w = max(1, int(left) + w + int(right))
+    line = max(1, int(line))
+    top = int(round(ascent - em * MARK_MID_EM - hgt / 2.0))
+    k = _MARK_SS
+    im = Image.new("RGBA", (box_w * k, line * k), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    x0, y0 = int(left) * k, top * k
+    x1, y1 = x0 + w * k - 1, y0 + hgt * k - 1
+    fill = _rgb(color) + (255,)
+    if shape == "dot":
+        d.ellipse((x0, y0, x1, y1), fill=fill)
+    elif shape == "up":
+        d.polygon([(x0, y1), (x1, y1), ((x0 + x1) / 2.0, y0)], fill=fill)
+    else:
+        d.polygon([(x0, y0), (x1, y0), ((x0 + x1) / 2.0, y1)], fill=fill)
+    return im.resize((box_w, line), Image.LANCZOS)
+
+
+def font_px(widget, font):
+    """그 글꼴의 (em, 글줄 높이, 기준선까지) px."""
+    import tkinter.font as tkfont
+    root = widget._root()
+    f = tkfont.Font(root=root, font=font)
+    size = f.actual("size")
+    em = float(-size) if size < 0 else size * float(root.tk.call("tk", "scaling"))
+    return em, f.metrics("linespace"), f.metrics("ascent")
+
+
+def mark_image(widget, font, color, shape="dot", left=0, right=0):
+    """글줄 하나 높이의 작은 그림: shape 는 'dot' · 'up' · 'down'. left/right 는 양옆 빈칸(px).
+
+    높이를 그 글꼴의 글줄 높이로 두고 그림을 한글 가운데 높이에 놓는다 - Label 이나 탭에
+    compound 로 글자 옆에 붙이면 글자와 같은 줄에 앉는다. 같은 것은 한 번만 만든다 (Tk 마다).
+    """
+    from PIL import ImageTk
+    root = widget._root()
+    cache = root.__dict__.setdefault("_poket_marks", {})
+    key = (tuple(font) if isinstance(font, (tuple, list)) else font, color, shape,
+           int(left), int(right))
+    if key not in cache:
+        em, line, ascent = font_px(widget, font)
+        cache[key] = ImageTk.PhotoImage(mark_pil(em, line, ascent, color, shape, left, right),
+                                        master=root)
+    return cache[key]
+
+
+def space_px(widget, font, n=1):
+    """그 글꼴의 빈칸 n 개 폭 (px). 점·화살표를 글자에서 띄울 때 쓴다."""
+    import tkinter.font as tkfont
+    return tkfont.Font(root=widget._root(), font=font).measure(" " * n)
+
+
 class Segmented(object):
     """나란히 붙은 고르기 단추 ([도구 | 기술머신], [전체 | 공지 | 자유]).
 
@@ -255,10 +333,13 @@ class Segmented(object):
         self.on_pick = on_pick
         self.current = current
         self.cells = {}
+        self.dots = set()        # 이름 옆에 점이 찍힌 칸 (badge)
+        self.padx = h(13)
         self.frame = tk.Frame(parent, bg=INK, highlightthickness=2,
                               highlightbackground=LINE2, bd=0)
         for key, label in items:
-            lb = tk.Label(self.frame, text=label, font=FONT_B, padx=h(13), pady=h(3))
+            lb = tk.Label(self.frame, text=label, font=FONT_B, padx=self.padx, pady=h(3),
+                          compound="right")
             lb.pack(side="left")
             lb.bind("<Button-1>", lambda _e, k=key: self._click(k))
             lb.bind("<Enter>", lambda _e, k=key: self._hover(k, True))
@@ -266,16 +347,37 @@ class Segmented(object):
             self.cells[key] = lb
         self._paint()
 
+    DOT_GAP = 2      # 글자와 점 사이 (그림의 앞 빈칸. Tk 가 padx 만큼 더 띄운다 - 아래)
+
+    def _look(self, key, bg, fg, **kw):
+        """그 칸을 칠한다. 점이 있으면 점도 (글자색과 같은 색).
+
+        **점이 붙은 칸은 폭을 직접 정한다.** Tk 의 Label 은 글자 옆에 그림을 붙이면 그 사이에
+        padx 를 한 번 더(맥은 두 번) 넣어서, 점 하나에 칸이 39px 넓어졌다 (사용자 지적, 1.11.0).
+        그래서 점이 있을 때는 padx 를 1 로 줄이고, 폭을 '글자만일 때 + 점' 으로 맞춘다 - Tk 는
+        정해 준 폭 안에 글자와 점을 가운데로 놓으니 양옆 여백은 그대로다.
+        """
+        lb = self.cells[key]
+        if key not in self.dots:
+            lb.configure(bg=bg, fg=fg, image="", padx=self.padx, width=0, **kw)
+            return
+        img = mark_image(lb, FONT_B, fg, "dot", left=self.DOT_GAP)
+        lb.configure(bg=bg, fg=fg, image="", padx=self.padx, width=0, **kw)
+        want = lb.winfo_reqwidth() + img.width()
+        lb.configure(image=img, padx=1, width=want)
+        got = lb.winfo_reqwidth()
+        if got != want:                  # 정한 폭에 테두리를 더하는 OS 가 있다 - 그만큼 뺀다
+            lb.configure(width=max(1, want - (got - want)))
+
     def _paint(self):
         for key, lb in self.cells.items():
             on = key == self.current
-            lb.configure(bg=ACCENT if on else INK, fg=ACCENT_DARK if on else FG_DIM,
-                         cursor="" if on else "hand2")
+            self._look(key, ACCENT if on else INK, ACCENT_DARK if on else FG_DIM,
+                       cursor="" if on else "hand2")
 
     def _hover(self, key, inside):
         if key != self.current:
-            self.cells[key].configure(bg=BG3 if inside else INK,
-                                      fg=FG if inside else FG_DIM)
+            self._look(key, BG3 if inside else INK, FG if inside else FG_DIM)
 
     def _click(self, key):
         if key != self.current and self.on_pick:
@@ -284,6 +386,20 @@ class Segmented(object):
     def set(self, key):
         self.current = key
         self._paint()
+
+    def badge(self, key, on):
+        """그 칸 이름 옆에 점 (허브 탭의 set_badge 와 같은 모양). 켜고 끄는 것만 한다 - 이름은 그대로."""
+        if key not in self.cells:
+            return
+        # 이미 같아도 다시 칠한다 - 그사이 칸 이름이 바뀌었으면(길드 '채팅 2' -> '채팅') 폭도 다시 잡아야 한다
+        (self.dots.add if on else self.dots.discard)(key)
+        try:
+            self._paint()
+        except tk.TclError:
+            pass
+
+    def has_badge(self, key):
+        return key in self.dots
 
     def pack(self, **kw):
         self.frame.pack(**kw)

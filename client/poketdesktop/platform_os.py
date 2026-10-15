@@ -58,6 +58,9 @@ activate = _M.activate
 own_dialog = _M.own_dialog
 surface = _M.surface
 accept_first_click = _M.accept_first_click
+# 테두리 없는 창이 글자를 받게 (친구 채팅, 1.11.0). 맥은 고른 창만 키 창이 될 수 있게 연다.
+take_keys = _M.take_keys
+drop_keys = _M.drop_keys
 keep_focus = _M.keep_focus
 watch_right_click = _M.watch_right_click
 take_right_clicks = _M.take_right_clicks

@@ -27,6 +27,7 @@ class BagTabs(object):
         self.app = app
         self.panes = {}           # 열쇠 -> BagWindow / TmWindow (처음 눌렀을 때 생긴다)
         self.holders = {}
+        self.segs = []            # 칸마다 머리줄에 있는 [도구 | 기술머신] (점을 같이 칠한다)
         self.current = None
         self.win = U.panel(parent, root, "포스크탑 — 가방",
                            1000, 664, 950, 600, self.close)
@@ -41,8 +42,16 @@ class BagTabs(object):
     def _switch_for(self, key):
         """그 칸의 머리줄에 넣을 단추를 만들어 주는 함수."""
         def build(parent):
-            return U.Segmented(parent, KINDS, key, self.show)
+            seg = U.Segmented(parent, KINDS, key, self.show)
+            self.segs.append(seg)
+            seg.badge("tms", getattr(self.app, "tm_new", 0) > 0)
+            return seg
         return build
+
+    def badge_tms(self, on):
+        """[기술머신] 옆의 점 (1.11.0): 받고 아직 안 본 기술머신이 있다. 칸마다 단추가 따로라 둘 다 칠한다."""
+        for seg in self.segs:
+            seg.badge("tms", on)
 
     def show(self, key):
         if key not in CLASSES or key == self.current:

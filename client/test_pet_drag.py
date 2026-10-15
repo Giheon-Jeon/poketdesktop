@@ -141,8 +141,9 @@ def main():
     root.update()
     geo = p.win.geometry().split("+")[1:]
     chk("창도 그 자리에 있다", [int(v) for v in geo] == [550, 380], geo)
-    chk("이름표가 같이 따라온다", p.name_win is not None
-        and int(p.name_win.geometry().split("+")[1]) == 550, p.name_win.geometry())
+    chk("이름표가 같이 따라온다 (몸 가운데에)", p.name_win is not None and p.name_w > 4
+        and abs(int(p.name_win.geometry().split("+")[1]) + p.name_w / 2.0 - (550 + p.ax)) <= 1,
+        (p.name_win.geometry(), p.name_w, p.ax))
     p.update(33)
     chk("들고 있는 동안은 제 발로 안 걷는다", (round(p.x), round(p.y)) == (550, 380), (p.x, p.y))
     p.on_release(Ev(0, 0))

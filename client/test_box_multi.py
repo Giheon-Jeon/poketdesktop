@@ -109,7 +109,7 @@ def main():
         return want[page * 30:(page + 1) * 30]
 
     print("=== 머리글로 줄 세우기 ===")
-    heads = dict((k, lb.cget("text")) for k, lb in win.heads.items())
+    heads = dict((k, SB.head(lb)) for k, lb in win.heads.items())
     chk("누를 수 있는 머리글 넷에 ▾ 가 붙는다", heads == {"num": "도감▾", "name": "이름▾", "level": "Lv▾", "bst": "개체값▾"}
         and all(lb.cget("cursor") == "hand2" for lb in win.heads.values()), heads)
     chk("  머리글의 글자가 칸에 다 들어간다", all(lb.winfo_reqwidth() <= lb.winfo_width() for lb in win.heads.values()),
@@ -121,9 +121,15 @@ def main():
     SB.settle_rows(root, win)
     chk("**'도감' 을 누르면 박스를 넘어 도감 번호 순**", win.sort == "num" and box_shown() == ids_of("num")
         and [by_id[i]["num"] for i in box_shown()][:5] == [3, 6, 10, 11, 12], [by_id[i]["num"] for i in box_shown()][:6])
-    chk("  머리글이 금색 '도감▲' 로 바뀐다 (나머지는 그대로)", win.heads["num"].cget("text") == "도감▲"
-        and str(win.heads["num"].cget("fg")) == U.ACCENT and win.heads["name"].cget("text") == "이름▾"
-        and win.heads["bst"].cget("text") == "개체값▾", win.heads["num"].cget("text"))
+    chk("  머리글이 금색 '도감▲' 로 바뀐다 (나머지는 그대로)", SB.head(win.heads["num"]) == "도감▲"
+        and str(win.heads["num"].cget("fg")) == U.ACCENT and SB.head(win.heads["name"]) == "이름▾"
+        and SB.head(win.heads["bst"]) == "개체값▾", SB.head(win.heads["num"]))
+    def pic_size(lb):
+        n = str(lb.cget("image"))
+        return (int(root.tk.call("image", "width", n)), int(root.tk.call("image", "height", n))) if n else None
+    chk("  켜진 화살표와 꺼진 화살표가 같은 크기의 그림 (1.11.0: 꺼진 ▾ 는 작고 켜진 ▲ 는 컸다)",
+        pic_size(win.heads["num"]) is not None and pic_size(win.heads["num"]) == pic_size(win.heads["name"]),
+        (pic_size(win.heads["num"]), pic_size(win.heads["name"])))
     chk("  박스 이름표 자리에 몇 번째인지, 'PC 박스' 줄에 기준이 적힌다",
         win.lbl_page.cget("text") == "1~30 / 71마리" and "도감 번호 순" in win._sep_label.cget("text")
         and "도감 번호 순" in win.status.cget("text"), (win.lbl_page.cget("text"), win._sep_label.cget("text")))
@@ -145,12 +151,12 @@ def main():
     names = [F.name_of(by_id[i]) for i in box_shown()]
     chk("**'이름' 을 누르면 가나다 순** (별명 '가나다' 가 맨 앞, 첫 쪽으로 돌아온다)", win.sort == "name"
         and names == sorted(names) and names[0] == "가나다" and win.rank_page == 0
-        and win.heads["name"].cget("text") == "이름▲" and win.heads["num"].cget("text") == "도감▾", names[:4])
+        and SB.head(win.heads["name"]) == "이름▲" and SB.head(win.heads["num"]) == "도감▾", names[:4])
     win.set_sort("level")
     SB.settle_rows(root, win)
     lvs = [by_id[i]["level"] for i in box_shown()]
     chk("**'Lv' 를 누르면 레벨 높은 것부터**", lvs == sorted(lvs, reverse=True) and lvs[0] == max(m["level"] for m in box)
-        and win.heads["level"].cget("text") == "Lv▼" and "레벨 높은 순" in win._sep_label.cget("text"), lvs[:6])
+        and SB.head(win.heads["level"]) == "Lv▼" and "레벨 높은 순" in win._sep_label.cget("text"), lvs[:6])
     win.f_query.set("1")                                             # 도감 번호에 1 이 든 것만
     SB.settle_rows(root, win)
     hit = [m for m in box if "1" in str(m["num"]) or "1" in ("%04d" % m["num"])]
@@ -161,13 +167,13 @@ def main():
     win.toggle_sort()                                                # 종족값 (예전부터 있던 것)
     SB.settle_rows(root, win)
     chk("종족값 순은 예전 그대로다 ('개체값' 머리글, 그 칸에 종족값 합계, '위' 로 센다)", win.sort == "bst" and win.sort_bst
-        and box_shown() == ids_of("bst") and win.heads["bst"].cget("text") == "종족값▼"
-        and win.heads["level"].cget("text") == "Lv▾" and "위" in win.lbl_page.cget("text")
+        and box_shown() == ids_of("bst") and SB.head(win.heads["bst"]) == "종족값▼"
+        and SB.head(win.heads["level"]) == "Lv▾" and "위" in win.lbl_page.cget("text")
         and not win.rows[box_shown()[0]].iv_cell.cget("text").endswith("%"), win.lbl_page.cget("text"))
     win.set_sort("bst")
     SB.settle_rows(root, win)
     chk("같은 머리글을 다시 누르면 박스 순서로 돌아온다", win.sort is None and box_shown() == first_box
-        and all(lb.cget("text").endswith("▾") for lb in win.heads.values())
+        and all(SB.head(lb).endswith("▾") for lb in win.heads.values())
         and win.rows[first_box[1]].iv_cell.cget("text").endswith("%") and "박스 1" in win.lbl_page.cget("text"),
         (win.sort, win.lbl_page.cget("text")))
     win.set_sort("level")

@@ -197,6 +197,60 @@ def remember_checks(d, R, Body):
         evo and all(got.get(m) == 0 for m in evo), (evo, got))
 
 
+def fresh_checks(R, Body):
+    """새 기술머신 (1.11.0) - 받은 것은 가방에서 볼 때까지 '새 것', 옛 것은 처음부터 본 것."""
+    import sqlite3
+
+    print("\n=== 새 기술머신 (1.11.0) ===")
+    uid = mkuser("tm_new")
+    me = {"user": {"id": uid}}
+    chk("처음에는 새 것이 없다", tms.new_count(uid) == 0 and tms.unseen(uid) == set())
+    tms.give(uid, 7)
+    tms.give(uid, 9)
+    chk("받은 것은 새 것이다 (둘)", tms.new_count(uid) == 2 and tms.unseen(uid) == {7, 9},
+        tms.unseen(uid))
+    tms.give(uid, 7)
+    chk("  이미 가진 것을 또 받아도 늘지 않는다", tms.new_count(uid) == 2)
+    r = R.my_tms(me)
+    rows = dict((t["no"], t) for t in r["tms"])
+    chk("/api/tms: 새 것에 new 가 붙는다", rows[7]["new"] and rows[9]["new"] and r["newCount"] == 2, r["newCount"])
+    chk("  안 가진 것·다른 것에는 안 붙는다", not rows[1]["new"] and not rows[8]["new"])
+    out = R.seen(Body(nos=[7]), me)
+    chk("하나를 보면 그것만 꺼진다", out["newCount"] == 1 and tms.unseen(uid) == {9}, out)
+    out = R.seen(Body(nos=[7, 7]), me)
+    chk("  또 봐도 그대로 (본 것은 본 것)", out["newCount"] == 1, out)
+    out = R.seen(Body(nos=[123]), me)
+    chk("  안 가진 번호를 봐도 아무 일 없다", out["newCount"] == 1 and not tms.has(uid, 123), out)
+    other = mkuser("tm_new2")
+    tms.give(other, 9)
+    R.seen(Body(nos=[9]), me)
+    chk("  내가 본 것은 남의 것을 끄지 않는다", tms.new_count(other) == 1 and tms.new_count(uid) == 0,
+        (tms.new_count(other), tms.new_count(uid)))
+    tms.give(uid, 11)
+    tms.give(uid, 12)
+    out = R.seen(Body(nos=None), me)
+    chk("nos 가 없으면 전부 본 것으로", out["newCount"] == 0 and tms.new_count(uid) == 0, out)
+    chk("본다고 기술머신이 없어지지 않는다", tms.owned(uid) == {7, 9, 11, 12}, tms.owned(uid))
+    chk("너무 많은 번호는 거절한다", refused(lambda: R.seen(Body(nos=list(range(400))), me)))
+
+    # 1.10.x 의 DB: seen 칸이 없다. 붙이면 **옛 행은 본 것** - 올리자마자 가진 것 전부에 점이 뜨면 안 된다
+    sql = [m[2] for m in db.MIGRATIONS if m[0] == "tm_owned" and m[1] == "seen"]
+    chk("seen 칸을 붙이는 손질이 있다", len(sql) == 1, sql)
+    old = sqlite3.connect(":memory:")
+    old.execute("CREATE TABLE tm_owned (user_id INTEGER NOT NULL, no INTEGER NOT NULL,"
+                " got_at TEXT NOT NULL, PRIMARY KEY (user_id, no))")
+    old.execute("INSERT INTO tm_owned VALUES (1, 5, '2026-10-01')")
+    old.execute(sql[0])
+    chk("  옛 행은 seen=1 (새 것이 아니다)",
+        old.execute("SELECT seen FROM tm_owned").fetchone()[0] == 1)
+
+    # /api/me 에 수가 실린다 (가방 탭의 점)
+    import inspect
+    from app import main as M
+    src = inspect.getsource(M.me)
+    chk("/api/me 에 tmNew 가 실린다", '"tmNew": tms.new_count(uid)' in src)
+
+
 def main():
     db.init()
     d = deps.dex()
@@ -436,6 +490,7 @@ def main():
     full = [tms.roll_drop(rng, species_num=1, uid=uid3) for _ in range(500)]
     chk("다 모았으면 안 나온다", all(f is None for f in full))
 
+    fresh_checks(R, Body)
     remember_checks(d, R, Body)
 
     print()

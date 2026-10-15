@@ -428,10 +428,15 @@ def start(wid: int, ctx=Depends(deps.current)):
     uid = ctx["user"]["id"]
     d = deps.dex()
 
+    party = _party(uid)
     old = db.q1("SELECT * FROM battle WHERE user_id=? AND state='active'"
                 " ORDER BY id DESC LIMIT 1", (uid,))
     if old:
-        if old["wild_id"] == wid:
+        # **싸우던 포켓몬이 아직 파티에 있을 때만 이어 준다** (게시판 #218). 배틀 중에 파티를
+        # 바꿔 그 포켓몬이 박스로 갔으면, 화면은 그 도트를 못 찾아 배틀을 접는데 여기서 계속
+        # 그 판을 돌려주면 '대결' 을 몇 번 눌러도 같은 자리에서 멈췄다. 그때는 옛 판을 닫고
+        # 지금 파티 맨 앞 포켓몬으로 새로 시작한다.
+        if old["wild_id"] == wid and old["mine_id"] in set(m["id"] for m in party):
             me, foe = _fighters(d, old)
             bt = _battle(d, old, me, foe)
             return {"battle": _view(d, old, bt), "resumed": True}
@@ -444,7 +449,6 @@ def start(wid: int, ctx=Depends(deps.current)):
     if w["state"] != "revealed":
         raise HTTPException(409, "아직 모습을 드러내지 않았습니다.")
 
-    party = _party(uid)
     if not party:
         raise HTTPException(409, "데리고 있는 포켓몬이 없습니다.")
     mine = party[0]
@@ -690,6 +694,11 @@ def throw_ball(bid: int, body: BallIn, ctx=Depends(deps.current)):
                 ev.append({"t": "faint", "who": "me",
                            "text": "%s 은(는) 쓰러졌다!" % me.name})
         _save(row["id"], bt)
+        if bt.over and bt.result == "lost":
+            # **공격 턴에 쓰러졌을 때와 똑같이** 다음 포켓몬을 실어 보낸다 (게시판 #222, 레드 36세).
+            # 예전에는 여기서 빠져서, 볼을 놓친 뒤의 반격으로 쓰러지면 교체 없이 판이 그냥 끝났다 -
+            # 야생은 서버에 남았다가 사라지거나, 다시 누르면 둘 다 체력이 꽉 찬 새 판이 됐다.
+            _lost(uid, row, out)
         row = db.q1("SELECT * FROM battle WHERE id=?", (row["id"],))
         out["battle"] = _view(d, row, bt)
         # 볼을 던진 뒤에도 목록을 새로 준다. 타이머볼처럼 던진 횟수를
@@ -760,5 +769,9 @@ def run_away(bid: int, ctx=Depends(deps.current)):
         if not any(e.get("t") == "faint" and e.get("who") == "me" for e in ev):
             ev.append({"t": "faint", "who": "me", "text": "%s 은(는) 쓰러졌다!" % me.name})
     _save(row["id"], bt)
+    out = {"escaped": False, "events": ev}
+    if bt.over and bt.result == "lost":
+        _lost(uid, row, out)                # 볼을 던진 턴과 같다 - 쓰러지면 다음 포켓몬 (게시판 #222)
     row = db.q1("SELECT * FROM battle WHERE id=?", (row["id"],))
-    return {"escaped": False, "events": ev, "battle": _view(d, row, bt)}
+    out["battle"] = _view(d, row, bt)
+    return out

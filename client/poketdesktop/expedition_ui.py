@@ -232,6 +232,10 @@ class Desk(object):
             # 가방이 바뀌었다 - 열려 있는 가방·상점·관리 창이 새 값을 보게 한다
             self.app.balls = r.get("balls", self.app.balls)
             self.app.money = r.get("money", self.app.money)
+            tms = sum(1 for g in got if g.get("tm"))
+            got_tm = getattr(self.app, "got_tm", None)
+            if tms and got_tm:
+                got_tm(tms)                  # 가방 탭에 새 기술머신 점 (1.11.0)
             try:
                 self.app.request_sync()
             except Exception:                               # noqa: BLE001

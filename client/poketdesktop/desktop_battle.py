@@ -223,6 +223,13 @@ class DesktopBattle(object):
         self.app.notify(msg)
         self.finish_cleanup()
 
+    def left_party(self):
+        """싸우던 포켓몬이 파티에서 빠졌다 (배틀 중에 파티를 바꿨다). 이 판을 접는다 (게시판 #218)."""
+        if self.closed:
+            return
+        self.abort("싸우던 포켓몬이 파티에서 빠져 배틀을 멈췄습니다. 야생을 다시 누르면 지금 파티의 "
+                   "맨 앞 포켓몬이 싸웁니다.")
+
     # ---------------- 다가가기 ----------------
     def approach(self):
         """내 포켓몬이 야생 옆으로 걸어간다."""
@@ -404,8 +411,10 @@ class DesktopBattle(object):
         """멈춘 것을 풀고 이 판은 끝까지 싸운다. 10초가 지났거나 야생을 왼쪽 클릭했다."""
         if self.closed or not self.holding:
             return
-        if self.busy or self.menu_open:
-            # 볼이 날아가는 중이거나 고르는 중이다. 결과를 보고 다시 센다.
+        if self.busy or self.menu_open or self.playing or self.pending_ball is not None:
+            # 볼이 날아가는 중이거나(흔들리는 연출 포함) 고르는 중이다. 결과를 보고 다시 센다
+            # (놓치면 turn_done 이 10초를 새로 건다). 예전에는 흔들리는 동안의 왼쪽 클릭이 '끝까지
+            # 싸우기' 로 먹어서, 놓친 다음 턴부터 멈추지 않고 쓰러뜨렸다 (게시판 #222).
             return
         self.holding = False
         self.finish = True
@@ -448,6 +457,9 @@ class DesktopBattle(object):
                 head += "  " + natural("%s 을(를) 주웠다!" % tm["label"])
                 if self.mine:
                     self.float_over(self.mine, "기술머신!", "#6fb3ff")
+                got_tm = getattr(self.app, "got_tm", None)
+                if got_tm:
+                    got_tm()                 # 가방 탭에 새 기술머신 점 (1.11.0)
             self.app.notify(head)
         elif res == "lost":
             party = result.get("party") or []
@@ -476,6 +488,9 @@ class DesktopBattle(object):
         # 멈춰 있던 것은 푼다. 새 포켓몬으로 다시 부르면 서버가 또 멈추라고 한다.
         self.holding = False
         self._cancel_hold_jobs()
+        # **'끝까지 싸우기' 도 푼다** (게시판 #222). 앞 포켓몬 때 10초가 지났거나 왼쪽 클릭으로 싸우기로
+        # 했어도, 새 포켓몬은 다시 잡기 모드로 싸운다 - 여섯이 다 쓰러질 때까지 던질 틈이 있어야 한다.
+        self.finish = False
 
         def done(r, err):
             self.busy = False

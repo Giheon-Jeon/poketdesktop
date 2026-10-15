@@ -154,6 +154,8 @@ def listing(uid):
 
     names = _names(list(ids))
     online = _online_map([o for o, _ in friends])
+    from . import visit                       # 놀러 가기 (1.11.0) - 서로를 부르므로 여기서
+    here = visit.presence([o for o, _ in friends])
     stats = _stats([o for o, _ in friends])
     decos = season.deco_map([o for o, _ in friends])
 
@@ -163,6 +165,10 @@ def listing(uid):
         out = {"id": other, "name": names.get(other, "?"), "online": on,
                "lastSeen": seen, "lastSeenAgo": _ago(seen),
                "since": r["decided_at"] or r["created_at"]}
+        # 놀러 갈 수 있나: 앱이 켜져 있어 놀러 가기 소켓에 붙어 있고, 다른 친구와 연결돼 있지 않다
+        live, taken = here.get(other, (False, False))
+        out["visitable"] = bool(live and not taken)
+        out["visitBusy"] = bool(taken)
         if st:
             out.update({"rating": st["rating"], "ranked": bool(st["ranked"]),
                         "wins": st["wins"], "losses": st["losses"],

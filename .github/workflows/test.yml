@@ -343,6 +343,12 @@ jobs:
       # 머리글로 줄 세우기(도감 번호·이름·레벨) · 여러 마리 한꺼번에 옮기기 (1.10.6)
       - name: 포켓몬 관리 창의 줄 세우기·여러 마리 옮기기 (진짜 Tk)
         run: python client/test_box_multi.py
+      # 친구 집에 놀러 가기 · 친구 채팅 (1.11.0): 걸어 들어오고 나가기, 파티만 맞추기, Enter 로 말풍선,
+      # 보따리 두고 받기, 크기를 바꿔도 그대로 / 새 기술머신 노란 점
+      - name: 친구 채팅 (진짜 Tk)
+        run: python client/test_visit_ui.py
+      - name: 새 기술머신 표시 (진짜 Tk)
+        run: python client/test_tm_new.py
       # 기술머신 창의 포켓몬 도트가 잘려 있었다 (Label width=3 이 3px 로 읽혔다).
       - name: 기술머신 창 도트·목록 (진짜 Tk)
         run: python client/smoke_tms.py
@@ -468,6 +474,12 @@ jobs:
       # 머리글로 줄 세우기(도감 번호·이름·레벨) · 여러 마리 한꺼번에 옮기기 (1.10.6)
       - name: 포켓몬 관리 창의 줄 세우기·여러 마리 옮기기 (진짜 Tk)
         run: python client/test_box_multi.py
+      # 친구 집에 놀러 가기 · 친구 채팅 (1.11.0): 걸어 들어오고 나가기, 파티만 맞추기, Enter 로 말풍선,
+      # 보따리 두고 받기, 크기를 바꿔도 그대로 / 새 기술머신 노란 점
+      - name: 친구 채팅 (진짜 Tk)
+        run: python client/test_visit_ui.py
+      - name: 새 기술머신 표시 (진짜 Tk)
+        run: python client/test_tm_new.py
       - name: 기술머신 창 도트·목록 (진짜 Tk)
         run: python client/smoke_tms.py
       - name: 기술 떠올리기 창·포켓몬 관리 단추 (진짜 Tk)
@@ -520,6 +532,7 @@ jobs:
           python test_shiny_recolor.py
           python test_s3_void.py
           python test_catch_exp.py
+          python test_wild_faint.py
           # 길드 (1.10.0): 만들기·가입·권한·채팅·일일 미션·단계 보상·코인 상점
           python test_guild.py
           # 캐릭터 (1.10.3): 고른 것만 저장한다, 보내온 것은 믿지 않는다, 마이페이지 카드에 실린다
@@ -548,6 +561,8 @@ jobs:
           # 이벤트 볼을 받은 사람에게 반드시 나오는 길(test_event)은 이
           # 값과 상관없으므로 그대로 검사된다. 운영 서버는 그대로 0.002.
           POKET_EVENT_RESPAWN: "0"
+          # 친구 집에 놀러 가기: 끊긴 뒤 끝내기까지 기다리는 초 (운영은 20초 - 검사는 짧게)
+          POKET_VISIT_GRACE: "2"
           POKET_WILD_COOLDOWN_MIN: "60"
           POKET_WILD_COOLDOWN_MAX: "60"
           POKET_MISS_COOLDOWN: "60"
@@ -624,6 +639,10 @@ jobs:
           # 길드 친선전 (1.10.3): 진짜 웹소켓으로 셋이 붙어서 - 상대 구함이 길드원에게 가는지, 받으면
           # 실시간 배틀이 진짜로 열리고 구경용 모습이 길드원에게 밀려오는지. 길드를 만들 돈만 DB 로 넣는다.
           python server/test_friendly_ws.py http://127.0.0.1:8788 /tmp/poket-test.db
+          # 친구 집에 놀러 가기 · 친구 채팅 (1.11.0): 진짜 웹소켓으로 둘이 붙어서 - 1:1, 들고 가기·보따리
+          # (볼·지닌 도구 귀함까지, 받는 것은 하루 한 번), 파티·말·동작·메가 주고받기, 끊기면 끝.
+          # 가방에 도구를 넣는 데만 DB 를 쓴다.
+          python server/test_visit.py http://127.0.0.1:8788 /tmp/poket-test.db
 
       - name: 서버 로그 (실패했을 때만)
         if: failure()
