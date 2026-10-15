@@ -446,6 +446,20 @@ def guest_part(root, ov, app):
     settle(root, 0.1)
     chk("  Esc 면 그냥 닫는다", vis.input is None)
     chk("  남의 포켓몬에게는 안 열린다", vis.open_input(m50) is None)
+    # 윈도우가 말풍선에 글자 포커스를 안 주면 글자는 포켓몬 창으로 간다 - 그때도 말풍선 일로 읽는다
+    inp = vis.open_input(lead)
+    vis.pet_typed(lead, "a", "안")
+    vis.pet_typed(lead, "a", "녀")
+    vis.pet_typed(lead, "BackSpace", "")
+    vis.pet_typed(lead, "a", "녕")
+    chk("포커스가 포켓몬 창에 남아도 친 글자는 말풍선 칸으로 간다", inp.var.get() == "안녕", inp.var.get())
+    chk("  화살표 같은 글자 아닌 키는 넘기지 않는다", vis.pet_typed(lead, "Left", "") is False)
+    settle(root, 0.7)
+    vis.pet_enter(lead)
+    chk("  Enter 는 보내기 (새 말풍선을 또 열지 않는다)", inp.dead and vis.input is None
+        and sent_now(vis, root, {"t": "say", "text": "안녕"}), vis.sock.sent[-1:])
+    vis.open_input(lead)
+    chk("  Esc 는 닫기", vis.pet_escape(lead) is True and vis.input is None)
 
     print("\n=== 우클릭 ===")
     texts_, rows = menu_of(app, lead)

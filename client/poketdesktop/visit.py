@@ -498,9 +498,11 @@ class InputBubble(_Floater):
         for seq in ("<Return>", "<KP_Enter>"):
             self.entry.bind(seq, self.send)
         self.entry.bind("<Escape>", lambda _e: self.close(refocus=True) or "break")
+        self.win.bind("<Escape>", lambda _e: self.close(refocus=True) or "break")
         self.entry.bind("<FocusOut>", self._lost)
         self.follow()
         self.focus()
+        self.root.after(60, self._focus_again)       # 윈도우는 새 창이 뜬 바로 그때 포커스를 안 주기도 한다
 
     def _trim(self, *_a):
         t = self.var.get()
@@ -514,6 +516,34 @@ class InputBubble(_Floater):
             PLAT.take_keys(self.win)
             self.entry.focus_set()
             self.entry.icursor("end")
+        except tk.TclError:
+            pass
+
+    def _focus_again(self):
+        if self.dead:
+            return
+        try:
+            if self.root.focus_get() is not self.entry:
+                self.entry.focus_force()
+        except Exception:                                   # noqa: BLE001
+            pass
+
+    def type_in(self, ch):
+        """포켓몬 창으로 온 글자를 받아 넣는다 (Visit.pet_typed)."""
+        if self.dead:
+            return
+        try:
+            self.entry.insert("insert", ch)
+        except tk.TclError:
+            pass
+
+    def backspace(self):
+        if self.dead:
+            return
+        try:
+            i = self.entry.index("insert")
+            if i > 0:
+                self.entry.delete(i - 1)
         except tk.TclError:
             pass
 
@@ -1290,15 +1320,62 @@ class Visit(object):
         def key(_e, p=pet):
             vis = getattr(app, "visit", None)
             if vis is not None:
-                vis.open_input(p)
+                vis.pet_enter(p)
             return "break"
+
+        def esc(_e, p=pet):
+            vis = getattr(app, "visit", None)
+            if vis is not None:
+                vis.pet_escape(p)
+            return "break"
+
+        def typed(e, p=pet):
+            vis = getattr(app, "visit", None)
+            if vis is not None and vis.pet_typed(p, e.keysym, e.char):
+                return "break"
+            return None
         try:
             pet.label.bind("<Button-1>", click, add="+")
             for seq in ("<Return>", "<KP_Enter>"):
                 pet.win.bind(seq, key)
+            pet.win.bind("<Escape>", esc)
+            pet.win.bind("<Key>", typed)
             pet._visit_armed = True
         except tk.TclError:
             pass
+
+    # ---- 글자가 입력 말풍선이 아니라 포켓몬 창으로 왔을 때 ----
+    # 윈도우는 앞에 나와 있지 않은 프로그램이 새 창에 글자 포커스를 주는 것을 막는다. 그러면 말풍선이 떠도
+    # 글자는 방금 누른 포켓몬 창으로 간다 (CI 의 윈도우 러너에서 Esc 가 안 먹어 드러났다). 그때는 포켓몬 창이
+    # 받은 것을 말풍선 일로 읽는다: Enter = 보내기, Esc = 닫기, 글자 = 말풍선 칸에 넣기.
+    def _input_of(self, pet):
+        inp = self.input
+        return inp if (inp is not None and not inp.dead and inp.pet is pet) else None
+
+    def pet_enter(self, pet):
+        inp = self._input_of(pet)
+        if inp is not None:
+            return inp.send()
+        return self.open_input(pet)
+
+    def pet_escape(self, pet):
+        inp = self._input_of(pet)
+        if inp is not None:
+            inp.close(refocus=True)
+            return True
+        return False
+
+    def pet_typed(self, pet, keysym, char):
+        inp = self._input_of(pet)
+        if inp is None:
+            return False
+        if keysym == "BackSpace":
+            inp.backspace()
+            return True
+        if char and char.isprintable():
+            inp.type_in(char)
+            return True
+        return False
 
     def on_pet_click(self, pet):
         """내 포켓몬을 눌렀다: 포커스를 준다 (입력 말풍선이 그 포켓몬 것이면 그리로)."""
