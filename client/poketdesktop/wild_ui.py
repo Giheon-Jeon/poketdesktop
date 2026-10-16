@@ -842,8 +842,7 @@ class WildController(object):
         if not opts:
             return self.throw_ball()          # 목록이 아직이면 예전처럼
         self.hide_hint()
-        ball_menu.popup(self.app.root, e, opts, self.throw_ball,
-                        on_shop=self.app.open_shop)
+        ball_menu.popup(self.app.root, e, opts, self.throw_ball)
 
     def last_ball(self):
         """마지막에 쓴 볼. 없으면 몬스터볼."""

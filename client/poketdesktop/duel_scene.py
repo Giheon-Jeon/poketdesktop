@@ -651,6 +651,12 @@ class FightScene(object):
             mon["mega"] = True
             self._flash(who, mon, now)
             self.say("메가진화!", who, "#ffe08a", 1200)
+        elif t == "msg" and ev.get("transform") and who in SIDES and self.sides[who].mon:
+            # 변신 (1.12.1): 흰 빛에 싸였다가 상대의 모습으로. 이름·체력은 그대로다.
+            mon = dict(self.sides[who].mon)
+            mon["num"] = ev["transform"]
+            self._flash(who, mon, now)
+            self.say("변신!", who, "#c9a0ff", 1200)
         elif t == "zpower" and who in SIDES and self.sides[who].mon:      # 시즌 4
             self.say("Z기술!", who, "#ffd23c", 1200)
         elif t == "move":

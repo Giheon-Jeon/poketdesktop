@@ -27,6 +27,11 @@
 도트는 연출 도중에 받는다. 기운이 모이는 동안(0.5초 남짓) 뒤에서 받고,
 그때까지 못 받으면 조금 더 기다렸다가 도트는 그대로 둔 채 넘어간다.
 배틀을 도트 하나 때문에 세워 둘 수는 없다.
+
+## 3. 바탕화면 배틀 중의 변신 (transform, 1.12.1)
+
+메타몽이 변신하면 상대의 모습으로 갈아입는다. 같은 길(look_hold · release)을
+쓰고, 물러나면 untransform 으로 먼저 풀린다.
 """
 import math
 import random
@@ -261,6 +266,75 @@ def battle(host, pet, num, done):
     _gather(host, pet, gathered)
 
 
+# ---------------------------------------------------------------- 3. 변신 (메타몽)
+T_TEXT = "변신!"
+T_COLOR = "#c9a0ff"
+T_WAIT_MS = 900          # 도트를 이만큼만 기다린다. 늦게 오면 오는 대로 갈아입는다
+T_AFTER_MS = 520
+
+
+def transform(host, pet, num, done):
+    """바탕화면 배틀에서 pet 이 변신했다 (1.12.1). 상대의 모습(num)으로 갈아입고 done().
+
+    예전에는 '변신했다!' 글만 뜨고 도트는 메타몽 그대로였다. 메가처럼 그 판이 끝날 때까지
+    그 모습이고(look_hold - release 가 되돌린다), 메가와 달리 **물러나면 풀린다** (본가와
+    같다) - 그때는 부르는 쪽이 untransform 을 부른다. 색은 메타몽 자기 것이다 (이로치
+    메타몽은 이로치 색으로 변한다 - 본가와 같다).
+    """
+    app = host.app
+    ov = getattr(app, "overlay", None)
+    shiny = T.skin(pet.mon)
+    state = {"went": False}
+
+    def closed():
+        return bool(getattr(host, "closed", False))
+
+    def go():
+        if state["went"] or closed():
+            return
+        state["went"] = True
+        try:
+            host.float_over(pet, T_TEXT, T_COLOR)
+        except Exception:                                   # noqa: BLE001
+            pass
+        host.after(T_AFTER_MS, done)
+
+    def got(r, err):
+        if r and not err and not closed():
+            path, walk = r
+            if path:
+                ov.paths[(num, shiny)] = path
+            if walk:
+                ov.walks[walk_cache.key(num, shiny)] = walk
+            try:
+                if ov.reskin(pet, num):
+                    pet.look_hold = True        # 판이 끝날 때까지 (물러나면 그 전에)
+                    pet.transformed = True
+            except Exception as e:                          # noqa: BLE001
+                config.log("변신 도트 실패: %s" % e)
+        go()
+
+    def work():
+        path = sprite_cache.ensure(app.api, num, shiny)
+        sheet, meta = walk_cache.ensure(app.api, num, shiny=shiny)
+        return path, (sheet, meta) if sheet and meta else None
+
+    if not num or ov is None or getattr(pet, "look", None) == num:
+        return go()                     # 같은 모습이다 (메타몽끼리) - 글씨만
+    try:
+        U.run_async(app.root, work, got)
+    except Exception:                                       # noqa: BLE001
+        return go()
+    host.after(T_WAIT_MS, go)           # 배틀을 도트 하나 때문에 세워 둘 수는 없다
+
+
+def untransform(ov, pet):
+    """변신이 풀렸다 (물러났다). 원래 모습으로. 변신한 적이 없으면 아무것도 안 한다 - 메가는 안 풀린다."""
+    if pet is None or not getattr(pet, "transformed", False):
+        return
+    release(ov, [pet])
+
+
 def _center(pet):
     return pet.x + pet.fw / 2.0, pet.y + pet.fh / 2.0
 
@@ -362,12 +436,13 @@ def _burst(host, pet):
 
 
 def release(ov, pets):
-    """배틀이 끝났다. 잠깐 메가 폼이 됐던 도트를 원래 입던 모습으로 되돌린다."""
+    """배틀이 끝났다. 잠깐 메가 폼이 됐던(변신했던) 도트를 원래 입던 모습으로 되돌린다."""
     from .overlay import look_num
     for pet in pets or []:
         if pet is None or not getattr(pet, "look_hold", False):
             continue
         pet.look_hold = False
+        pet.transformed = False
         try:
             if ov is not None and pet.look != look_num(pet.mon):
                 ov.reskin(pet)

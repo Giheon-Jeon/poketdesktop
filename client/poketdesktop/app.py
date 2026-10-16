@@ -154,6 +154,10 @@ class App(object):
         self._update_asking = False
         self._anim_job = False
         self.arena = None
+        # 대전을 받아 와서 투기장에 펴는 중 (watch_match 의 뒤 작업 - 그동안 arena 는 아직 None).
+        self._match_loading = False
+        # 대전 재생이 끝나면 부를 것 (after_match, 1.12.1).
+        self._after_match = []
         self.battle = None
         # 레이드 (1.5.0). 탭·배틀 창·바탕화면 기둥.
         self.raid_window = None
@@ -1559,18 +1563,22 @@ class App(object):
     # 대전은 비동기다. 상대가 켜져 있지 않아도 그 사람의 지금 파티를
     # 가져와 붙인다. 그래서 누르면 그 자리에서 끝나고, 상대는 다음에
     # 켤 때 결과를 받는다.
-    def pvp_random(self, on_done=None):
-        self._pvp(lambda: self.api.pvp_random(), on_done)
+    def pvp_random(self, on_done=None, on_found=None):
+        self._pvp(lambda: self.api.pvp_random(), on_done, on_found)
 
     def pvp_challenge(self, uid, on_done=None):
         self._pvp(lambda: self.api.pvp_challenge(uid), on_done)
 
-    def _pvp(self, fn, on_done=None):
+    def _pvp(self, fn, on_done=None, on_found=None):
         """대전을 건다. on_done(결과, 오류 문구) 는 **어떤 길로 끝나든 한 번** 부른다.
 
         대전·랭킹 창은 누르는 순간 '상대를 찾는 중...' 을 적는다. 끝났다는
         소식을 못 받으면 그 글이 영영 남는다 (1.4.0 까지 그랬다 - 창이 2.5초
         뒤에 목록만 다시 불러오고 글은 안 지웠다).
+
+        판이 성사되면 on_done 은 **재생이 끝난 뒤에** 부른다 (1.12.1). 서버는 한 판을 다
+        계산하고 점수까지 넣은 뒤에 답하므로, 받자마자 랭킹을 다시 읽으면 재생이 시작되기도
+        전에 RP·승패가 바뀌어 보였다. 성사된 그때는 on_found(결과) 로 알린다.
         """
         def tell(r, why):
             if on_done:
@@ -1580,7 +1588,7 @@ class App(object):
                     pass
         if getattr(self, "_pvp_busy", False):
             return tell(None, "이미 상대를 찾는 중입니다.")
-        if self.arena:
+        if self.match_playing():
             return tell(None, "보고 있는 대전이 끝난 뒤에 해주세요.")
         if self.battle:
             self.notify("야생 배틀이 끝난 뒤에 해주세요.")
@@ -1603,9 +1611,41 @@ class App(object):
                 msg = getattr(err, "message", str(err))
                 self.notify(msg)
                 return tell(None, msg)
+            if on_found:
+                try:
+                    on_found(r)
+                except Exception:                           # noqa: BLE001
+                    pass
             self.show_pvp_result(r)
-            tell(r, None)
+            self.after_match(lambda: tell(r, None))
         run_async(self.root, fn, done)
+
+    # ---------------- 대전 재생이 끝난 뒤 (1.12.1) ----------------
+    def match_playing(self):
+        """대전을 재생하는 중인가 (투기장에 펴려고 받아 오는 중도 친다)."""
+        return bool(self.arena) or self._match_loading
+
+    def after_match(self, fn):
+        """대전 재생이 끝난 뒤에 fn() 을 부른다. 재생 중이 아니면 바로 부른다.
+
+        랭킹 창이 점수를 다시 읽는 것을 여기에 건다 - 서버에는 이미 들어가 있어서, 재생
+        중에 읽으면 끝나기도 전에 결과가 보인다.
+        """
+        if not self.match_playing():
+            return fn()
+        self._after_match.append(fn)
+
+    def _match_over(self):
+        """재생이 끝났다 (또는 못 펼쳤다). 미뤄 둔 것을 부른다."""
+        self._match_loading = False
+        if self.arena:
+            return                  # 다른 판이 재생 중이다 - 그 판이 끝날 때 부른다
+        fns, self._after_match = self._after_match, []
+        for fn in fns:
+            try:
+                fn()
+            except Exception as e:                          # noqa: BLE001
+                config.log("대전 뒤에 할 일 실패: %s" % e)
 
     # ---------------- 진화 알림 ----------------
     def show_evolutions(self, infos, parent=None):
@@ -1647,6 +1687,8 @@ class App(object):
         if self.visit is not None and self.visit.guest:
             # 놀러 가 있는 동안 바탕화면은 친구 집이다 - 투기장이 그 위에 판을 펴면 섞인다
             return self.notify("친구 집에 놀러 가 있는 동안에는 대전을 볼 수 없습니다. 돌아온 뒤에 봐 주세요.")
+        self._match_loading = True
+
         def work():
             view = self.api.pvp_match(mid)
             # 상대 팀 도트를 여기서 받아 둔다. overlay.walks 에는 내 팀
@@ -1664,9 +1706,10 @@ class App(object):
             return view, paths, walks
 
         def done(r, err):
+            self._match_loading = False
             if err or not r:
-                return self.notify(
-                    getattr(err, "message", "대전을 불러오지 못했습니다."))
+                self.notify(getattr(err, "message", "대전을 불러오지 못했습니다."))
+                return self._match_over()
             if self.arena:
                 return
             view, paths, walks = r
@@ -1699,9 +1742,12 @@ class App(object):
         # 종료·로그아웃 중이면 되살리지 않는다. 그 길로도 여기를 지나는데,
         # 그때 폴링을 다시 켜면 죽은 세션으로 서버를 두드리게 된다.
         if self._quitting or self._relogin or not self.api:
+            self._match_loading = False
+            self._after_match = []          # 미뤄 둔 것도 버린다 (랭킹 다시 읽기 - 죽은 세션이다)
             return
         if self.wild:
             self.wild.start()
+        self._match_over()                  # 재생이 끝났다 - 미뤄 둔 랭킹 다시 읽기 (1.12.1)
         self.sync()
 
     def show_pvp_result(self, r):

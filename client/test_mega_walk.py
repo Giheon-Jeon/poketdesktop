@@ -489,6 +489,61 @@ def battle_part(root, ov, app):
         layer.destroy()
 
 
+# ---------------------------------------------------------------- 6-2. 변신 (1.12.1)
+def transform_part(root, ov, app):
+    print("\n=== 바탕화면 배틀의 변신 (메타몽) ===")
+    pet = ov.pets[1]
+    w_base = pet.fw
+    host = Host(app, None)
+    done = []
+    mega_fx.transform(host, pet, RAY, lambda: done.append(1))
+    chk("끝나면 다음 사건으로 넘긴다 (한 번만)", wait(root, lambda: done) and settle(root, 1.2) is None
+        and done == [1], done)
+    chk("상대의 모습(번호)으로 갈아입는다", pet.look == RAY, pet.look)
+    chk("  '변신!' 이 뜬다", host.said == ["변신!"], host.said)
+    chk("  판이 끝날 때까지 sync 가 못 되돌린다", pet.look_hold is True and pet.transformed is True)
+    ov.sync([p.mon for p in ov.pets.values()], {})
+    chk("    동기화가 와도 변신한 모습", pet.look == RAY)
+    mega_fx.untransform(ov, pet)
+    chk("물러나면 원래 모습으로", pet.look == LIZ and pet.fw == w_base and not pet.look_hold
+        and not pet.transformed, (pet.look, pet.fw))
+
+    print("\n=== 변신 뒤 판이 끝나면 ===")
+    done = []
+    mega_fx.transform(host, pet, RAY, lambda: done.append(1))
+    wait(root, lambda: done)
+    mega_fx.release(ov, [pet])
+    chk("release 가 되돌리고 변신 표시도 지운다", pet.look == LIZ and not pet.look_hold
+        and not pet.transformed, (pet.look, pet.look_hold, pet.transformed))
+
+    print("\n=== 메가진화는 물러나도 안 풀린다 ===")
+    done = []
+    mega_fx.battle(host, pet, MEGA_X, lambda: done.append(1))
+    wait(root, lambda: done)
+    mega_fx.untransform(ov, pet)
+    chk("untransform 은 메가 폼을 건드리지 않는다", pet.look == MEGA_X and pet.look_hold, pet.look)
+    mega_fx.release(ov, [pet])
+    chk("  판이 끝나면 release 가 되돌린다", pet.look == LIZ, pet.look)
+
+    print("\n=== 상대의 도트가 없을 때 ===")
+    done = []
+    host.said = []
+    t0 = time.time()
+    mega_fx.transform(host, pet, 10288, lambda: done.append(1))     # 도트 없음
+    chk("판은 흘러간다", wait(root, lambda: done), done)
+    chk("  3초 안에", time.time() - t0 < 3.0, time.time() - t0)
+    chk("  도트는 그대로, 글씨는 뜬다", pet.look == LIZ and host.said == ["변신!"], (pet.look, host.said))
+    chk("  붙잡아 두지 않는다", not pet.look_hold and not getattr(pet, "transformed", False))
+
+    print("\n=== 판이 도중에 닫히면 ===")
+    done = []
+    mega_fx.transform(host, pet, RAY, lambda: done.append(1))
+    host.closed = True
+    settle(root, 1.2)
+    chk("다음으로 넘기지 않고 갈아입지도 않는다", done == [] and pet.look == LIZ, (done, pet.look))
+    host.closed = False
+
+
 # ---------------------------------------------------------------- 7. 배틀 창
 def canvas_part(root):
     print("\n=== 배틀 창의 연출 (MegaFx) ===")
@@ -569,6 +624,7 @@ def main():
     app = MiniApp(root, ov)
     toggle_part(root, ov, app, files, sheets)
     battle_part(root, ov, app)
+    transform_part(root, ov, app)
 
     # 배틀 밖에서 도트 위에 글씨 띄우기 (싸우지 않고 잡아서 받은 경험치, 1.8.1)
     print("\n=== 도트 위에 잠깐 뜨는 글씨 ===")

@@ -1152,8 +1152,17 @@ def h_transform(bt, move, who, user, target, tw, ev):
         user.pp[m] = min(5, bt.move_of(m).get("pp", 5) or 5)
     user.stages = dict(target.stages)
     user.cond["transformed"] = target.mon.get("species")
+    # 화면에 그릴 모습 = 상대의 지금 모습 (메가진화했으면 메가 폼). cond 라 물러나면 같이 풀린다.
+    # 배틀 창들은 이 번호로 도트를 바꾸고, 판 상태(num)도 이걸 보낸다 - 안 그러면 턴이 끝날 때
+    # 서버 값으로 맞추면서 메타몽으로 되돌아갔다 (1.12.1).
+    look = (target.species or {}).get("num")
+    if look:
+        user.cond["look"] = look
     _changed(user)
-    say(ev, who, "%s 은(는) %s(으)로 변신했다!" % (user.name, target.name))
+    e = {"t": "msg", "who": who, "text": "%s 은(는) %s(으)로 변신했다!" % (user.name, target.name)}
+    if look:
+        e["transform"] = look
+    ev.append(e)
 
 
 def h_mimic(bt, move, who, user, target, tw, ev):

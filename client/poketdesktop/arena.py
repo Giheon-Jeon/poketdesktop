@@ -490,6 +490,7 @@ class Arena(object):
         pet = self.active.get(side)
         if pet is None or getattr(pet, "down", False):
             return
+        mega_fx.untransform(getattr(self.app, "overlay", None), pet)    # 변신은 물러나면 풀린다
         sx, sy = self._seat_of(side, self.slot[side])
         self._walk(pet, sx, sy, STEP_IN_MS)
 
@@ -596,6 +597,10 @@ class Arena(object):
                                           or ev.get("amount") or 0), "#ff8a8a")
         if t == "heal" and src:
             self.float_over(src, "+%d" % (ev.get("amount") or 0), "#7bffa0")
+        # 변신 (1.12.1). 상대의 모습으로 갈아입는다 - 물러나면(_step_out) 풀린다.
+        # 글은 transform 이 '변신!' 으로 띄운다 - 아래의 줄인 글과 둘이 겹치지 않게 먼저 본다.
+        if t == "msg" and ev.get("transform") and src:
+            return mega_fx.transform(self, src, ev["transform"], done)
         # **못 움직인 턴을 보여준다.** 예전에는 이 셋을 그리지 않아서,
         # 잠들거나 마비돼서 한 턴을 쉬면 화면에는 아무것도 안 뜨고
         # 상대만 연달아 때리는 것처럼 보였다.

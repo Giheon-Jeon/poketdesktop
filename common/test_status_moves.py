@@ -368,15 +368,21 @@ def t_특성과_타입(dex):
 
     bt, me, foe = fight(dex, mon(dex, "DITTO", 50, ["TRANSFORM"]), mon(dex, "DRAGONITE", 60, ["DRAGONCLAW", "EXTREMESPEED"]))
     base_hp = me.maxhp
-    use(bt, "me", "TRANSFORM")
+    ev = use(bt, "me", "TRANSFORM")
     chk("변신: 기술·타입·능력치를 베낀다", me.moves == ["DRAGONCLAW", "EXTREMESPEED"] and me.types() == foe.types()
         and me.base["atk"] == foe.base["atk"] and me.maxhp == base_hp, (me.moves, me.types()))
     chk("변신한 기술은 PP 5", me.pp["DRAGONCLAW"] == 5)
+    num = foe.species["num"]
+    chk("변신 사건에 상대의 모습 번호가 실린다 (화면이 도트를 바꾼다, 1.12.1)",
+        [e.get("transform") for e in ev if e.get("transform")] == [num] and me.cond.get("look") == num,
+        (ev, me.cond.get("look")))
     saved = B.Fighter(dex, me.mon, me.hp, me.pp, me.status)
     saved.load_volatile(json.loads(json.dumps(me.volatile())))
-    chk("저장했다 되살려도 변신한 채", saved.moves == me.moves and saved.base["atk"] == me.base["atk"])
+    chk("저장했다 되살려도 변신한 채", saved.moves == me.moves and saved.base["atk"] == me.base["atk"]
+        and saved.cond.get("look") == num)
     me.clear_volatile()
-    chk("물러나면 메타몽으로", me.moves == ["TRANSFORM"] and me.types() == ["NORMAL"], (me.moves, me.types()))
+    chk("물러나면 메타몽으로", me.moves == ["TRANSFORM"] and me.types() == ["NORMAL"] and "look" not in me.cond,
+        (me.moves, me.types(), me.cond))
 
     bt, me, foe = fight(dex, mon(dex, "SMEARGLE", 50, ["SKETCH", "MIMIC"]), mon(dex, "PIKACHU", 50, ["THUNDERBOLT"]))
     use(bt, "foe", "THUNDERBOLT")

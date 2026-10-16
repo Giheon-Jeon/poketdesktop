@@ -413,7 +413,8 @@ SPECTATE_MON = ("species", "num", "name", "level", "hp", "maxhp", "status", "shi
                 "fainted", "mega")
 SPECTATE_EVENT = ("t", "who", "target", "text", "move", "moveType", "cat", "hp", "maxhp", "damage",
                   "crit", "eff", "slot", "status", "num", "newName", "to", "result",
-                  "base", "z")                                # Z기술 (시즌 4)
+                  "base", "z",                                # Z기술 (시즌 4)
+                  "transform")                                # 변신한 모습 번호 (1.12.1)
 _RECALL = re.compile(r"^(?:상대는 )?(.+?)(?:, 돌아와!| 을\(를\) 불러들였다!)$")
 
 

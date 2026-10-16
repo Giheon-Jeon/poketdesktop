@@ -681,7 +681,8 @@ class RaidBattle(object):
         sp = f.species or {}
         dex = self.dex
         out = {
-            "species": f.mon["species"], "num": sp.get("num"), "name": f.name,
+            # 변신(메타몽)한 동안은 상대의 모습 번호 (statusmoves.h_transform 의 cond["look"])
+            "species": f.mon["species"], "num": f.cond.get("look") or sp.get("num"), "name": f.name,
             "level": f.level, "hp": f.hp, "maxhp": f.maxhp,
             "status": f.status, "statusKr": B.STATUS_KR.get(f.status),
             "gender": f.mon.get("gender"), "shiny": bool(f.mon.get("shiny")),

@@ -9,7 +9,10 @@
 
 가진 볼만 보여준다. 스무 줄 중 열다섯 줄이 죽은 줄이면 메뉴가 아니라
 카탈로그다. 대신 '지금 제일 잘 듣는데 없는 볼' 은 맨 아래 한 줄로
-알려준다 - 그런 볼이 있다는 걸 알아야 상점에서 사 온다.
+알려준다 - 그런 볼이 있다는 걸 알아야 다음에 상점에서 사 온다.
+
+**상점으로 가는 줄은 없다** (1.12.1). 있었을 때는 야생을 앞에 두고(배틀
+중에도) 상점에서 볼을 사 와서 바로 던질 수 있었다.
 """
 import tkinter as tk
 
@@ -31,7 +34,7 @@ def _label(o):
     return left, right
 
 
-def build(root, options, on_pick, on_shop=None):
+def build(root, options, on_pick):
     """메뉴를 만들어 돌려준다. 띄우는 건 부르는 쪽에서 한다."""
     m = tk.Menu(root, tearoff=0, bg=U.BG2, fg=U.FG,
                 activebackground=U.BG4, activeforeground=U.FG,
@@ -69,12 +72,10 @@ def build(root, options, on_pick, on_shop=None):
         m.add_separator()
         m.add_command(label="지금은 %s 이(가) 잘 듣습니다 (없음)" % top["kr"],
                       state="disabled")
-        if on_shop:
-            m.add_command(label="상점 열기...", command=on_shop)
     return m
 
 
-def rows(options, on_pick, on_shop=None):
+def rows(options, on_pick):
     """`build` 와 같은 내용을 ui_common.PopupMenu 가 받는 줄 목록으로.
 
     맥에서는 `tk.Menu` 를 쓸 수 없다. aqua 에서 그것은 NSMenu 이고,
@@ -114,20 +115,18 @@ def rows(options, on_pick, on_shop=None):
         out.append(None)
         out.append({"text": "지금은 %s 이(가) 잘 듣습니다 (없음)" % top["kr"],
                     "enabled": False})
-        if on_shop:
-            out.append({"text": "상점 열기...", "command": on_shop})
     return out
 
 
-def popup(root, event, options, on_pick, on_shop=None, on_close=None):
+def popup(root, event, options, on_pick, on_close=None):
     """on_close: 메뉴가 닫히면(골랐든 안 골랐든) 한 번 부른다. 배틀이 그동안 멈춘다."""
     from . import platform_os as PLAT
     if not PLAT.NATIVE_MENU:
         # 맥. tk.Menu 는 NSMenu 라 여는 순간 앱이 죽는다.
-        return U.PopupMenu(root, rows(options, on_pick, on_shop),
+        return U.PopupMenu(root, rows(options, on_pick),
                            event.x_root, event.y_root, width=290,
                            on_close=on_close)
-    m = build(root, options, on_pick, on_shop)
+    m = build(root, options, on_pick)
     try:
         # 윈도우의 tk_popup 은 메뉴가 닫힐 때까지 돌아오지 않는다
         m.tk_popup(event.x_root, event.y_root)

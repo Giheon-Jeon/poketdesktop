@@ -74,6 +74,7 @@ class RankWindow(object):
         self.hall = {}
         self.season = 1
         self.placement = 5
+        self._reload_later = False   # 대전 재생이 끝나면 다시 읽기로 걸어 두었다 (reload)
 
         self.win = U.panel(parent, self.root, "포스크탑 — 랭킹",
                            W, H, 700, 520, self.close)
@@ -141,6 +142,14 @@ class RankWindow(object):
     def reload(self):
         if self.busy:
             return
+        # **대전을 재생하는 동안에는 읽지 않는다** (1.12.1). 서버에는 점수가 이미 들어가
+        # 있어서, 지금 읽으면 재생이 끝나기도 전에 RP·승패가 바뀌어 보인다. 끝나면 읽는다.
+        playing = getattr(self.app, "match_playing", None)
+        if playing is not None and playing():
+            if not self._reload_later:
+                self._reload_later = True
+                self.app.after_match(self._reload_after)
+            return self.say("대전이 끝나면 새로 불러옵니다", U.FG_FAINT)
         self.busy = True
         wait = ui_loading.Overlay(self.win, "랭킹을 불러오는 중")
 
@@ -167,6 +176,15 @@ class RankWindow(object):
                 except tk.TclError:
                     wait.close()
         run_async(self.root, self.app.api.pvp_ranking, done)
+
+    def _reload_after(self):
+        self._reload_later = False
+        try:
+            if not self.win.winfo_exists():
+                return                          # 그사이 창을 닫았다
+        except tk.TclError:
+            return
+        self.reload()
 
     # ---------------- 그리기 ----------------
     def draw(self):
@@ -463,10 +481,17 @@ class RankWindow(object):
     # ---------------- 동작 ----------------
     def _random(self):
         self.say("상대를 찾는 중...", U.FG_FAINT)
-        self.app.pvp_random(on_done=self._battle_done)
+        self.app.pvp_random(on_done=self._battle_done, on_found=self._found)
+
+    def _found(self, r):
+        """상대를 찾았다 - 이제 바탕화면에서 재생한다. 점수는 재생이 끝나야 바뀐다 (1.12.1)."""
+        try:
+            self.say("대전 중... 끝나면 점수가 반영됩니다", U.FG_FAINT)
+        except Exception:                                   # noqa: BLE001
+            pass                                            # 그사이 창을 닫았다
 
     def _battle_done(self, r, why):
-        """대전이 끝났다 (성사됐든 막혔든). '찾는 중' 글을 걷는다."""
+        """대전이 끝났다 (막혔거나, 성사돼서 재생까지 끝났다). '찾는 중' 글을 걷는다."""
         try:
             if why:
                 self.say(why, U.DANGER)

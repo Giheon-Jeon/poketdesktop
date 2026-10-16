@@ -349,6 +349,9 @@ class DesktopBattle(object):
             side = self.mine if who == "me" else self.foe
             if side:
                 return mega_fx.battle(self, side, ev.get("num"), done)
+        if t == "msg" and ev.get("transform") and src:
+            # 변신 (1.12.1): 상대의 모습으로 갈아입는다. 판이 끝나면 release 가 되돌린다
+            return mega_fx.transform(self, src, ev["transform"], done)
         self.after(220, done)
 
     def turn_done(self, result):
@@ -502,6 +505,9 @@ class DesktopBattle(object):
             self.app.notify("가라, %s!" % self.b["me"]["name"])
             # 쓰러진 도트는 원래 자리로, 새 포켓몬이 앞으로 나선다
             if self.mine:
+                # 메가진화·변신한 모습도 여기서 푼다 (1.12.1). 판이 끝날 때의 release 는
+                # 그때 나와 있는 둘만 보므로, 쓰러져 들어간 도트는 그 모습 그대로 남았다.
+                mega_fx.release(self.app.overlay, [self.mine])
                 self.mine.battling = False
                 PLAT.show_again(self.mine.win)
                 if self.saved_home:
@@ -545,7 +551,6 @@ class DesktopBattle(object):
             self._menu_opened()
             try:
                 return ball_menu.popup(self.root, e, opts, self._do_throw,
-                                       on_shop=self.app.open_shop,
                                        on_close=lambda: self._safe(self._menu_closed))
             except Exception:
                 self._menu_closed()

@@ -740,7 +740,7 @@ def 잡기_준비(mode="new"):
     menus = []
     real_async, real_popup = DB.run_async, DB.ball_menu.popup
     DB.run_async = lambda root, fn, cb: cb(fn(), None)
-    DB.ball_menu.popup = lambda root, e, opts, pick, on_shop=None, on_close=None: menus.append((pick, on_close))
+    DB.ball_menu.popup = lambda root, e, opts, pick, on_close=None: menus.append((pick, on_close))
 
     def 되돌리기():
         DB.run_async, DB.ball_menu.popup = real_async, real_popup

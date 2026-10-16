@@ -647,6 +647,23 @@ class GymBattleWindow(Z.Resizable):
                     pass
         self.later(1400, gone)
 
+    def _transform(self, ev):
+        """변신 (1.12.1) - 도트가 상대의 모습(transform 번호)으로 바뀐다. 이름·체력은 그대로다.
+
+        서버도 변신한 동안은 판 상태의 num 을 그 번호로 보낸다 - 턴이 끝나고 sync_view 가
+        메타몽으로 되돌리지 않는다. 물러나면 다시 나올 때 원래 번호로 온다.
+        """
+        who = ev.get("who")
+        mon = self.shown.get(who) if who in ("me", "foe") else None
+        self.say(ev.get("text"))
+        if mon is None:
+            return STEP_MS
+        mon = dict(mon)
+        mon["num"] = ev["transform"]
+        self.set_mon(who, mon)
+        self._show_banner(who, "변신!")
+        return STEP_MS + 300
+
     def _mega(self, ev):
         """메가진화 - 빛에 싸였다가 도트와 이름이 메가 폼으로 바뀐다. 체력은 그대로다.
 
@@ -722,6 +739,8 @@ class GymBattleWindow(Z.Resizable):
         if t == "mega":
             self._mega(ev)
             return None
+        if t == "msg" and ev.get("transform"):
+            return self._transform(ev)
         if t == "zpower":                    # Z파워를 두른다 - 기술은 뒤따르는 move 가 그린다
             ui_gimmick.z_event(self, ev, size=Z.px(MON_H.get(who, 100)) * 0.55)
             return None
