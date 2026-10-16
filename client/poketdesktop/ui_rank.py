@@ -11,7 +11,12 @@
 남이 몇 번 걸었느냐로 내 등수가 정해진다.
 
 배치(5판)를 마쳐야 표에 오른다.
+
+**대전 기록** (1.12.1): 머리줄의 '대전 기록' 을 누르면 같은 칸이 내 전적으로 바뀐다 -
+내가 건 판(공격)과 걸려온 판(방어)을 [전체 | 공격한 판 | 공격받은 판] 으로 걸러 보고,
+로그가 남아 있는 판은 다시 본다. 그 자리에 있던 '칭호·명패' 는 마이페이지로 옮겼다.
 """
+import datetime
 import tkinter as tk
 
 from . import ui_common as U
@@ -32,6 +37,16 @@ CHUNK_ROWS = 6
 
 CARD_BG = "#161b28"
 
+# 대전 기록 (1.12.1)
+RECORD_LIMIT = 50
+RESULT = {"win": ("승", U.GOOD), "lose": ("패", U.RED), "draw": ("무", U.FG_DIM)}
+KIND = {"random": "랜덤 배틀", "friend": "친구 배틀", "live": "실시간 배틀"}
+REC_FILTERS = (("all", "전체"), ("attack", "공격한 판"), ("defend", "공격받은 판"))
+REC_EMPTY = {"all": "아직 대전 기록이 없습니다.\n랜덤 배틀로 한 판 붙어 보세요.",
+             "attack": "내가 건 대전이 아직 없습니다.",
+             "defend": "아직 나에게 걸려온 대전이 없습니다.\n"
+                       "랜덤 배틀 상대로 뽑히거나 친구가 걸면 여기에 남습니다."}
+
 
 def _date_kr(s):
     """2026-10-27 -> 10월 27일."""
@@ -40,6 +55,16 @@ def _date_kr(s):
         return "%d월 %d일" % (m, d)
     except ValueError:
         return s or ""
+
+
+def when_text(s):
+    """2026-09-02T03:22:07+00:00 -> 09-02 12:22 (이 PC 의 시간대로). 서버는 UTC 로 보낸다."""
+    if not s:
+        return ""
+    try:
+        return datetime.datetime.fromisoformat(s).astimezone().strftime("%m-%d %H:%M")
+    except ValueError:
+        return s.replace("T", " ")[:16]
 
 
 def rank_short_text(me, rules):
@@ -75,6 +100,11 @@ class RankWindow(object):
         self.season = 1
         self.placement = 5
         self._reload_later = False   # 대전 재생이 끝나면 다시 읽기로 걸어 두었다 (reload)
+        # 지금 보는 것: "rank"(순위표) 또는 "records"(대전 기록, 1.12.1)
+        self.mode = "rank"
+        self.records = []
+        self.rec_summary = {}
+        self.rec_filter = "all"
 
         self.win = U.panel(parent, self.root, "포스크탑 — 랭킹",
                            W, H, 700, 520, self.close)
@@ -104,8 +134,9 @@ class RankWindow(object):
 
         U.ghost_button(inner, "새로고침", self.reload,
                        height=32).pack(side="right", pady=15)
-        U.ghost_button(inner, "칭호·명패", self._rewards,
-                       height=32).pack(side="right", padx=(0, 8), pady=15)
+        # 칭호·명패가 있던 자리 (1.12.1 - 칭호·명패는 마이페이지로). 누르면 랭킹 <-> 대전 기록.
+        self.mode_btn = U.ghost_button(inner, "대전 기록", self._toggle_mode, height=32)
+        self.mode_btn.pack(side="right", padx=(0, 8), pady=15)
         U.ghost_button(inner, "랭크 팀", self._team,
                        height=32).pack(side="right", padx=(0, 8), pady=15)
         U.ghost_button(inner, "랜덤 배틀", self._random,
@@ -151,20 +182,29 @@ class RankWindow(object):
                 self.app.after_match(self._reload_after)
             return self.say("대전이 끝나면 새로 불러옵니다", U.FG_FAINT)
         self.busy = True
-        wait = ui_loading.Overlay(self.win, "랭킹을 불러오는 중")
+        mode = self.mode
+        wait = ui_loading.Overlay(self.win, "랭킹을 불러오는 중" if mode == "rank"
+                                  else "대전 기록을 불러오는 중")
 
         def done(r, err):
             self.busy = False
+            if mode != self.mode:
+                wait.close()            # 받는 사이에 보는 것을 바꿨다 - 그쪽을 읽는다
+                return self.reload()
             if err:
                 wait.close()
                 return self.say(getattr(err, "message", str(err)), U.DANGER)
             try:
-                self.rows = r.get("ranking") or []
-                self.me = r.get("me") or {}
-                self.rules = r.get("rules") or {}
-                self.hall = r.get("hall") or {}
-                self.season = r.get("season", 1)
-                self.placement = r.get("placement", 5)
+                if mode == "records":
+                    self.records = r.get("records") or []
+                    self.rec_summary = r.get("summary") or {}
+                else:
+                    self.rows = r.get("ranking") or []
+                    self.me = r.get("me") or {}
+                    self.rules = r.get("rules") or {}
+                    self.hall = r.get("hall") or {}
+                    self.season = r.get("season", 1)
+                    self.placement = r.get("placement", 5)
                 self.draw()
             finally:
                 # **첫 화면을 그린 뒤에 걷는다.** 맨 앞에서 걷으면 카드를
@@ -175,7 +215,10 @@ class RankWindow(object):
                     self.root.after_idle(wait.close)
                 except tk.TclError:
                     wait.close()
-        run_async(self.root, self.app.api.pvp_ranking, done)
+        if mode == "records":
+            run_async(self.root, lambda: self.app.api.pvp_records(RECORD_LIMIT), done)
+        else:
+            run_async(self.root, self.app.api.pvp_ranking, done)
 
     def _reload_after(self):
         self._reload_later = False
@@ -198,6 +241,8 @@ class RankWindow(object):
         # 곧 보이는 화면이다 - 아래를 보던 채로 두면 아직 안 만든 자리가
         # 빈 채로 먼저 보인다. 다 만들면 보던 자리로 돌려놓는다 (_back_to).
         self.cv.yview_moveto(0)
+        if self.mode == "records":
+            return self._draw_records(keep)
 
         self.title.configure(text="랭킹  ·  시즌 %d" % self.season)
         me = self.me
@@ -478,6 +523,115 @@ class RankWindow(object):
         tk.Label(inner, text=text, bg=box["bg"], fg=U.FG,
                  font=U.FONT_NUM).pack(side="right")
 
+    # ---------------- 대전 기록 (1.12.1) ----------------
+    def _toggle_mode(self):
+        self.mode = "records" if self.mode == "rank" else "rank"
+        self.mode_btn.configure(text="랭킹" if self.mode == "records" else "대전 기록")
+        self.reload()
+
+    def _pick_filter(self, key):
+        self.rec_filter = key
+        self.draw()
+
+    def _shown_records(self):
+        if self.rec_filter == "attack":
+            return [r for r in self.records if r.get("started", True)]
+        if self.rec_filter == "defend":
+            return [r for r in self.records if not r.get("started", True)]
+        return list(self.records)
+
+    def _draw_records(self, keep):
+        self.title.configure(text="대전 기록")
+        s = self.rec_summary
+        bits = ["랜덤 배틀 %d전 %d승 %d패" % (s.get("games", 0), s.get("wins", 0), s.get("losses", 0))]
+        if s.get("draws"):
+            bits[0] += " %d무" % s["draws"]
+        fw, fl = s.get("friendWins", 0), s.get("friendLosses", 0)
+        if fw or fl:
+            bits.append("친구 배틀 %d승 %d패" % (fw, fl))
+        bits.append("최근 %d판" % RECORD_LIMIT)
+        self.sub.configure(text="  ·  ".join(bits))
+
+        bar = tk.Frame(self.list, bg=U.BG)
+        bar.pack(fill="x", pady=(0, 8))
+        self.rec_seg = U.Segmented(bar, REC_FILTERS, self.rec_filter, self._pick_filter)
+        self.rec_seg.pack(side="left")
+        tk.Label(self.list, text="공격한 판은 내가 건 대전, 공격받은 판은 나를 상대로 걸려온 대전입니다. "
+                                 "점수와 상금은 내가 건 랜덤 배틀에만 붙습니다.",
+                 bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS, anchor="w", justify="left",
+                 wraplength=W - 80).pack(fill="x", pady=(0, 8))
+
+        rows = self._shown_records()
+        if not rows:
+            tk.Label(self.list, text=REC_EMPTY.get(self.rec_filter, REC_EMPTY["all"]),
+                     bg=U.BG, fg=U.FG_FAINT, font=U.FONT_S, justify="center").pack(pady=36)
+            return self.fit.schedule()
+
+        def finished():
+            self.fit.schedule()
+            self._back_to(keep)
+        self._job = U.Chunked(self.win, rows, self._record_card,
+                              first=FIRST_ROWS, size=CHUNK_ROWS, on_done=finished)
+        self.fit.schedule()
+
+    def _lead_text(self, r):
+        """'피카츄 vs 꼬부기' - 양쪽 선두. 도감이 없거나 모르는 종이면 빈 글."""
+        dex = getattr(self.app, "dex", None)
+
+        def kr(sp):
+            got = dex.get(sp) if (dex and sp) else None
+            return (got or {}).get("kr") or ""
+        a, b = kr(r.get("lead")), kr(r.get("foeLead"))
+        return "%s vs %s" % (a, b) if a and b else ""
+
+    def _record_card(self, r):
+        attack = r.get("started", True)
+        box = tk.Frame(self.list, bg=CARD_BG, highlightthickness=2,
+                       highlightbackground=U.LINE)
+        box.pack(fill="x", pady=(0, 7))
+        inner = tk.Frame(box, bg=CARD_BG)
+        inner.pack(fill="x", padx=13, pady=10)
+
+        left = tk.Frame(inner, bg=CARD_BG)
+        left.pack(side="left", fill="x", expand=True)
+        top = tk.Frame(left, bg=CARD_BG)
+        top.pack(fill="x")
+        mark, color = RESULT.get(r.get("result"), ("?", U.FG_DIM))
+        tk.Label(top, text=mark, bg=color, fg="#14141a",
+                 font=(U.FAMILY_BLACK, U.pt(11)), width=3).pack(side="left")
+        U.chip(top, "공격" if attack else "방어", U.ACCENT if attack else U.INFO,
+               font=U.FONT_XS, padx=6).pack(side="left", padx=(8, 0))
+        tk.Label(top, text=r.get("foe") or "?", bg=CARD_BG, fg=U.FG,
+                 font=U.FONT_B).pack(side="left", padx=(9, 0))
+        lead = self._lead_text(r)
+        if lead:
+            tk.Label(top, text=lead, bg=CARD_BG, fg=U.FG_DIM,
+                     font=U.FONT_XS).pack(side="left", padx=(10, 0))
+
+        bits = [KIND.get(r.get("kind"), r.get("kind") or ""), when_text(r.get("at")),
+                "%d턴" % (r.get("turns") or 0),
+                "남은 %d : %d" % (r.get("myLeft") or 0, r.get("foeLeft") or 0)]
+        if r.get("rpDelta"):
+            bits.append("RP %+d" % r["rpDelta"])
+        if r.get("reward"):
+            bits.append("%s원" % format(r["reward"], ","))
+        if not attack:
+            bits.append("점수·승패에 안 들어감")
+        tk.Label(left, text="  ·  ".join(b for b in bits if b), bg=CARD_BG,
+                 fg=U.FG_FAINT, font=U.FONT_XS, anchor="w", justify="left",
+                 wraplength=W - 260).pack(anchor="w", fill="x", pady=(4, 0))
+
+        # 다시 보기: 로그가 남아 있는 판만 (옛 서버는 canReplay 가 없다 - 그때는 띄운다)
+        if r.get("matchId") and r.get("canReplay", True):
+            U.ghost_button(inner, "다시 보기", lambda m=r["matchId"]: self._watch(m),
+                           height=30).pack(side="right")
+
+    def _watch(self, mid):
+        playing = getattr(self.app, "match_playing", None)
+        if playing is not None and playing():
+            return self.say("보고 있는 대전이 끝난 뒤에 봐 주세요.", U.DANGER)
+        self.app.watch_match(mid)
+
     # ---------------- 동작 ----------------
     def _random(self):
         self.say("상대를 찾는 중...", U.FG_FAINT)
@@ -503,9 +657,6 @@ class RankWindow(object):
 
     def _team(self):
         S.TeamWindow(self.app, on_saved=self.reload)
-
-    def _rewards(self):
-        S.RewardsWindow(self.app, on_saved=self.reload)
 
     # ---------------- 끝 ----------------
     def focus(self):

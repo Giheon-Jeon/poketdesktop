@@ -149,7 +149,13 @@ class FakeApi(object):
                      "result": "win", "started": True, "delta": 16, "rp": 40,
                      "rpDelta": 20, "reward": 500, "turns": 12, "myLeft": 2,
                      "foeLeft": 0, "matchId": 5, "at": "2026-09-15T01:00:00+00:00",
-                     "canFight": False, "whyNot": "친구에게만"},
+                     "canFight": False, "whyNot": "친구에게만", "canReplay": True,
+                     "lead": "PIKACHU", "foeLead": "SQUIRTLE"},
+                    {"id": 3, "foe": "공격자", "foeId": 7, "kind": "random",
+                     "result": "win", "started": False, "delta": 0, "rp": 40,
+                     "rpDelta": 0, "reward": 0, "turns": 7, "myLeft": 3,
+                     "foeLeft": 0, "matchId": 6, "at": "2026-09-14T01:00:00+00:00",
+                     "canFight": False, "whyNot": "", "canReplay": False},
                     {"id": 2, "foe": "옛상대", "foeId": 8, "kind": "random",
                      "result": "lose", "started": True, "delta": -14, "rp": 0,
                      "rpDelta": 0, "reward": 0, "turns": 9, "myLeft": 0,
@@ -166,6 +172,9 @@ class FakeApp(object):
         self.api = FakeApi()
         self.rank_window = None
         self.said = []
+
+    def watch_match(self, mid):
+        self.watched = getattr(self, "watched", []) + [mid]
 
     def pvp_random(self, on_done=None, on_found=None):
         self.random_calls = getattr(self, "random_calls", 0) + 1
@@ -252,6 +261,40 @@ def main():
     pump(root, lambda: not rw.busy and "1200" in texts(rw.win))
     chk("옛 서버 응답(rp 없음)도 그린다", "1200" in texts(rw.win))
     app.api.old_server = False
+
+    print("대전 기록 (1.12.1 - 칭호·명패가 있던 자리)")
+    chk("머리줄에 '칭호·명패' 는 없고 '대전 기록' 이 있다", "칭호·명패" not in texts(rw.win)
+        and rw.mode_btn.label.cget("text") == "대전 기록")
+    app.dex = type("Dex", (), {"get": lambda _s, sp: {"PIKACHU": {"kr": "피카츄"},
+                                                      "SQUIRTLE": {"kr": "꼬부기"}}.get(sp)})()
+    rw._toggle_mode()
+    pump(root, lambda: not rw.busy and "공격자" in texts(rw.win))
+    t = texts(rw.win)
+    chk("같은 칸이 대전 기록으로 바뀐다", rw.title.cget("text") == "대전 기록"
+        and rw.mode_btn.label.cget("text") == "랭킹", rw.title.cget("text"))
+    chk("  머리줄에 내 전적", "랜덤 배틀 3전 2승 1패" in rw.sub.cget("text"), rw.sub.cget("text"))
+    chk("  세 판 다, 공격 둘 · 방어 하나", "상대" in t and "옛상대" in t and "공격자" in t
+        and t.count("\n공격\n") == 2 and t.count("\n방어\n") == 1, t[-600:])
+    chk("  걸려온 판은 점수에 안 들어간다고 적는다", "점수·승패에 안 들어감" in t)
+    chk("  양쪽 선두", "피카츄 vs 꼬부기" in t, t)
+    chk("  RP 와 상금", "RP +20" in t and "500원" in t)
+    chk("  다시 보기는 로그가 남은 판만 (로그 없음·지워짐은 없다)", t.count("다시 보기") == 1, t.count("다시 보기"))
+    rw._watch(5)
+    chk("  다시 보기 = 그 판을 투기장에서", getattr(app, "watched", None) == [5], getattr(app, "watched", None))
+    rw._pick_filter("defend")
+    pump(root, lambda: False, 0.2)
+    t = texts(rw.win)
+    chk("공격받은 판만 거르기", "공격자" in t and "옛상대" not in t and rw.rec_seg.current == "defend", t[-300:])
+    rw._pick_filter("attack")
+    pump(root, lambda: False, 0.2)
+    t = texts(rw.win)
+    chk("공격한 판만 거르기", "옛상대" in t and "공격자" not in t, t[-300:])
+    bad = squeezed(rw.win)
+    chk("  눌린 위젯 없음", not bad, bad[:3])
+    rw._toggle_mode()
+    pump(root, lambda: not rw.busy and "명예의 전당" in texts(rw.win))
+    chk("다시 누르면 랭킹으로", rw.title.cget("text").startswith("랭킹")
+        and rw.mode_btn.label.cget("text") == "대전 기록", rw.title.cget("text"))
     rw.close()
 
     print("랭크 팀")
@@ -513,7 +556,7 @@ def main():
     chk("선물 창이 떴다", t is not None)
     if t:
         chk("칭호 줄과 사탕 줄", "칭호 · 시즌 1 사천왕" in t and "이로치사탕 ×2" in t, t)
-        chk("칭호는 랭킹 탭에서 바꾼다고 알린다", "랭킹 탭" in t, t)
+        chk("칭호는 마이페이지에서 바꾼다고 알린다 (1.12.1)", "마이페이지" in t, t)
         chk("알 줄과 알 안내", "환상의 포켓몬 알" in t and "데리고 다니는 동안" in t, t)
 
     print("투기장 이름표")

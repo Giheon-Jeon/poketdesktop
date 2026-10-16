@@ -16,7 +16,7 @@ import tkinter as tk
 
 from . import ball_menu, config, effects, item_icons, sprite_cache, sprites
 from . import platform_os as PLAT
-from . import walk_cache
+from . import shiny_fx, walk_cache
 from . import ui_common as U
 from .overlay import Pet
 from .ui_common import run_async
@@ -756,7 +756,19 @@ class WildController(object):
                                              info.get("level"))
         if mon.get("shiny"):
             msg = "★ " + msg + " 색이 다르다!"
+            self.sparkle()
         self.app.notify(msg)
+
+    def sparkle(self):
+        """색이 다른 개체가 나왔다 - 도트 둘레에서 별이 터진다 (1.12.1, shiny_fx)."""
+        pet = self.pet
+        if pet is None:
+            return
+        try:
+            shiny_fx.play(self.app.root, self.app.overlay.area(), pet,
+                          alive=lambda: self.pet is pet)
+        except Exception as e:                             # noqa: BLE001
+            config.log("이로치 반짝임을 못 띄웠습니다: %s" % e)
 
     # ---------------- 조작 ----------------
     def on_grass_click(self):

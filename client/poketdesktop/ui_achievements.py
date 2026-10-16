@@ -69,7 +69,7 @@ def announce(parent, app, items):
 
     bits = []
     if any(a.get("title") for a in items):
-        bits.append("칭호는 랭킹 탭에서 달 수 있습니다.")
+        bits.append("칭호는 마이페이지에서 달 수 있습니다.")
     if any(a.get("balls") for a in items):
         bits.append("몬스터볼은 가방에 넣어 두었습니다.")
     bits.append("모든 업적은 도감 탭의 '업적' 에서 봅니다.")
@@ -249,7 +249,7 @@ class TitlePanel(AchievementPanel):
         items = d.get("titles") or []
         self.summary.configure(text="가진 칭호 %d / %d" % (d.get("owned", 0),
                                                        d.get("total", len(items))), fg=U.FG)
-        self.unlock.configure(text="칭호는 랭킹 탭의 '칭호·명패' 에서 답니다")
+        self.unlock.configure(text="칭호는 마이페이지의 '칭호·명패 바꾸기' 에서 답니다")
         groups = []
         for c in items:
             if c["group"] not in groups:

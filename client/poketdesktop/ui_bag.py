@@ -1433,7 +1433,7 @@ def announce_gifts(parent, app, gifts):
         tk.Label(inner, text="그 밖 %d개" % (n - 8), bg=PANEL,
                  fg=U.FG_FAINT, font=U.FONT_XS).pack(anchor="w", pady=(4, 0))
 
-    # 칭호·명패는 가방이 아니라 랭킹 탭에서 단다 (시즌 보상)
+    # 칭호·명패는 가방이 아니라 마이페이지에서 단다 (시즌 보상, 1.12.0 까지는 랭킹 탭)
     kinds = set(g.get("kind") for g in gifts)
     bits = []
     if kinds & {"item", "money", "balls"}:
@@ -1443,7 +1443,7 @@ def announce_gifts(parent, app, gifts):
         bits.append("알은 데리고 다니는 동안 게임을 켜 둔 시간만큼 자라서 부화합니다. "
                     "자리가 없으면 박스에 들어가니 포켓몬 관리에서 데리고 다니세요.")
     if kinds & {"title", "frame"}:
-        bits.append("칭호·명패는 랭킹 탭에서 바꿀 수 있습니다.")
+        bits.append("칭호·명패는 마이페이지에서 바꿀 수 있습니다.")
     footer = " ".join(bits) or "가방에 넣어 두었습니다."
     tk.Label(f, text=footer, bg=U.BG, fg=U.FG_DIM,
              font=U.FONT_S, wraplength=360,

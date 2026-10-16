@@ -248,6 +248,18 @@ def main():
     chk("가진 칭호가 다 보인다", all(len(c) >= 1 for c in chips))
     on = [c for c in find(top, "칭호 1번 수집가") if c.cget("bg") == U.ACCENT]
     chk("달고 있는 칭호는 금색", len(on) == 1)
+    # 1.12.1: 칭호·명패를 다는 곳이 랭킹 탭에서 여기로 옮겨 왔다
+    chk("'칭호·명패 바꾸기' 단추가 칭호 칸 제목줄에 있다", len(find(top, "칭호·명패 바꾸기")) == 1)
+    chk("  어디서 바꾸는지 알려 준다", any("'칭호·명패 바꾸기' 에서" in x for x in tx))
+    from poketdesktop import ui_season
+    opened = []
+    real_rw = ui_season.RewardsWindow
+    ui_season.RewardsWindow = lambda app_, on_saved=None: opened.append(on_saved)
+    try:
+        w.open_rewards()
+    finally:
+        ui_season.RewardsWindow = real_rw
+    chk("  누르면 칭호·명패 창, 달면 마이페이지를 다시 받는다", opened == [w.load], opened)
 
     print("\n=== 시즌 기록 ===")
     chk("지금 시즌", ui_mypage.season_line(app.api.data["seasons"][0])

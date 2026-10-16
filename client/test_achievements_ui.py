@@ -151,7 +151,7 @@ def main():
     UA.announce(root, app, [ach("dex_400", "400종", title="도감 조사원", got=True)])
     chk("'업적 달성!'", "업적 달성!" in shot["t"], shot["t"][:80])
     chk("칭호 보상을 적는다", "도감 조사원" in shot["t"], shot["t"][:120])
-    chk("칭호를 어디서 다는지 알려준다", "랭킹 탭" in shot["t"])
+    chk("칭호를 어디서 다는지 알려준다 (마이페이지, 1.12.1)", "마이페이지" in shot["t"])
     chk("눌린 위젯 없음", not shot["bad"], shot["bad"][:3])
 
     print("\n=== 알림 창 — 여럿 (처음 켠 사람) ===")

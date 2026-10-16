@@ -149,6 +149,17 @@ def main():
         chk("걸려온 쪽도 목록에는 남는다", len(recb) == 1, len(recb))
         chk("걸려온 판으로 표시된다", recb[0]["started"] is False, recb[0])
         chk("걸려온 판은 상금 0 으로 남는다", recb[0]["reward"] == 0, recb[0])
+        # 1.12.1: 로그가 남아 있는 판만 '다시 보기' (prune 이 로그를 치워도 전적은 남는다)
+        chk("로그가 있으면 다시 볼 수 있다 (양쪽)", rec[0]["canReplay"] is True
+            and recb[0]["canReplay"] is True, (rec[0].get("canReplay"), recb[0].get("canReplay")))
+        saved = db.q1("SELECT * FROM pvp_match WHERE id=?", (r["matchId"],))
+        db.run("DELETE FROM pvp_match WHERE id=?", (r["matchId"],))
+        chk("  로그가 치워지면 못 본다 (전적은 그대로)", pvp.records(a)[0]["canReplay"] is False
+            and len(pvp.records(a)) == 1)
+        cols = list(saved.keys())
+        db.run("INSERT INTO pvp_match (%s) VALUES (%s)" % (",".join(cols), ",".join("?" * len(cols))),
+               tuple(saved[k] for k in cols))
+        chk("  되돌려 두면 다시 볼 수 있다", pvp.records(a)[0]["canReplay"] is True)
 
         print("\n=== 배치 5판 ===")
         for i in range(4):

@@ -925,6 +925,13 @@ def records(uid, limit=30):
     rows = db.q("SELECT * FROM battle_record WHERE user_id=?"
                 " ORDER BY id DESC LIMIT ?", (uid, limit))
     s2 = _season2_opened()
+    # 아직 다시 볼 수 있는 판 (1.12.1). 로그는 KEEP_DAYS 가 지나면 치워지는데(prune) 전적은 남아서,
+    # 화면이 '다시 보기' 를 띄울지 날짜로 따지면 이 규칙과 어긋난다 - 로그가 있는지를 그대로 본다.
+    mids = sorted(set(r["match_id"] for r in rows if r["match_id"]))
+    live = set()
+    if mids:
+        live = set(x["id"] for x in db.q("SELECT id FROM pvp_match WHERE id IN (%s)"
+                                         % ",".join("?" * len(mids)), tuple(mids)))
     # 같은 상대가 여러 번 나오므로 판정을 한 번만 하고 돌려 쓴다.
     why = {}
     out = []
@@ -947,6 +954,7 @@ def records(uid, limit=30):
                     "reward": r["reward"], "turns": r["turns"],
                     "myLeft": r["my_left"], "foeLeft": r["foe_left"],
                     "matchId": r["match_id"], "at": r["ended_at"],
+                    "canReplay": r["match_id"] in live,
                     "lead": r["lead"], "foeLead": r["foe_lead"],
                     "canFight": (fid is not None and why.get(fid) is None),
                     "whyNot": why.get(fid) if fid is not None

@@ -324,6 +324,9 @@ jobs:
       # 1.8.0: 메가진화한 모습으로 바탕화면 걷기 + 메가진화 연출 (바탕화면·배틀 창)
       - name: 메가 폼으로 걷기·메가진화 연출 (진짜 Tk)
         run: python client/test_mega_walk.py
+      # 1.12.1: 색이 다른 야생이 나오면 도트 둘레에서 별이 터진다
+      - name: 이로치 야생 반짝임 (진짜 Tk)
+        run: python client/test_shiny_fx.py
       # 1.8.0: 이로치 색 고르기 - 색조 돌리기·캐시·바탕화면 갈아 입기·고르기 창
       - name: 이로치 색 고르기 (진짜 Tk)
         run: python client/test_tint_ui.py
@@ -463,6 +466,9 @@ jobs:
       # 1.8.0: 메가진화한 모습으로 바탕화면 걷기 + 메가진화 연출 (바탕화면·배틀 창)
       - name: 메가 폼으로 걷기·메가진화 연출 (진짜 Tk)
         run: python client/test_mega_walk.py
+      # 1.12.1: 색이 다른 야생이 나오면 도트 둘레에서 별이 터진다
+      - name: 이로치 야생 반짝임 (진짜 Tk)
+        run: python client/test_shiny_fx.py
       # 1.8.0: 이로치 색 고르기 - 색조 돌리기·캐시·바탕화면 갈아 입기·고르기 창
       - name: 이로치 색 고르기 (진짜 Tk)
         run: python client/test_tint_ui.py

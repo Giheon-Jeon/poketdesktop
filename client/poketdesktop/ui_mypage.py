@@ -10,7 +10,7 @@
   · 나         이름·칭호·티어, 가입한 지 며칠째. **닉네임 왼쪽에 내 캐릭터** (1.10.3) -
                누르거나 '캐릭터 만들기' 를 누르면 꾸미기 창(ui_avatar)이 뜬다
   · 모은 것    포켓몬, 색이 다른 포켓몬, 도감, 이긴 관장, 친구, 레이드
-  · 칭호       가진 칭호들 (달고 있는 것은 금색)
+  · 칭호       가진 칭호들 (달고 있는 것은 금색). '칭호·명패 바꾸기' 로 단다 (1.12.1 - 랭킹 탭에서 옮겨 왔다)
   · 시즌 기록  지금 시즌과 지난 시즌들의 순위·티어·전적
   · 게시판     [알림 | 내 글 | 내 댓글] 중 하나를 한 쪽(다섯 줄)씩 - 누르면 그 글로 간다.
                활동이 아무리 쌓여도 이 칸의 높이는 같다 (쪽은 ◀ ▶ 로 넘긴다)
@@ -289,14 +289,16 @@ class MyPageWindow(object):
         self.load()
 
     # ---------------- 그리기 ----------------
-    def _section(self, title, note=""):
-        """제목 줄과 그 아래 칸. 칸을 돌려준다."""
+    def _section(self, title, note="", action=None):
+        """제목 줄과 그 아래 칸. 칸을 돌려준다. action=(글, 함수) 면 제목 줄 오른쪽에 단추."""
         head = tk.Frame(self.inner, bg=U.BG)
         head.pack(fill="x", pady=(16, 6), padx=(0, 8))
         U.marker_label(head, title, bg=U.BG, color=U.FG).pack(side="left")
         if note:
             tk.Label(head, text=note, bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS).pack(
                 side="left", padx=(10, 0))
+        if action:
+            U.ghost_button(head, action[0], action[1], height=28).pack(side="right")
         box = tk.Frame(self.inner, bg=CARD, highlightthickness=1, highlightbackground=U.LINE)
         box.pack(fill="x", padx=(0, 8))
         return box
@@ -457,7 +459,8 @@ class MyPageWindow(object):
     def _titles(self, d):
         t = d.get("titles") or {}
         box = self._section("내 칭호", "%d / %d" % (int(t.get("count") or 0),
-                                                 int(t.get("total") or 0)))
+                                                 int(t.get("total") or 0)),
+                            action=("칭호·명패 바꾸기", self.open_rewards))
         own = t.get("owned") or []
         if not own:
             tk.Label(box, text="아직 가진 칭호가 없습니다. 도감 탭의 '칭호' 에서 얻는 방법을 "
@@ -474,9 +477,14 @@ class MyPageWindow(object):
             flow.add(lb)
         self.flows.append(flow)
         if t.get("equipped"):
-            tk.Label(box, text="금색이 지금 달고 있는 칭호입니다. 랭킹 탭에서 바꿀 수 있습니다.",
+            tk.Label(box, text="금색이 지금 달고 있는 칭호입니다. '칭호·명패 바꾸기' 에서 바꿀 수 있습니다.",
                      bg=CARD, fg=U.FG_FAINT, font=U.FONT_XS, anchor="w").pack(
                 fill="x", padx=14, pady=(0, 10))
+
+    def open_rewards(self):
+        """가진 칭호·명패 중에서 하나씩 단다 (1.12.1 - 랭킹 탭에 있던 창). 달면 이 쪽을 다시 받는다."""
+        from .ui_season import RewardsWindow
+        RewardsWindow(self.app, on_saved=self.load)
 
     def _seasons(self, d):
         box = self._section("시즌 기록")
