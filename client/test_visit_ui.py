@@ -946,12 +946,14 @@ def stack_part(root, vis, vp, mine):
     chk("  새 말이 도트 바로 위, 먼저 한 말은 그 위로 (자리)", second.offset == 0
         and first.offset >= second.height() + V.STACK_GAP, (first.offset, second.offset, second.height()))
     chk("  먼저 한 말은 단번에 뛰지 않고 미끄러져 올라간다", 0 < first._shown < first.offset, (first._shown, first.offset))
-    settle(root, 0.5)
+    wait(root, lambda: first._shown == first.offset, 3)        # 느린 PC(CI)에서는 더 걸린다
+    settle(root, 0.1)
     chk("  다 올라가면 새 말 바로 위에 선다 (겹치지 않는다)", first._shown == first.offset
         and bottom(first) <= second.win.winfo_y() and first.win.winfo_y() < y_first
         and bottom(second) <= vp.y + 2, (bottom(first), second.win.winfo_y(), y_first))
     vis.on_event({"t": "say", "from": "guest", "text": "셋"})
-    settle(root, 0.5)
+    wait(root, lambda: all(b._shown == b.offset for b in vis._stacks.get(id(vp), [])), 3)
+    settle(root, 0.1)
     third = vis.bubbles.get(id(vp))
     chk("  셋째는 맨 아래, 첫째가 맨 위", bottom(first) <= second.win.winfo_y() and bottom(second) <= third.win.winfo_y(),
         (first.win.winfo_y(), second.win.winfo_y(), third.win.winfo_y()))
@@ -991,12 +993,14 @@ def stack_part(root, vis, vp, mine):
     settle(root, 0.3)
     said = vis.bubbles.get(id(mine))
     inp = vis.open_input(mine)
-    settle(root, 0.5)
+    wait(root, lambda: said._shown == said.offset and said.offset > 0, 3)
+    settle(root, 0.1)
     chk("입력 말풍선을 열어도 떠 있던 말풍선은 안 지운다, 그 위로 올라간다", inp is not None and not said.dead
         and said.offset >= inp.height() and bottom(said) <= inp.win.winfo_y(),
         (said.dead, said.offset, inp.height(), bottom(said), inp.win.winfo_y()))
     inp.close()
-    settle(root, 0.5)
+    wait(root, lambda: said._shown == said.offset == 0, 3)
+    settle(root, 0.1)
     chk("  입력 말풍선을 닫으면 내려온다", said.offset == 0 and said._shown == 0 and bottom(said) <= mine.y + 2,
         (said.offset, said._shown))
     vis._close_bubbles()

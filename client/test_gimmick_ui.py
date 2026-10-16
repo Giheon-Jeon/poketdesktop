@@ -226,6 +226,8 @@ def gym_part(root, dex, gyms, kmap):
     chk("켜고 쓰면 z 가 기술과 함께 간다", api.sent[-1] == {"move": "FLAMETHROWER", "z": True}, api.sent[-1])
     chk("Z파워 사건을 재생한다 (테라스탈은 없다)", "zpower" in seen and "tera" not in seen, seen)
     chk("쓰고 나면 단추가 다시 안 뜬다", not b.gim.z.shown and b.view["gimmick"]["zUsed"], b.view.get("gimmick"))
+    # 연출은 판이 끝난 뒤에도 잠깐 돈다 - 느린 PC(CI 윈도우)에서는 그 끝을 기다린다
+    TG.pump(root, lambda: all(e.dead for e in b.effects), 5)
     chk("연출이 남기고 간 것이 없다", all(e.dead for e in b.effects), [type(e).__name__ for e in b.effects])
     b.close()
     root.update()
