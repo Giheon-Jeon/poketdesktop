@@ -181,6 +181,9 @@ class MiniApp(object):
     look_num = App.look_num
     pet_menu = App.pet_menu
     _pvp = App._pvp
+    match_playing = App.match_playing      # _pvp 가 본다 (1.12.1)
+    after_match = App.after_match
+    _match_over = App._match_over
     _hit = staticmethod(App._hit)
     set_size = App.set_size
 
@@ -191,6 +194,7 @@ class MiniApp(object):
         self.settings = ov.settings
         self.keystone = True
         self.arena = self.battle = None
+        self._match_loading, self._after_match = False, []
         self.wild = Wild()
         self.notes, self.syncs, self.fetched = [], 0, []
         self.box_window = None

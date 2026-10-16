@@ -167,7 +167,7 @@ class FakeApp(object):
         self.rank_window = None
         self.said = []
 
-    def pvp_random(self, on_done=None):
+    def pvp_random(self, on_done=None, on_found=None):
         self.random_calls = getattr(self, "random_calls", 0) + 1
         if on_done:
             on_done(None, "랜덤 배틀은 12초 뒤에 다시 걸 수 있습니다.")
