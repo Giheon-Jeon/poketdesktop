@@ -149,10 +149,9 @@ jobs:
       # 시즌 4 (1.12.0): 본가 규칙의 Z기술, 그리고 그 자료(Z크리스탈·악당 조직)
       - name: Z기술 (엔진)
         run: python common/test_zmoves.py
-      - name: Z크리스탈·악당 조직 자료가 도구와 같은가
-        run: |
-          python tools/add_zcrystals.py --check
-          python tools/build_villains.py --check
+      # Z크리스탈 자료(tools/add_zcrystals.py --check)는 PokeAPI 캐시가 있는 PC 에서만 돈다 (CI 에는 없다).
+      - name: 악당 조직 자료가 도구와 같은가
+        run: python tools/build_villains.py --check
       # 먼 섬(울릉군·백령도·추자도)을 원래 쪽으로 당겨 그리는가, 이름표 자리
       - name: 관장 지도 배치
         run: python client/test_gym_map.py
