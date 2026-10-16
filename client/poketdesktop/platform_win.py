@@ -246,6 +246,60 @@ def machine_raw():
         return None
 
 
+_IMM = None
+
+
+def _imm():
+    """조합 글자를 읽는 함수들 (한 번만 만든다). 핸들이 64비트라 타입을 정해 둔다 - 안 정하면 잘린다."""
+    global _IMM
+    if _IMM is None:
+        from ctypes import wintypes
+        u = ctypes.WinDLL("user32")
+        imm = ctypes.WinDLL("imm32")
+        u.GetFocus.restype = wintypes.HWND
+        u.GetFocus.argtypes = []
+        imm.ImmGetContext.restype = wintypes.HANDLE
+        imm.ImmGetContext.argtypes = [wintypes.HWND]
+        imm.ImmGetCompositionStringW.restype = wintypes.LONG
+        imm.ImmGetCompositionStringW.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.c_void_p,
+                                                 wintypes.DWORD]
+        imm.ImmReleaseContext.restype = wintypes.BOOL
+        imm.ImmReleaseContext.argtypes = [wintypes.HWND, wintypes.HANDLE]
+        _IMM = (u, imm)
+    return _IMM
+
+
+GCS_COMPSTR = 0x0008
+
+
+def ime_composition():
+    """한글 입력기가 지금 조합 중인 글자 (없으면 "").
+
+    윈도우 Tk 는 입력기가 다 짠 글자만 칸에 넣고, 짜는 중인 글자('녕' 을 치다 만 'ㄴ'·'녀')는 칸에
+    그리지 않는다. 그래서 친구 채팅에서 글자가 한 박자씩 늦게 보였다. 키보드 포커스를 가진 창의
+    입력기에 직접 묻는다 (Tk 를 돌리는 이 스레드의 포커스).
+    """
+    try:
+        u, imm = _imm()
+        hwnd = u.GetFocus()
+        if not hwnd:
+            return ""
+        himc = imm.ImmGetContext(hwnd)
+        if not himc:
+            return ""
+        try:
+            size = imm.ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0)
+            if size <= 0:
+                return ""
+            buf = ctypes.create_unicode_buffer(size // 2 + 1)
+            imm.ImmGetCompositionStringW(himc, GCS_COMPSTR, buf, size)
+            return buf.value[:size // 2]
+        finally:
+            imm.ImmReleaseContext(hwnd, himc)
+    except Exception:                                       # noqa: BLE001
+        return ""
+
+
 def dpi_aware():
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(1)

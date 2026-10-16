@@ -58,12 +58,22 @@ class TeamWindow(object):
     랜덤 배틀에서 **걸 때도 걸려올 때도** 이 팀으로 싸운다. 등록하지 않으면
     바탕화면에 데리고 다니는 파티로 싸운다 - 그래서 처음 열면 지금 파티가
     골라져 있다.
+
+    **길드전의 방어팀·공격팀도 이 창으로 짠다** (시즌 4, spec). 고르는 방식과 규칙(여섯 마리,
+    레벨 상한, 전설·환상 한 마리)이 같아서다. spec 은 무엇이 다른지만 적는다:
+        title     창 제목 ("길드전 방어팀")
+        note      위에 적을 설명
+        load      () -> (팀, 내 포켓몬)        팀은 /api/pvp/team 과 같은 꼴
+        save      (ids) -> {"registered", "ids"}
+        saved     저장했을 때 띄울 말
     """
 
-    def __init__(self, app, on_saved=None):
+    def __init__(self, app, on_saved=None, spec=None):
         self.app = app
         self.root = app.root
         self.on_saved = on_saved
+        self.spec = spec or {}
+        title = self.spec.get("title") or "랭크 팀"
         self.mons = []
         self.picked = []          # 고른 순서대로 포켓몬 id
         self.registered = False
@@ -74,8 +84,9 @@ class TeamWindow(object):
         self.visible = []              # 지금 목록에 담긴 id, 화면 순서대로
         self.restricted = set()        # 전설·환상 도감 번호
         self.restricted_max = 1
+        self.rank_min = None           # 랭크전 조건 {"count", "level"} (시즌 4 서버만 준다)
 
-        self.win = U.panel(None, self.root, "랭크 팀", 560, 660, 460, 520,
+        self.win = U.panel(None, self.root, title, 560, 660, 460, 520,
                            self.close)
         self.win.configure(bg=U.BG, highlightthickness=2,
                            highlightbackground=U.LINE2)
@@ -84,7 +95,7 @@ class TeamWindow(object):
         head = tk.Frame(self.win, bg=U.BG2, height=U.h(56))
         head.pack(fill="x")
         head.pack_propagate(False)
-        tk.Label(head, text="랭크 팀", bg=U.BG2, fg=U.FG,
+        tk.Label(head, text=title, bg=U.BG2, fg=U.FG,
                  font=(U.FAMILY_BLACK, U.pt(14))).pack(side="left", padx=16)
         self.state = tk.Label(head, text="", bg=U.BG2, fg=U.FG_DIM,
                               font=U.FONT_XS)
@@ -143,6 +154,8 @@ class TeamWindow(object):
         self._wait = ui_loading.Overlay(self.win, "포켓몬을 불러오는 중")
 
         def work():
+            if self.spec.get("load"):
+                return self.spec["load"]()
             return self.app.api.pvp_team(), self.app.api.pokemon()
         run_async(self.root, work, self._loaded)
 
@@ -161,19 +174,30 @@ class TeamWindow(object):
         self.cap = int(team.get("levelCap") or 50)
         self.restricted = set(int(n) for n in team.get("restrictedNums") or [])
         self.restricted_max = int(team.get("restrictedMax") or 1)
+        self.rank_min = None if self.spec else team.get("rankMin")
         self.registered = bool(team.get("registered"))
         self.picked = [int(i) for i in team.get("ids") or []]
         # 레벨 높은 순. 랭크 팀은 대개 제일 센 애들로 짠다.
         self.mons = sorted(mons or [], key=lambda m: (-int(m.get("level", 0)),
                                                       m.get("id", 0)))
-        self.note.configure(text=natural(
-            "랜덤 배틀에서 걸 때도 걸려올 때도 이 팀으로 싸웁니다. "
-            "등록하지 않으면 바탕화면에 데리고 다니는 파티로 싸웁니다.\n"
-            "Lv.%d 넘는 포켓몬은 Lv.%d(으)로 싸웁니다. %d마리로 걸면 %d마리 "
-            "팀만 만나고, 받는 쪽도 거는 쪽보다 적은 팀이면 안 붙습니다. "
-            "전설·환상 포켓몬은 %d마리까지 넣을 수 있습니다."
-            % (self.cap, self.cap, self.max, self.max, self.restricted_max)))
-        if self.registered:
+        if self.spec.get("note"):
+            note = self.spec["note"]
+        elif self.rank_min:
+            note = ("랜덤 배틀에서 걸 때도 걸려올 때도 이 팀으로 싸웁니다. "
+                    "등록하지 않으면 바탕화면에 데리고 다니는 파티로 싸웁니다.\n"
+                    "랭크전은 Lv.%d 이상 포켓몬 %d마리로 채워야 걸 수 있고, 상대로도 그런 팀만 뽑힙니다. "
+                    "Lv.%d 넘는 포켓몬은 Lv.%d(으)로 싸웁니다. 전설·환상 포켓몬은 %d마리까지 넣을 수 있습니다."
+                    % (int(self.rank_min.get("level") or 50), int(self.rank_min.get("count") or 6),
+                       self.cap, self.cap, self.restricted_max))
+        else:
+            note = ("랜덤 배틀에서 걸 때도 걸려올 때도 이 팀으로 싸웁니다. "
+                    "등록하지 않으면 바탕화면에 데리고 다니는 파티로 싸웁니다.\n"
+                    "Lv.%d 넘는 포켓몬은 Lv.%d(으)로 싸웁니다. %d마리로 걸면 %d마리 "
+                    "팀만 만나고, 받는 쪽도 거는 쪽보다 적은 팀이면 안 붙습니다. "
+                    "전설·환상 포켓몬은 %d마리까지 넣을 수 있습니다."
+                    % (self.cap, self.cap, self.max, self.max, self.restricted_max))
+        self.note.configure(text=natural(note))
+        if self.registered and not self.spec:
             self.unreg_btn.pack(side="left", padx=(8, 0))
         for m in self.mons:
             self._row(m)
@@ -181,7 +205,7 @@ class TeamWindow(object):
         self._filter()
         self._paint()
         extra = self._restricted_count(self.picked) - self.restricted_max
-        if extra > 0:
+        if extra > 0 and not self.spec:
             self.say("전설·환상이 %d마리 더 있어 랭크 배틀에는 앞의 %d마리만 나갑니다. "
                      "등록하려면 %d마리를 빼세요." % (extra, self.restricted_max, extra),
                      U.ACCENT)
@@ -275,15 +299,43 @@ class TeamWindow(object):
                 row=i // 3, column=i % 3, sticky="we", padx=2, pady=2)
         for c in range(3):
             self.slots.grid_columnconfigure(c, weight=1, uniform="slot")
+        if self.spec:
+            self.state.configure(text=("  짜 둠" if self.registered else "  아직 안 짬 · 랭크 팀으로 나감")
+                                 + "  ·  %d / %d마리" % (n, self.max))
+            return self.say("")
         self.state.configure(
             text=("  등록됨" if self.registered else "  등록 안 함 · 바탕화면 파티로 싸움")
             + "  ·  %d / %d마리" % (n, self.max))
+        if self.rank_min:
+            need, lv = int(self.rank_min.get("count") or 6), int(self.rank_min.get("level") or 50)
+            ready = self.rank_ready_count()
+            if ready < need:
+                return self.say("랭크전은 Lv.%d 이상 %d마리가 있어야 걸 수 있습니다 - 지금 %d마리."
+                                % (lv, need, ready), U.ACCENT)
+            return self.say("")
         if n and n < self.max:
             self.say("%d마리 팀에는 %d마리 이하로 거는 사람만 걸어옵니다. "
                      "%d마리를 채우면 더 많은 상대와 붙습니다." % (n, n, self.max),
                      U.ACCENT)
         else:
             self.say("")
+
+    def rank_ready_count(self):
+        """고른 팀에서 랭크전 조건(Lv.N 이상)에 드는 마릿수. 서버처럼 전설·환상은 앞의 몇 마리만 나간다고 센다."""
+        lv = int((self.rank_min or {}).get("level") or 50)
+        by = dict((m["id"], m) for m in self.mons)
+        legends = n = 0
+        for pid in self.picked:
+            m = by.get(pid)
+            if not m:
+                continue
+            if self._is_restricted(m):
+                legends += 1
+                if legends > self.restricted_max:
+                    continue
+            if int(m.get("level") or 1) >= lv:
+                n += 1
+        return n
 
     def _is_restricted(self, m):
         return bool(m) and m.get("num") in self.restricted
@@ -326,10 +378,12 @@ class TeamWindow(object):
         self._paint()
 
     def save(self):
+        if not self.picked and self.spec:
+            return self.say("포켓몬을 한 마리 이상 고르세요.", U.ACCENT)
         if not self.picked:
             return self.say("포켓몬을 한 마리 이상 고르세요. 등록을 풀려면 "
                             "'등록 풀기' 를 누르세요.", U.ACCENT)
-        self._send(list(self.picked), "랭크 팀을 등록했습니다.")
+        self._send(list(self.picked), self.spec.get("saved") or "랭크 팀을 등록했습니다.")
 
     def unregister(self):
         self._send([], "등록을 풀었습니다. 바탕화면 파티로 싸웁니다.")
@@ -343,7 +397,7 @@ class TeamWindow(object):
             r = r or {}
             self.registered = bool(r.get("registered"))
             self.picked = [int(i) for i in r.get("ids") or []]
-            if self.registered:
+            if self.registered and not self.spec:
                 self.unreg_btn.pack(side="left", padx=(8, 0))
             else:
                 self.unreg_btn.holder.pack_forget()      # PushButton 은 틀(holder)을 담는다
@@ -354,7 +408,8 @@ class TeamWindow(object):
                     self.on_saved()
                 except Exception:                           # noqa: BLE001
                     pass
-        run_async(self.root, lambda: self.app.api.pvp_set_team(ids), done)
+        save = self.spec.get("save") or self.app.api.pvp_set_team
+        run_async(self.root, lambda: save(ids), done)
 
     def close(self):
         try:

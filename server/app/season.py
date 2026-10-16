@@ -23,17 +23,26 @@ import datetime
 
 from . import db
 
-SEASON = 3
+SEASON = 4
 # 화면에 적는 날짜. 시즌은 운영자가 migrations 로 닫는다 - 이 날짜가 지났다고
-# 저절로 닫히지 않는다. 시즌 2 는 9/15~10/1, 시즌 3 은 10/2 부터 시즌 2 와 같은
-# 2주다 (티어 경계 150/350/600 이 2주에 맞춰져 있다).
-SEASON_STARTS = "2026-10-02"
-SEASON_ENDS = "2026-10-16"
+# 저절로 닫히지 않는다. 시즌 2 는 9/15~10/1, 시즌 3 은 10/2~10/16, 시즌 4 는 10/17 부터
+# 같은 2주다 (티어 경계 150/350/600 이 2주에 맞춰져 있다).
+#
+# 시즌 4 에서 바뀐 것: Z기술 (common/zmoves), 점수가 가까운 사람부터 붙는
+# 매칭 (pvp.RP_BANDS), 길드전 (guild_war - 시즌이 시작한 순간부터 센다), 악당 출현 (boss).
+SEASON_STARTS = "2026-10-17"
+SEASON_ENDS = "2026-10-31"
 
 # 랜덤(랭크) 배틀에서만 쓴다. 이보다 높은 포켓몬은 이 레벨로 싸운다.
 # 모두를 50 으로 올리지는 않는다 - 아래쪽은 키운 만큼 강해지는 재미가 그대로
 # 남고, 위쪽은 전부 50 에서 만나 팀 구성과 기술로 갈린다.
 LEVEL_CAP = 50
+
+# 랭크전(랜덤 배틀)에 나갈 수 있는 팀 (시즌 4 부터, 10/16 사용자 결정): 실제로 나가는 팀(전설·환상 제한
+# 뒤)에 Lv.RANK_MIN_LEVEL 이상이 RANK_MIN_COUNT 마리. 못 채우면 걸 수도 없고 상대로 뽑히지도 않는다
+# (pvp.rank_ready). 친구 배틀은 랭크전이 아니라 그대로다.
+RANK_MIN_COUNT = 6
+RANK_MIN_LEVEL = 50
 
 # ---- 티어 ----
 # (열쇠, 이름, 오르는 RP). 위의 두 칸(사천왕·챔피언)은 RP 가 아니라 자리다.
@@ -103,6 +112,13 @@ TITLES = {
     "s3_master": "시즌 3 마스터볼",
     "s3_hyper": "시즌 3 하이퍼볼",
     "s3_super": "시즌 3 슈퍼볼",
+    "s4_champion": "시즌 4 챔피언",
+    "s4_elite": "시즌 4 사천왕",
+    "s4_master": "시즌 4 마스터볼",
+    "s4_hyper": "시즌 4 하이퍼볼",
+    "s4_super": "시즌 4 슈퍼볼",
+    # 길드전 (시즌 4). 1위 길드에서 한 번이라도 공격한 길드원이 받는다 (guild_war.settle).
+    "s4_guildwar": "시즌 4 길드전 우승",
 }
 # 이름 둘레의 색. 랭킹·친구·투기장에서 남에게 보인다.
 FRAMES = {
@@ -140,13 +156,22 @@ S2_REWARDS = [
     ("hyper", "s2_hyper", None, 0, None),
     ("super", "s2_super", None, 0, None),
 ]
-# 시즌 3 이 끝날 때 줄 것. 시즌 2 와 같은 틀이다.
+# 시즌 3 이 끝날 때 준 것. 시즌 2 와 같은 틀이다. 실제로 나간 숫자는 migrations 에 있다
+# (_season4_open, 여기는 보여 주기용이다).
 S3_REWARDS = [
     ("champion", "s3_champion", "gold", 1, "legendary"),
     ("elite", "s3_elite", "silver", 1, "mythical"),
     ("master", "s3_master", "master", 1, None),
     ("hyper", "s3_hyper", None, 0, None),
     ("super", "s3_super", None, 0, None),
+]
+# 시즌 4 가 끝날 때 줄 것. 같은 틀이다.
+S4_REWARDS = [
+    ("champion", "s4_champion", "gold", 1, "legendary"),
+    ("elite", "s4_elite", "silver", 1, "mythical"),
+    ("master", "s4_master", "master", 1, None),
+    ("hyper", "s4_hyper", None, 0, None),
+    ("super", "s4_super", None, 0, None),
 ]
 
 
@@ -339,6 +364,7 @@ def rules_public():
     return {
         "season": SEASON, "startsAt": SEASON_STARTS, "endsAt": SEASON_ENDS,
         "levelCap": LEVEL_CAP,
+        "rankMin": {"count": RANK_MIN_COUNT, "level": RANK_MIN_LEVEL},
         "tiers": [{"tier": k, "tierKr": n, "rp": need} for k, n, need in TIERS]
                  + [{"tier": "elite", "tierKr": TIER_KR["elite"],
                      "seats": ELITE_SEATS},
@@ -354,7 +380,7 @@ def rules_public():
                      "frame": FRAMES[frame][0] if frame else None,
                      "frameColor": FRAMES[frame][1] if frame else None,
                      "shiny": n, "egg": EGG_KR.get(egg)}
-                    for t, title, frame, n, egg in S3_REWARDS],
+                    for t, title, frame, n, egg in S4_REWARDS],
     }
 
 

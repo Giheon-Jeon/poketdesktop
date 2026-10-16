@@ -36,6 +36,7 @@ from . import platform_os as PLAT
 from .ui_common import run_async
 from .ui_gym import shade
 from .ui_gym_battle import CAT_COLOR, CAT_KR, FX_SCALE, _FxStage, hp_color
+from . import ui_gimmick
 from . import ui_mega
 from .ui_mega import MegaToggle
 
@@ -248,6 +249,10 @@ class RaidBattleWindow(Z.Resizable):
         self.msg.pack(side="left", fill="both", expand=True, padx=14)
         U.wrap_to_width(self.msg)
         self.mega = MegaToggle(f, before=self.msg, make=U.ghost_button)   # 시즌 3, 고를 때만 보인다
+        # Z기술 단추 (시즌 4). Z기술을 켜고 끄면 기술 칸을 다시 그린다 (이름·위력이 바뀐다)
+        self.gim = ui_gimmick.GimmickBar(f, before=self.msg, make=U.ghost_button,
+                                         on_change=self._gim_changed,
+                                         prev=getattr(self, "gim", None))
 
     def _commands(self):
         self.cmd = tk.Frame(self.win, bg=U.BG)
@@ -625,6 +630,12 @@ class RaidBattleWindow(Z.Resizable):
             ui_mega.play_in(self, self._center(key), swap,
                             size=U.h(BOSS_H if key == BOSS else MON_H) * 0.6)
             return None
+        if t == "zpower":
+            # Z기술 (시즌 4). 레이드는 자리(p)로 누구인지 안다.
+            size = U.h(BOSS_H if key == BOSS else MON_H) * 0.6
+            ui_gimmick.z_event(self, ev, size=size, key=key,
+                               banner=lambda s: self._flash(s, "#ffd23c"))
+            return None
         if t == "move":
             self.say(text)
             other = BOSS if key != BOSS else self._boss_target(ev)
@@ -852,6 +863,12 @@ class RaidBattleWindow(Z.Resizable):
         for b in (self.switch_btn, self.leave_btn):
             b.configure(state="disabled")
         self.mega.show(False)
+        self.gim.hide()
+
+    def _gim_changed(self):
+        """Z기술 단추를 켜고 껐다 - 기술을 고르는 중이면 칸을 다시 그린다."""
+        if self.alive and not self.busy and not self.sent and not self._switching:
+            self.show_commands()
 
     def show_commands(self):
         self.zoom_use()
@@ -861,6 +878,7 @@ class RaidBattleWindow(Z.Resizable):
         me = self.view.get("me") or {}
         # 폴링이 명령 칸을 다시 그려도 켜 둔 메가는 그대로다 (이미 보이면 안 건드린다)
         self.mega.show(me.get("canMega") and not (self.sent or me.get("choice")))
+        self.gim.show(None if (self.sent or me.get("choice")) else me.get("gimmick"))
         if not me.get("canAct"):
             self.switch_btn.configure(state="disabled")
             self.leave_btn.configure(state="normal")
@@ -893,7 +911,7 @@ class RaidBattleWindow(Z.Resizable):
         grid = tk.Frame(self.left, bg=U.BG)
         grid.pack(fill="both", expand=True)
         for i, m in enumerate((me.get("moves") or [])[:4]):
-            self._move_cell(grid, i, m)
+            self._move_cell(grid, i, self.gim.decorate(m))
         for c in (0, 1):
             grid.grid_columnconfigure(c, weight=1, uniform="mv")
         for r in (0, 1):
@@ -971,6 +989,7 @@ class RaidBattleWindow(Z.Resizable):
             grid.grid_columnconfigure(c, weight=1, uniform="pt")
         self.switch_btn.configure(state="disabled")
         self.mega.show(False)
+        self.gim.hide()
         self.hint.configure(text="교체한 라운드에는 공격하지 못합니다.")
 
     def _party_cell(self, grid, i, m, active):
@@ -1001,6 +1020,7 @@ class RaidBattleWindow(Z.Resizable):
         if self.busy or self.sent:
             return
         mega = self.mega.take() if kind == "move" else False
+        z = self.gim.take(move) if kind == "move" else False
         self.sent = True
         self.hide_commands()
         self.say("...")
@@ -1019,7 +1039,8 @@ class RaidBattleWindow(Z.Resizable):
                 return self.play(r.get("events") or [], r)
             self.sync(r)
             self.show_commands()
-        run_async(self.root, lambda: self.app.api.raid_act(kind, move, slot, mega=mega), done)
+        run_async(self.root, lambda: self.app.api.raid_act(kind, move, slot,
+                                                          **ui_gimmick.act_kwargs(mega, z)), done)
 
     def use_move(self, key):
         self._send("move", move=key)

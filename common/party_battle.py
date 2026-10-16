@@ -84,7 +84,7 @@ class PartyBattle(object):
         out["turns"]    총 턴 수
     """
 
-    def __init__(self, dex, a_mons, b_mons, seed=None, keystone=None):
+    def __init__(self, dex, a_mons, b_mons, seed=None, keystone=None, zring=None):
         if not a_mons or not b_mons:
             # 엔진이 정책을 갖지는 않지만, 여기서 안 막으면 아래에서
             # team[0] 이 IndexError 를 내고 서버가 500 을 뱉는다.
@@ -108,6 +108,9 @@ class PartyBattle(object):
         # Battle 을 새로 만들어도 한 판 한 번이 지켜지게 여기 둔다.
         self.keystone = dict(keystone or {"me": False, "foe": False})
         self.mega_done = set()
+        # Z기술 (시즌 4). 메가와 같은 틀 - 한 판에 한 번, AI 가 알아서 쓴다.
+        self.zring = dict(zring or {"me": False, "foe": False})
+        self.z_done = set()
 
     # ---------------- 도구 ----------------
     @staticmethod
@@ -204,6 +207,8 @@ class PartyBattle(object):
         bt.keystone = self.keystone
         bt.mega_done = self.mega_done
         bt.auto_mega = {"me": True, "foe": True}
+        bt.zring, bt.z_done = self.zring, self.z_done
+        bt.auto_z = {"me": True, "foe": True}
         self.bt = bt
         return bt
 
@@ -376,9 +381,13 @@ class PartyBattle(object):
         return "me" if ra > rb else "foe"
 
 
-def simulate(dex, a_mons, b_mons, seed=None, keystone=None):
-    """한 줄로 쓰는 입구. keystone = {"me": a 가 가졌나, "foe": b 가 가졌나}."""
-    return PartyBattle(dex, a_mons, b_mons, seed, keystone=keystone).run()
+def simulate(dex, a_mons, b_mons, seed=None, keystone=None, zring=None):
+    """한 줄로 쓰는 입구. keystone = {"me": a 가 가졌나, "foe": b 가 가졌나}.
+
+    zring 도 같은 꼴이다 (시즌 4). 안 주면 Z기술 없이 싸운다 -
+    그때의 로그는 예전과 한 글자도 다르지 않다.
+    """
+    return PartyBattle(dex, a_mons, b_mons, seed, keystone=keystone, zring=zring).run()
 
 
 # 시점 뒤집기 --------------------------------------------------------

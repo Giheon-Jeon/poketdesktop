@@ -61,6 +61,9 @@ accept_first_click = _M.accept_first_click
 # 테두리 없는 창이 글자를 받게 (친구 채팅, 1.11.0). 맥은 고른 창만 키 창이 될 수 있게 연다.
 take_keys = _M.take_keys
 drop_keys = _M.drop_keys
+# 한글 입력기가 지금 조합 중인 글자를 읽는다 (윈도우만). 윈도우 Tk 는 조합 중인 글자를 칸에 안 그려서
+# '한 글자 늦게' 보인다 - 친구 채팅 입력 말풍선이 이걸로 직접 그린다. 없는 곳(맥은 Tk 가 그린다)은 None.
+ime_composition = getattr(_M, "ime_composition", None)
 keep_focus = _M.keep_focus
 watch_right_click = _M.watch_right_click
 take_right_clicks = _M.take_right_clicks

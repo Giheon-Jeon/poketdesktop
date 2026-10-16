@@ -150,7 +150,10 @@ def _team_view(uid):
             "restrictedMax": pvp.RESTRICTED_MAX,
             "restrictedNums": sorted(dex.get(s)["num"] for s in pvp.restricted_species()
                                      if dex.get(s)),
-            "restrictedDropped": dropped}
+            "restrictedDropped": dropped,
+            # 랭크전 조건 (시즌 4): 실제로 나가는 팀에 Lv.50 이상 6마리
+            "rankMin": {"count": season.RANK_MIN_COUNT, "level": season.RANK_MIN_LEVEL},
+            "rankReady": pvp.rank_ready(team)[0], "rankReadyCount": pvp.rank_ready(team)[1]}
 
 
 @router.get("/api/pvp/team")

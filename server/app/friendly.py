@@ -39,6 +39,18 @@
 정한다 - 서버가 다시 떠서 메모리를 잃어도 죽은 카드의 단추가 남지 않는다.
 길드원끼리 친구 목록으로 연 판처럼 '상대 구함' 없이 열린 판은 그때 카드를 새로 놓는다.
 
+## 길드전 공격도 구경한다 (시즌 4)
+
+길드원이 다른 길드의 칸을 치면(관장식 판 - guild_war.attack) **공격한 길드의 채팅에** 같은 카드가 놓이고
+([관전] -> 끝나면 결과), 판이 넘어갈 때마다 같은 길로 밀어 준다 (watch_open / watch_feed). 판 번호는
+'w' + 관장 배틀 번호다 (실시간 배틀 번호와 겹치지 않게). 동시에 여는 친선전 수(MAX_FIGHTS)에는 안 센다.
+
+## 관전 N명
+
+구경하는 화면이 보기 시작할 때·그만둘 때·보는 동안 PING_SEC 마다 알린다 (/api/guild/friendly/watch,
+watchers.py 가 센다). 수가 바뀌면 길드에 {"t": "watchers", "id": 판, "n": 수} 를 민다 - 싸우는 사람의
+배틀 창이 '관전 N명' 을 고친다. 실시간 배틀 응답(live.public)과 판의 모습(fight)에도 수가 실린다.
+
 ## 들고 있는 것
 
 상대를 구하는 사람과 진행 중인 판은 **메모리에** 둔다 (서버는 프로세스 하나다 - guild_ws 와 같은
@@ -50,7 +62,7 @@ import time
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from . import db, deps, guild, live, pvp
+from . import db, deps, guild, live, pvp, watchers
 
 router = APIRouter()
 
@@ -165,8 +177,9 @@ def _push(gid, now=None):
 
 
 def count(gid):
+    """그 길드에서 진행 중인 친선전 수 (길드전 공격은 안 센다)."""
     with _lock:
-        return len(_fights.get(gid) or {})
+        return sum(1 for f in (_fights.get(gid) or {}).values() if not f.get("war"))
 
 
 # ---------------------------------------------------------------- 상대 구함
@@ -223,7 +236,7 @@ def accept(uid, other, now=None):
         gone = None
         if got and _gid(other) != gid:
             gone, got = (_seek.get(gid) or {}).pop(other, None), None     # 그사이 길드를 나갔다
-        full = len(_fights.get(gid) or {}) >= MAX_FIGHTS
+        full = sum(1 for f in (_fights.get(gid) or {}).values() if not f.get("war")) >= MAX_FIGHTS
     _close(gid, gone)
     if not got:
         raise ValueError("그 길드원은 지금 상대를 구하고 있지 않습니다.")
@@ -298,10 +311,13 @@ def on_live(row):
             if f is None:
                 continue
             fight["card"] = f.get("card")    # 화면이 채팅의 어느 카드가 이 판인지 안다
+            fight["watchers"] = watchers.count(mid)
             same = bool(f.get("fight")) and _scene(f["fight"]) == _scene(fight)
             f["fight"] = fight
             if over:
                 del _fights[gid][mid]
+        if over:
+            watchers.drop(mid)
         if over and f.get("card"):
             a, b = f["who"]["a"], f["who"]["b"]
             result = row["result"] if state == "done" else fight.get("result")
@@ -329,7 +345,13 @@ def _sweep(gid, now=None, force=False):
         if not force and now - _swept.get(gid, -10 ** 9) < SWEEP_SEC:
             return
         _swept[gid] = now
-        mids = list(_fights.get(gid) or {})
+        mids = [m for m, f in (_fights.get(gid) or {}).items() if not f.get("war")]
+        wars = [m for m, f in (_fights.get(gid) or {}).items() if f.get("war")]
+    for fid in wars:
+        # 길드전 공격: 판이 이미 끝났는데(시간이 지나 접혔다) 끝났다는 소식이 안 왔으면 여기서 닫는다
+        r = db.q1("SELECT state FROM gym_battle WHERE id=?", (int(str(fid)[1:]),))
+        if not r or r["state"] != "active":
+            watch_feed(gid, fid, {"id": fid, "over": True, "result": None, "events": []})
     if not mids:
         return
     live.expire_old()
@@ -339,6 +361,86 @@ def _sweep(gid, now=None, force=False):
             row = live.tick(row) or row          # 넘어가면 live 가 on_live 를 부른다
         if not row or row["state"] == "done":
             on_live(row or {"id": mid, "state": "done", "result": "expired", "data": None})
+
+
+# ---------------------------------------------------------------- 길드전 공격 (시즌 4)
+def watch_open(gid, fid, a, b, text, war=None):
+    """친선전이 아닌 판(길드전 공격)을 길드원이 구경하게 연다: 채팅에 카드를 놓고 진행 중 목록에 넣는다.
+
+    a 는 공격한 길드원, b 는 막는 쪽 ({id, name}). war 는 카드에 같이 적을 것 (칸 이름, 상대 길드 ...).
+    """
+    card = _card("fight", a, b, fid)
+    if war:
+        card["war"] = war
+    line = guild._say(gid, text, card=card)
+    with _lock:
+        _fights.setdefault(gid, {})[fid] = {"a": a.get("id"), "b": b.get("id"), "fight": None, "card": line,
+                                            "who": {"a": a, "b": b}, "war": war or {}}
+    _push(gid)
+    return line
+
+
+def watch_feed(gid, fid, fight, result=None, text=None, war=None):
+    """그 판의 새 모습을 길드원에게 민다. 끝났으면(over) 카드를 결과로 고치고 목록에서 뺀다.
+
+    result 는 'a'(공격한 쪽이 이겼다) / 'b' / 'draw' / None, war 는 끝난 카드에 더 적을 것 (점령했나 ...).
+    """
+    with _lock:
+        f = (_fights.get(gid) or {}).get(fid)
+        if f is None:
+            return False
+        over = bool(fight.get("over"))
+        fight["card"] = f.get("card")
+        fight["watchers"] = watchers.count(fid)
+        f["fight"] = fight
+        if over:
+            del _fights[gid][fid]
+    if over:
+        watchers.drop(fid)
+        if f.get("card"):
+            a, b = f["who"]["a"], f["who"]["b"]
+            card = _card("over", a, b, fid, result)
+            card["war"] = dict(f.get("war") or {}, **(war or {}))
+            guild.card_set(gid, f["card"], card, text or over_text(a, b, result))
+    guild._emit("guild", gid, {"t": "friendly_fight", "fight": fight})
+    if over:
+        _push(gid)
+    return True
+
+
+# ---------------------------------------------------------------- 관전 N명
+def watch(uid, fid, on=True, now=None):
+    """그 사람이 우리 길드의 판을 보기 시작했다 / 아직 본다 / 그만 봤다. 바뀐 구경꾼 수를 길드에 민다."""
+    gid = _gid(uid)
+    if gid is None:
+        raise LookupError("길드에 들어 있지 않습니다.")
+    with _lock:
+        hit = next(((k, f) for k, f in (_fights.get(gid) or {}).items() if str(k) == str(fid)), None)
+    if hit is None:
+        if on:
+            raise LookupError("그 판은 이미 끝났습니다.")
+        return {"id": fid, "n": 0}
+    key, f = hit
+    if uid in (f.get("a"), f.get("b")):
+        raise ValueError("내 배틀은 구경하지 않습니다.")
+    before = watchers.count(key, now)
+    n = watchers.ping(key, uid, on, now)
+    if n != before:
+        guild._emit("guild", gid, {"t": "watchers", "id": key, "n": n})
+    return {"id": key, "n": n}
+
+
+def _decorate(row, out):
+    """실시간 배틀 응답(live.public)에 '관전 N명' 을 얹는다 - 길드원끼리의 판(친선전)일 때만."""
+    mid = row["id"]
+    with _lock:
+        mine = any(mid in fs for fs in _fights.values())
+    if mine:
+        out["watchers"] = watchers.count(mid)
+
+
+if _decorate not in live.decorators:
+    live.decorators.append(_decorate)
 
 
 def state(uid):
@@ -378,6 +480,17 @@ def friendly_accept(other: int, ctx=Depends(deps.current)):
     uid = ctx["user"]["id"]
     row = _run(accept, uid, other)
     return {"match": live.public(row, uid)}
+
+
+class WatchIn(BaseModel):
+    id: str = ""
+    on: bool = True
+
+
+@router.post("/api/guild/friendly/watch")
+def friendly_watch(body: WatchIn, ctx=Depends(deps.current)):
+    fid = body.id[:16]
+    return _run(watch, ctx["user"]["id"], int(fid) if fid.isdigit() else fid, bool(body.on))
 
 
 @router.post("/api/guild/friendly/ask/{other}")

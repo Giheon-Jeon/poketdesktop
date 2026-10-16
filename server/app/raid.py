@@ -517,8 +517,11 @@ def begin(row, now=None):
         rng=random.Random())
     # 메가진화 (시즌 3): 참가자마다 관장 8곳이면 키스톤
     from . import mega
+    from . import gimmick
     for p in rb.players:
         p.keystone = mega.has_keystone(p.uid)
+        # Z기술 (시즌 4). 같은 객체를 고친다 - 이미 만들어 둔 판(p.bt)이 그것을 보고 있다.
+        p.zring["me"] = gimmick.has_zring(p.uid)
         if p.bt is not None:
             p.bt.keystone["me"] = p.keystone
     ev = rb.start()
@@ -572,7 +575,7 @@ def _save(row, rb, ev, now=None):
 CHOOSE_TRIES = 5
 
 
-def choose(uid, kind, value, now=None, mega=False):
+def choose(uid, kind, value, now=None, mega=False, z=False):
     """이번 라운드에 할 것을 적는다. 다 모이면 그 자리에서 라운드가 돈다.
 
     **부딪히면 다시 해본다.** 여섯 명이 같은 방을 동시에 두드리는 판이라,
@@ -588,7 +591,7 @@ def choose(uid, kind, value, now=None, mega=False):
         i = _index_of(row, uid)
         if i is None:
             raise LookupError("이 레이드의 참가자가 아닙니다.")
-        rb.choose(i, kind, value, mega=mega)
+        rb.choose(i, kind, value, mega=mega, z=z)
         ev = None
         if rb.ready():
             ev = rb.resolve()

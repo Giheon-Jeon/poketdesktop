@@ -57,6 +57,8 @@ PAD = 18
 STOPS = [(20, (58, 161, 126)), (40, (140, 194, 74)), (60, (242, 193, 78)),
          (80, (240, 123, 63)), (100, (201, 64, 106))]
 CLEAR = "#ffc043"
+BOSS_FILL = "#0b0d13"        # 악당이 차지한 시·도 (시즌 4). 지도의 다른 어떤 색보다 어둡다
+BOSS_LINE = "#e5484d"
 TODAY = U.GOOD               # 오늘 보상을 받은 곳 (지도의 체크, 목록의 글)
 
 ROW_H = U.h(50)              # 목록의 한 줄 (이름·역할 / 지역 두 줄)
@@ -246,6 +248,8 @@ class GymWindow(object):
         self._list_key = None        # 목록이 무엇을 보여 주고 있나 (같으면 보던 자리 그대로)
         self._reset_job = None       # 자정에 한 번 다시 불러온다
         self._sgg = {}               # 시·군·구 코드 -> 지도 자료
+        self.boss = {}               # 악당 출현 (시즌 4): 서버 개요의 "boss" 칸
+        self.boss_win = None
 
         self.win = U.panel(parent, root, "포스크탑 — 관장", W, H, 900, 600, self.close)
         self.win.configure(bg=U.BG, highlightthickness=2, highlightbackground=U.LINE2)
@@ -274,6 +278,8 @@ class GymWindow(object):
         self.sub.pack(side="left", padx=(12, 0))
         self.back_btn = U.ghost_button(inner, "전국 지도", self.to_nation, height=32)
         self.back_btn.pack(side="right", pady=12)
+        # 악당 출현 (시즌 4). 나타나 있을 때만 보인다 (_paint_boss).
+        self.boss_btn = U.danger_button(inner, "악당 출현", self.open_boss, height=32)
         tk.Frame(self.win, bg=U.LINE2, height=2).pack(fill="x")
 
     def _canvas(self, body):
@@ -439,23 +445,34 @@ class GymWindow(object):
             today = sum(1 for x in self.data["regions"] if x.get("today"))
             self.sub.configure(text="이긴 곳 %d / %d · 오늘 %d곳 완료"
                                % (self.data["cleared"], self.data["total"], today))
-            self._arm_reset(self.data.get("resetIn"))
             self.source.configure(text="지도: 통계청 SGIS · vuski/admdongkor")
+            self.boss = self.data.get("boss") or {}
+            # 자정에는 '오늘 완료' 가 풀리고, 밤 11시에는 악당이 떠난다 - 먼저 오는 때에 다시 불러온다
+            waits = [self.data.get("resetIn")]
+            if self.boss.get("active") and not self.boss.get("done"):
+                waits.append(self.boss.get("endsIn"))
+            self._arm_reset(min((int(x) for x in waits if isinstance(x, (int, float)) and x > 0), default=None))
+            self._paint_boss()
             self.redraw()
             if self.selected:
                 self.select(self.selected)
             else:
                 self._summary()
             act = self.data.get("active")
-            if act:
+            if act and str(act.get("region") or "").startswith("boss:"):
+                self.say("악당과의 승부가 진행 중입니다. '악당 출현' 을 눌러 이어서 하세요.", U.ACCENT)
+            elif act:
                 t = self.by_region.get(act["region"]) or {}
                 self.say("%s 과(와)의 승부가 진행 중입니다. 그 지역을 눌러 이어서 하세요."
                          % t.get("name", ""), U.ACCENT)
+            elif self.boss_sido():
+                self.say("%s 에 %s 이(가) 나타났다! 검게 물든 곳을 누르세요."
+                         % (self.boss.get("sidoName") or "", self.boss.get("team") or "악당"), U.DANGER)
 
         run_async(self.root, work, done)
 
     def _arm_reset(self, sec):
-        """자정(한국 시간)에 '오늘 완료' 가 풀린다. 그때 한 번 다시 불러온다."""
+        """자정(한국 시간)에 '오늘 완료' 가 풀리고, 밤 11시에 악당이 떠난다. 그때 한 번 다시 불러온다."""
         if self._reset_job is not None:
             try:
                 self.root.after_cancel(self._reset_job)
@@ -603,8 +620,35 @@ class GymWindow(object):
             self.select(code)
 
     def _click_sido(self, code):
-        if not self._dragged:
-            self.enter_sido(code)
+        if self._dragged:
+            return
+        if code == self.boss_sido():
+            return self.open_boss()          # 악당이 차지한 곳 (물리치면 원래대로 들어간다)
+        self.enter_sido(code)
+
+    # ---------------- 악당 출현 (시즌 4) ----------------
+    def boss_sido(self):
+        """악당이 차지하고 있는 시·도 코드. 안 나타났거나 내가 이미 물리쳤으면 None."""
+        b = self.boss or {}
+        return b.get("sido") if b.get("active") and not b.get("done") else None
+
+    def _paint_boss(self):
+        """위쪽의 '악당 출현' 단추. 나타나 있는 동안 보인다 (물리친 뒤에도 - 결과를 다시 볼 수 있게)."""
+        b = self.boss or {}
+        try:
+            if b.get("active"):
+                self.boss_btn.configure(text="악당 출현 · %s" % (b.get("team") or ""))
+                self.boss_btn.pack(side="right", pady=12, padx=(0, 8))
+            else:
+                self.boss_btn.pack_forget()
+        except Exception:                                  # noqa: BLE001
+            pass
+
+    def open_boss(self):
+        from .ui_boss import BossWindow
+        if self.boss_win is not None and self.boss_win.alive:
+            return self.boss_win.focus()
+        self.boss_win = BossWindow(self)
 
     def _reset_view(self):
         self.zoom = 1.0
@@ -638,10 +682,13 @@ class GymWindow(object):
             won, total, lo, hi = stats.get(sd["code"], (0, 0, 0, 0))
             frac = won / float(total or 1)
             fill = shade(CLEAR, 0.35 + 0.65 * frac) if won else "#2a3246"
+            if sd["code"] == self.boss_sido():
+                fill = BOSS_FILL                 # 악당이 차지한 곳은 검다 (시즌 4)
             tag = "s%s" % sd["code"]
             for ring in sd["rings"]:
-                cv.create_polygon([c for p in ring for c in tf(p)], fill=fill, outline="#0b0e14",
-                                  width=1, tags=(tag, "region", "map"))
+                cv.create_polygon([c for p in ring for c in tf(p)], fill=fill,
+                                  outline=BOSS_LINE if fill == BOSS_FILL else "#0b0e14",
+                                  width=2 if fill == BOSS_FILL else 1, tags=(tag, "region", "map"))
             self.items[tag] = ("sido", sd["code"])
             cv.tag_bind(tag, "<Enter>", lambda _e, c=sd["code"]: self._hover_sido(c, True))
             cv.tag_bind(tag, "<Leave>", lambda _e, c=sd["code"]: self._hover_sido(c, False))
@@ -836,13 +883,18 @@ class GymWindow(object):
     # ---------------- 올리기 / 누르기 ----------------
     def _hover_sido(self, code, on):
         tag = "s%s" % code
+        evil = code == self.boss_sido()
         try:
-            self.cv.itemconfigure(tag, outline="#ffffff" if on else "#0b0e14", width=2 if on else 1)
+            off = (BOSS_LINE, 2) if evil else ("#0b0e14", 1)
+            self.cv.itemconfigure(tag, outline="#ffffff" if on else off[0], width=2 if on else off[1])
             if on:
                 self.cv.tag_raise(tag)
                 self._restack(tag)
         except tk.TclError:
             return
+        if on and evil:
+            return self.say("%s — %s 이(가) 나타났다! 눌러서 맞서자."
+                            % (self.sido_names.get(code, ""), self.boss.get("team") or "악당"), U.DANGER)
         if on:
             won, total, lo, hi = self._sido_stats().get(code, (0, 0, 0, 0))
             today = sum(1 for d in self.map["sgg"] if d["sido"] == code
@@ -1275,6 +1327,8 @@ class GymWindow(object):
     def close(self):
         self.alive = False
         self._arm_reset(None)
+        if self.boss_win is not None and self.boss_win.alive:
+            self.boss_win.close()
         try:
             self.win.destroy()
         except Exception:                                  # noqa: BLE001

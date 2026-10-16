@@ -269,18 +269,17 @@ def main():
         chk("지워도 순위표에 그대로 있다",
             any(x["name"] == "zz_pvp_a" for x in pvp.ranking()), pvp.ranking())
 
-        print("\n=== 상대 고르기 — 전력이 비슷한 사람만 ===")
-        # 자세한 규칙은 test_season.py 가 본다. 여기서는 방금 붙은 사람을
-        # 다시 안 고르는 것만.
+        print("\n=== 상대 고르기 ===")
+        # 자세한 규칙은 test_match_rp.py 가 본다 (시즌 4: 점수가 가까운 사람부터).
+        # 여기서는 방금 붙은 사람을 다시 안 고르는 것만.
         lo = mkuser('zz_mm_lo', 3, 10)
         lo2 = mkuser('zz_mm_lo2', 3, 10)
         pvp.run_match(lo, lo2, kind='random', seed=11)
         op = pvp.find_opponent(lo)
         chk('방금 붙은 사람은 다시 안 고른다', op != lo2, op)
         teams = pvp._all_teams()
-        chk('그래도 규칙 밖의 사람을 데려오지는 않는다',
-            op is None or abs(pvp.team_power(teams[op]) / pvp.team_power(teams[lo]) - 1)
-            <= pvp.POWER_BANDS[-1], op)
+        chk('그래도 규칙 밖의 사람을 데려오지는 않는다 (받는 쪽 마릿수)',
+            op is None or pvp.can_defend(len(teams[lo]), len(teams[op])), op)
 
         print("\n=== 로그 정리 ===")
         n0 = db.q1("SELECT COUNT(*) c FROM pvp_match")["c"]

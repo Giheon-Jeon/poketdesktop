@@ -25,6 +25,12 @@
 
 웹소켓을 못 쓰는 환경이면 알림은 오지 않는다 (길드 채팅을 열면 카드는 보인다). 구경하는 동안에는
 밀려오는 것이 없으면 스스로 물어 온다 (POLL_MS).
+
+**길드전 공격도 같은 카드로 구경한다** (시즌 4). 길드원이 다른 길드의 칸을 치면 채팅에 '길드전 공격' 카드가
+놓인다 (판 번호는 'w' + 관장 배틀 번호, 카드에 war = 칸 이름·상대 길드·승수).
+
+**관전 N명.** 구경을 시작하고 그만둘 때, 보는 동안에는 PING_MS 마다 서버에 알린다. 서버가 센 수를
+{"t": "watchers"} 로 밀어 주면 싸우는 사람의 배틀 창(실시간·관장식)에 '관전 N명' 을 적는다 (draw_watchers).
 """
 import time
 import tkinter as tk
@@ -42,6 +48,7 @@ END_SEC = 3.5                 # 판이 끝나고 구경을 닫기까지
 PLATE_UP = 150                # 이름표를 포켓몬의 발에서 이만큼 위에 둔다
 TICK_MS = 15
 POLL_MS = 2500                # 구경 중에 밀려오는 것이 없을 때 스스로 물어보는 간격
+PING_MS = 20000               # 구경하는 동안 '아직 본다' 를 알리는 간격 (서버 watchers.PING_SEC)
 QUIET_SEC = 4.0               # 이만큼 아무것도 안 밀려오면 물어본다
 BALL_ON, BALL_OFF = "#f05a50", "#59607a"
 # 채팅에 치는 명령. '/친선전' 하나로 구하고, 뒤에 붙인 말로 그만두거나 한 사람에게 신청한다.
@@ -64,6 +71,42 @@ def work_area(win):
         return tuple(PLAT.work_area(sw, sh))
     except Exception:                                       # noqa: BLE001
         return (0, 0, sw, sh)
+
+
+def draw_watchers(cv, width, n, tag="watchers"):
+    """배틀 창 장면의 오른쪽 위에 '관전 N명'. n 이 None 이면 지운다 (구경할 수 없는 판)."""
+    try:
+        cv.delete(tag)
+    except tk.TclError:
+        return None
+    if n is None:
+        return None
+    s = U.h
+    t = cv.create_text(width - s(14), s(12), text="관전 %d명" % int(n), anchor="ne", fill="#f2f4fb",
+                       font=(U.FAMILY, U.pt(9), "bold"), tags=(tag,))
+    x0, y0, x1, y1 = cv.bbox(t)
+    cv.create_rectangle(x0 - s(8), y0 - s(3), x1 + s(8), y1 + s(3), fill="#2a3246",
+                        outline=U.ACCENT if n else "#39466a", tags=(tag,))
+    cv.tag_raise(t)
+    return t
+
+
+def is_war(fight_or_card):
+    """길드전 공격의 판(또는 카드)인가."""
+    x = fight_or_card or {}
+    return x.get("kind") == "guildwar" or bool(x.get("war")) or str(x.get("id") or x.get("mid") or "").startswith("w")
+
+
+def war_tail(war, result):
+    """끝난 길드전 공격 카드의 꼬리글."""
+    war = war or {}
+    if war.get("took"):
+        return "점령!"
+    if result == "a":
+        return "승리 (%d승 중 %d승)" % (war.get("need") or 3, min(war.get("wins") or 0, war.get("need") or 3))
+    if result == "draw":
+        return "무승부"
+    return "막혔다"
 
 
 def title_of(fight):
@@ -141,12 +184,17 @@ def chat_card(card, line, view, me, watching=None):
     card, view = card or {}, view or {}
     a, b = card.get("a") or {}, card.get("b") or {}
     an, bn = a.get("name") or "?", b.get("name") or "?"
+    war = card.get("war") or None
+    title = "길드전 공격" if war else "길드 친선전"
 
     def out(tag, tone, text, button=None, act=None, arg=None):
-        return {"tag": tag, "tone": tone, "text": text, "button": button, "act": act, "arg": arg}
+        return {"tag": tag, "tone": tone, "text": text, "button": button, "act": act, "arg": arg, "title": title}
     f = next((x for x in view.get("fights") or [] if x.get("card") == line and not x.get("over")), None)
     if f is not None:
         text = "%s  vs  %s" % ((f.get("a") or {}).get("name") or an, (f.get("b") or {}).get("name") or bn)
+        if war:
+            text = "%s  →  %s  ·  %s" % ((f.get("a") or {}).get("name") or an, (f.get("b") or {}).get("name") or bn,
+                                        war.get("name") or "")
         if me is not None and me in players(f):
             return out("진행 중", "fight", text, "내 배틀", "mine")
         if watching is not None and watching == f.get("id"):
@@ -160,6 +208,9 @@ def chat_card(card, line, view, me, watching=None):
                    "배틀", "accept", s.get("id"))
     if card.get("s") in ("fight", "over"):
         r = card.get("result") if card.get("s") == "over" else None
+        if war:
+            text = "%s  →  %s  ·  %s" % (an, bn, war.get("name") or "")
+            return out("끝", "done", text + ("   ·   %s" % war_tail(war, r) if card.get("s") == "over" else ""))
         tail = {"a": "%s 님 승리" % an, "b": "%s 님 승리" % bn, "draw": "무승부"}.get(r)
         return out("끝", "done", "%s  vs  %s" % (an, bn) + ("   ·   %s" % tail if tail else ""))
     return out("마감", "off", "%s 님이 친선전 상대를 구했습니다." % an)
@@ -182,6 +233,8 @@ class Friendly(object):
         self.pushes = 0               # 밀려온 횟수 (묻는 사이에 밀려왔는지 가린다 - 시계로는 못 가린다)
         self.chat_open = None         # 길드 채팅을 지금 보고 있나 (길드 탭이 넣는 함수) - 보고 있으면 알리지 않는다
         self._due = None              # '상대 구함' 의 시간이 다 될 때 서버에 다시 묻는 예약
+        self.counts = {}              # {판: 관전 N명} (서버가 민 것)
+        self._beat = None             # 구경하는 동안 '아직 본다' 를 알리는 예약
 
     # ---- 설정
     def setting(self, key, default):
@@ -257,6 +310,9 @@ class Friendly(object):
             self.pushes += 1
             self.fight(ev.get("fight") or {})
             return True
+        if t == "watchers":
+            self.counted(ev.get("id"), ev.get("n"))
+            return True
         if t == "left":
             self.reset()
         return False
@@ -296,10 +352,11 @@ class Friendly(object):
         if self.duel is not None and self.duel.mid == mid:
             self.duel.feed(fight)
         elif mid not in self.known and not fight.get("over") and not mine:
-            if self.setting("friendlyAuto", False) and not self.watching():
+            if self.setting("friendlyAuto", False) and not self.watching() and not self._away():
                 self.watch(mid, fight)
             elif self.setting("friendlyNotify", True) and not self.watching() and not self.in_chat():
-                self.notice("%s · 친선전 시작" % title_of(fight), "관전", lambda m=mid: self.watch(m))
+                self.notice("%s · %s" % (title_of(fight), "길드전 공격" if is_war(fight) else "친선전 시작"), "관전",
+                            lambda m=mid: self.watch(m))
         self.known.add(mid)
         self._changed()
 
@@ -322,15 +379,32 @@ class Friendly(object):
     def notice(self, text, button, command):
         self._card().notice(text, button, command)
 
+    def _away(self):
+        """친구 집에 놀러 가 있나 (visit). 그동안은 바탕화면에서 구경하지 않는다."""
+        vis = getattr(self.app, "visit", None)
+        return bool(vis is not None and getattr(vis, "guest", False))
+
     def watch(self, mid, fight=None):
         """그 판을 구경한다: 바탕화면 오른쪽 아래에서 포켓몬 둘이 싸운다. 알림은 닫는다."""
         fight = fight or next((f for f in self.view["fights"] if f.get("id") == mid), None)
         if fight is None:
             self.error = "그 친선전은 이미 끝났습니다."
             return self._changed()
+        if self._away():
+            # 구경은 바탕화면 오른쪽 아래에서 한다 - 놀러 가 있으면 그 자리에 내 포켓몬이 친구 집에 서 있다
+            msg = "친구 집에 놀러 가 있는 동안에는 친선전을 구경할 수 없습니다. 돌아온 뒤에 봐 주세요."
+            self.error = msg
+            self._changed()
+            if self.error == msg:                # 길드 탭이 안 열려 있어 아무도 안 보여 줬다 (오른쪽 아래 알림에서 눌렀다)
+                self.error = None
+                notify = getattr(self.app, "notify", None)
+                if notify is not None:
+                    notify(msg)
+            return None
         self.close_card()
         self.stop_watch()
         self.duel = DesktopDuel(self, fight)
+        self._tell(mid, True)                # 싸우는 사람에게 '관전 N명' 이 간다
         self._changed()
 
     def close_card(self):
@@ -342,7 +416,52 @@ class Friendly(object):
         d, self.duel = self.duel, None
         if d is not None:
             d.close()
+            self._tell(d.mid, False)
             self._changed()                  # 채팅의 카드가 '관전 중' 에서 [관전] 으로 돌아간다
+
+    # ---- 관전 N명
+    def _tell(self, mid, on):
+        """서버에 '보기 시작했다 / 아직 본다 / 그만 봤다' 를 알린다. 보는 동안에는 PING_MS 마다 다시."""
+        api, root = getattr(self.app, "api", None), self.root
+        if self._beat is not None and root is not None:
+            try:
+                root.after_cancel(self._beat)
+            except Exception:                               # noqa: BLE001
+                pass
+            self._beat = None
+        if api is None or mid is None:
+            return
+
+        def done(r, _err):
+            if isinstance(r, dict) and r.get("id") is not None:
+                self.counted(r.get("id"), r.get("n"))
+        try:
+            run_async(root, lambda: api.guild_friendly_watch(mid, on), done)
+        except Exception:                                   # noqa: BLE001
+            return
+        if on and root is not None:
+            def again():
+                self._beat = None
+                if self.watching() and self.duel.mid == mid:
+                    self._tell(mid, True)
+            try:
+                self._beat = root.after(PING_MS, again)
+            except Exception:                               # noqa: BLE001
+                self._beat = None
+
+    def counted(self, mid, n):
+        """그 판의 관전 N명이 바뀌었다 - 내가 그 판에서 싸우고 있으면 배틀 창에 적는다."""
+        if mid is None:
+            return
+        self.counts[str(mid)] = int(n or 0)
+        for name in ("live_battle", "gym_battle"):
+            win = getattr(self.app, name, None)
+            fn = getattr(win, "set_watchers", None)
+            if fn is not None and getattr(win, "alive", True):
+                try:
+                    fn(mid, int(n or 0))
+                except Exception:                           # noqa: BLE001
+                    pass
 
     def card_do(self, act, arg=None):
         """채팅의 카드에서 단추를 눌렀다 (chat_card 가 정한 act)."""
@@ -413,6 +532,12 @@ class Friendly(object):
         self._do(lambda: api.guild_friendly_ask(uid), sent)
 
     def close(self):
+        if self._beat is not None and self.root is not None:
+            try:
+                self.root.after_cancel(self._beat)
+            except Exception:                               # noqa: BLE001
+                pass
+            self._beat = None
         self.listeners = []
         self.chat_open = None
         self.view = {"seeking": [], "fights": [], "limit": 3}

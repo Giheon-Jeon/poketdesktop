@@ -22,6 +22,7 @@ PokeAPI 는 도구의 **이름·설명·가격**만 준다. 무엇을 하는지�
 있는지만 보고 없으면 바로 돌아간다 - 위 규칙 1 이다.
 """
 from . import movecalc as MC
+from . import zmoves as ZM
 
 # 도구 id -> 한글 이름. 로그의 문구에 쓴다. 서버의 items.json 과 같은
 # 출처(PokeAPI CSV)라 build_items 가 어긋나면 검사에서 잡힌다.
@@ -158,16 +159,24 @@ def is_mega_stone(item):
     return bool(item) and item in MEGA
 
 
+def stuck(item):
+    """뺏기지도 떨어지지도 않는 도구 - 메가스톤과 Z크리스탈 (본가와 같다).
+
+    트릭·바꿔치기·탁쳐서떨구기·도둑질·나쁜손버릇·매지션이 이것을 본다.
+    """
+    return is_mega_stone(item) or ZM.is_crystal(item)
+
+
 def normalize(v):
     """DB 나 요청에서 온 값을 도구 id 로. 모르는 것은 None."""
     if not v:
         return None
     k = "".join(c for c in str(v).upper() if c.isalnum())
-    return k if (k in ALL or k in MEGA) else None
+    return k if (k in ALL or k in MEGA or k in ZM.CRYSTALS) else None
 
 
 def name(item):
-    return KR.get(item) or MEGA.get(item) or (item or "")
+    return KR.get(item) or MEGA.get(item) or ZM.CRYSTALS.get(item) or (item or "")
 
 
 # ---------------------------------------------------------------- 도우미
@@ -583,6 +592,12 @@ def effect_note(item_id):
     h = normalize(item_id)
     if not h:
         return ""
+    if ZM.is_crystal(h):
+        own = ZM.EXCLUSIVE.get(h)
+        if own:
+            return "정해진 포켓몬이 정해진 기술을 전용 Z기술로 쓴다 (한 판에 한 번, Z링 필요)"
+        return ("%s 타입 기술 하나를 Z기술로 쓴다 (한 판에 한 번, Z링 필요). 반드시 맞고 방어도 뚫는다"
+                % _TYPE_KR.get(ZM.CRYSTAL_TYPE[h], ZM.CRYSTAL_TYPE[h]))
     t = TYPE_BOOST.get(h)
     if t:
         return "%s 타입 기술의 위력이 %d%% 올라간다 (%.1f배)" % (_TYPE_KR.get(t, t), _pct(TYPE_BOOST_MULT),

@@ -1053,4 +1053,7 @@ def state(uid, now=None):
         "chatLast": (last["x"] or 0) if last else 0, "stamp": _stamp(gid),
         "can": {"manage": m["role"] in ("master", "sub"), "master": m["role"] == "master"},
     })
+    # 길드전 (시즌 4): 지금 어느 단계인가, 내가 칠 것이 남았나. 화면은 이것을 보고 '길드전' 칸을 낸다.
+    from . import guild_war                  # 그쪽이 이 모듈을 불러온다 - 여기서는 쓸 때 부른다
+    base["war"] = guild_war.brief(uid, now)
     return base

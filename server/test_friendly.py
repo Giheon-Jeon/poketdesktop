@@ -35,7 +35,7 @@ os.environ.pop("POKET_TURSO_URL", None)
 os.environ["POKET_POKEDEX"] = os.path.join(HERE, "data", "pokedex.json")
 os.environ["POKET_ITEMS"] = os.path.join(HERE, "data", "items.json")
 
-from app import config, db, friendly, guild, live, main, social      # noqa: E402
+from app import config, db, friendly, guild, live, main, social, watchers      # noqa: E402
 
 OK = FAIL = 0
 
@@ -75,6 +75,7 @@ class Clock(object):
 
 CLOCK = Clock()
 friendly.time = CLOCK
+watchers.time = CLOCK
 
 
 def at(t):
@@ -281,10 +282,43 @@ def main_():
             live.act(p, "forfeit", None)
     chk("다 끝나면 비어 있다", friendly.state(a)["fights"] == [])
 
+    print("\n=== 관전 N명 ===")
+    del sent[:]
+    for p_ in (a, b, c):
+        if live.my_match(p_):
+            live.act(p_, "forfeit", None)
+    friendly.seek(a, True, now=at(3000.0))
+    row = friendly.accept(b, a, now=at(3001.0))
+    mid = row["id"]
+    chk("싸우는 사람의 판에 '관전 0명' 이 실린다 (길드원끼리의 판)", live.public(live.my_match(a), a).get("watchers") == 0)
+    del sent[:]
+    r = friendly.watch(c, str(mid), True, now=at(3002.0))
+    chk("구경을 시작하면 1명 (판 번호는 글로 와도 된다)", r == {"id": mid, "n": 1}, r)
+    chk("  길드에 '관전 1명' 이 나간다 (싸우는 사람의 창이 고친다)", got("watchers", "guild", gid) == [{"t": "watchers", "id": mid, "n": 1}],
+        got("watchers"))
+    chk("  싸우는 두 사람의 판에도 1명", live.public(live.my_match(a), a)["watchers"] == 1
+        and live.public(live.my_match(b), b)["watchers"] == 1)
+    friendly.watch(ids["라온"], mid, True, now=at(3003.0))
+    del sent[:]
+    friendly.watch(c, mid, True, now=at(3010.0))
+    chk("둘이 보면 2명, 같은 사람이 '아직 본다' 해도 그대로 (다시 밀지 않는다)",
+        watchers.count(mid, at(3010.0)) == 2 and got("watchers") == [])
+    chk("싸우는 사람은 자기 판을 구경할 수 없다", raises(ValueError, friendly.watch, a, mid, True) != "")
+    chk("남의 길드 사람은 못 본다 (우리 길드의 판이 아니다)", raises(LookupError, friendly.watch, ids["남원"], mid, True) != "")
+    r = friendly.watch(c, mid, False, now=at(3011.0))
+    chk("그만 보면 줄어든다", r["n"] == 1 and got("watchers")[-1]["n"] == 1)
+    chk("소식이 TTL 동안 없으면 빠진 것으로 친다 (앱을 끈 채 떠났다)",
+        watchers.count(mid, at(3003.0 + watchers.TTL + 1)) == 0)
+    friendly.watch(c, mid, True, now=at(3100.0))
+    live.act(a, "forfeit", None)
+    chk("판이 끝나면 센 것을 버린다", watchers.count(mid, at(3101.0)) == 0)
+    chk("끝난 판을 보겠다고 하면 이미 끝났다고 한다", "끝났" in raises(LookupError, friendly.watch, c, mid, True))
+
     print("\n=== 경로 ===")
     paths = main.app.openapi()["paths"]
     chk("경로가 붙어 있다", all(p in paths for p in ("/api/guild/friendly", "/api/guild/friendly/seek",
-                                              "/api/guild/friendly/accept/{other}", "/api/guild/friendly/ask/{other}")))
+                                              "/api/guild/friendly/accept/{other}", "/api/guild/friendly/ask/{other}",
+                                              "/api/guild/friendly/watch")))
     chk("광장은 없다", not any("plaza" in p for p in paths) and "plaza" not in guild.state(a))
 
     print("\n%d개 통과, %d개 실패" % (OK, FAIL))

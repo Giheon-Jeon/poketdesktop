@@ -345,6 +345,19 @@ CREATE TABLE IF NOT EXISTS gym_battle (
 );
 CREATE INDEX IF NOT EXISTS idx_gym_battle_user ON gym_battle(user_id, state);
 
+-- 악당 출현 (시즌 4, boss.py). 그날 그 사람이 어디까지 했나. 언제·어디에·누가 나오는지는
+-- 날짜로 정해져서 따로 적지 않는다.
+CREATE TABLE IF NOT EXISTS boss_run (
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    day         TEXT NOT NULL,              -- 한국 날짜
+    stage       INTEGER NOT NULL DEFAULT 0, -- 이긴 간부 수 (0~3)
+    legend      INTEGER NOT NULL DEFAULT 0, -- 전설을 쓰러뜨렸나
+    egg         INTEGER,                    -- 알이 나왔나 (전설을 쓰러뜨리기 전에는 NULL)
+    paid        INTEGER NOT NULL DEFAULT 0, -- 받은 상금 합계
+    updated_at  TEXT NOT NULL,
+    PRIMARY KEY (user_id, day)
+);
+
 -- 이긴 곳. 256곳 중 몇 곳을 이겼는지가 곧 진행도다.
 CREATE TABLE IF NOT EXISTS gym_clear (
     user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -747,6 +760,80 @@ CREATE TABLE IF NOT EXISTS guild_member (
     points      INTEGER NOT NULL DEFAULT 0          -- 이 길드에서 쌓은 미션 점수
 );
 CREATE INDEX IF NOT EXISTS idx_guild_member_g ON guild_member(guild_id);
+-- 길드전 (시즌 4, guild_war.py). 시즌마다 한 번이다.
+-- 참가를 신청한 길드. 길드가 나중에 없어져도 순위표에 남게 이름을 베껴 둔다 (외래키도 안 건다).
+CREATE TABLE IF NOT EXISTS guild_war_entry (
+    season      INTEGER NOT NULL,
+    guild_id    INTEGER NOT NULL,
+    name        TEXT NOT NULL,
+    applied_by  INTEGER NOT NULL,
+    applied_at  TEXT NOT NULL,
+    locked      INTEGER NOT NULL DEFAULT 0,     -- 0 신청만 / 1 전쟁에 나갔다 / -1 인원이 모자라 못 나갔다
+    rank        INTEGER,                        -- 끝난 뒤의 순위
+    score       INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (season, guild_id)
+);
+-- 사람마다의 팀. 신청 기간에는 포켓몬 번호(def_ids·atk_ids)만 들고 있다가, 전쟁이 시작되는
+-- 순간 그때의 모습을 통째로 베껴 둔다 (def_team·atk_team, locked=1) - 그 뒤로는 그것으로 싸운다.
+CREATE TABLE IF NOT EXISTS guild_war_team (
+    season      INTEGER NOT NULL,
+    user_id     INTEGER NOT NULL,
+    guild_id    INTEGER NOT NULL,
+    name        TEXT NOT NULL,                  -- 그때의 닉네임
+    def_ids     TEXT NOT NULL DEFAULT '[]',
+    atk_ids     TEXT NOT NULL DEFAULT '[]',
+    def_team    TEXT NOT NULL DEFAULT '[]',
+    atk_team    TEXT NOT NULL DEFAULT '[]',
+    attacks     INTEGER NOT NULL DEFAULT 0,     -- 이 사람이 칠 수 있는 횟수
+    used        INTEGER NOT NULL DEFAULT 0,
+    locked      INTEGER NOT NULL DEFAULT 0,
+    updated_at  TEXT NOT NULL,
+    PRIMARY KEY (season, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gw_team_guild ON guild_war_team(season, guild_id);
+-- 땅 한 칸 = 맞닿은 시·군·구 몇 곳을 묶은 것 (관장 지도와 같은 코드, codes). 전쟁이 시작될 때 참가
+-- 길드 수 x 15칸으로 묶어 길드마다 15칸씩 나눠 준다 (guild_war._deal). 같은 사람을 3번 이기면 넘어가고
+-- (taken_at), 한 번 넘어간 칸은 다시 못 뺏는다. guard_user 가 0 이면 AI 수비대(ai_team)가 지킨다.
+CREATE TABLE IF NOT EXISTS guild_war_tile (
+    season      INTEGER NOT NULL,
+    region      TEXT NOT NULL,                  -- 칸 번호 ('c07')
+    name        TEXT NOT NULL DEFAULT '',       -- '서울 종로구 외 3곳'
+    codes       TEXT NOT NULL DEFAULT '[]',     -- 묶인 시·군·구 코드들
+    guild_id    INTEGER NOT NULL,               -- 지금 주인
+    guard_user  INTEGER NOT NULL,               -- 지금 지키는 사람 (0 = AI 수비대)
+    home_guild  INTEGER NOT NULL,               -- 처음 주인
+    ai_team     TEXT,                           -- AI 수비대의 팀 (사람이 지키면 NULL)
+    ai_name     TEXT,
+    ai_sprite   TEXT,
+    taken_at    TEXT,                           -- 넘어간 때 (안 넘어갔으면 NULL). 넘어간 칸은 확정이다
+    PRIMARY KEY (season, region)
+);
+CREATE INDEX IF NOT EXISTS idx_gw_tile_guild ON guild_war_tile(season, guild_id);
+-- 공격 한 번 = 칸 하나에 건 관장식 승부 한 판 (battle_id = gym_battle). 판을 시작할 때 pending 으로 넣고
+-- 끝나면 win / lose / draw 로 고친다 (공격한 쪽에서 본 것, 기권·시간 초과는 lose).
+-- def_user·def_guild 는 **그때** 그 칸을 지키던 사람(0 = AI)과 주인이다. took = 이 판으로 칸이 넘어왔다.
+CREATE TABLE IF NOT EXISTS guild_war_attack (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    season      INTEGER NOT NULL,
+    region      TEXT NOT NULL,
+    atk_user    INTEGER NOT NULL,
+    atk_guild   INTEGER NOT NULL,
+    atk_name    TEXT NOT NULL,
+    def_user    INTEGER NOT NULL,
+    def_guild   INTEGER NOT NULL,
+    def_name    TEXT NOT NULL,
+    result      TEXT NOT NULL,
+    took        INTEGER NOT NULL DEFAULT 0,
+    battle_id   INTEGER,
+    turns       INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL,
+    ended_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_gw_attack_def ON guild_war_attack(season, def_guild);
+CREATE INDEX IF NOT EXISTS idx_gw_attack_atk ON guild_war_attack(season, atk_guild);
+CREATE INDEX IF NOT EXISTS idx_gw_attack_region ON guild_war_attack(season, region);
+CREATE INDEX IF NOT EXISTS idx_gw_attack_battle ON guild_war_attack(battle_id);
+
 -- 승인이 필요한 길드에 넣어 둔 가입 신청
 CREATE TABLE IF NOT EXISTS guild_request (
     guild_id    INTEGER NOT NULL REFERENCES guild(id) ON DELETE CASCADE,

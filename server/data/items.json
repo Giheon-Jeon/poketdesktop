@@ -1323,6 +1323,23 @@
    "sell": 4000,
    "weight": 14
   },
+  "BUGINIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 벌레타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Buginium Z",
+   "id": "BUGINIUMZ",
+   "ident": "buginium-z",
+   "kr": "벌레Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "BUG"
+  },
   "CALCIUM": {
    "cat": "ev",
    "cost": 10000,
@@ -1753,6 +1770,23 @@
    "sell": 500,
    "weight": 100
   },
+  "DARKINIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 악타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Darkinium Z",
+   "id": "DARKINIUMZ",
+   "ident": "darkinium-z",
+   "kr": "악Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "DARK"
+  },
   "DARKRANITE": {
    "cat": "megastone",
    "chance": 0,
@@ -1789,6 +1823,27 @@
    "rarity": "rare",
    "sell": 1500,
    "weight": 14
+  },
+  "DECIDIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 모크나이퍼의 그림자꿰매기를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Decidium Z",
+   "id": "DECIDIUMZ",
+   "ident": "decidium-z",
+   "kr": "모크나이퍼Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "SPIRITSHACKLE",
+   "zFor": [
+    "DECIDUEYE"
+   ],
+   "zMove": "SINISTERARROWRAID"
   },
   "DEEPSEASCALE": {
    "cat": "stone",
@@ -1927,6 +1982,23 @@
    "rarity": "legendary",
    "sell": 0,
    "weight": 0
+  },
+  "DRAGONIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 드래곤타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Dragonium Z",
+   "id": "DRAGONIUMZ",
+   "ident": "dragonium-z",
+   "kr": "드래곤Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "DRAGON"
   },
   "DRAGONSCALE": {
    "cat": "stone",
@@ -2090,6 +2162,27 @@
    "sell": 0,
    "weight": 0
   },
+  "EEVIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 이브이의 뒀다쓰기를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Eevium Z",
+   "id": "EEVIUMZ",
+   "ident": "eevium-z",
+   "kr": "이브이Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "LASTRESORT",
+   "zFor": [
+    "EEVEE"
+   ],
+   "zMove": "EXTREMEEVOBOOST"
+  },
   "ELECTIRIZER": {
    "cat": "stone",
    "chance": 0.00143,
@@ -2108,6 +2201,23 @@
    "rarity": "rare",
    "sell": 1000,
    "weight": 14
+  },
+  "ELECTRIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 전기타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Electrium Z",
+   "id": "ELECTRIUMZ",
+   "ident": "electrium-z",
+   "kr": "전기Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "ELECTRIC"
   },
   "EMBOARITE": {
    "cat": "megastone",
@@ -2191,6 +2301,23 @@
    "sell": 7500,
    "weight": 5
   },
+  "FAIRIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 페어리타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fairium Z",
+   "id": "FAIRIUMZ",
+   "ident": "fairium-z",
+   "kr": "페어리Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "FAIRY"
+  },
   "FALINKSITE": {
    "cat": "megastone",
    "chance": 0,
@@ -2243,6 +2370,23 @@
    "sell": 0,
    "weight": 0
   },
+  "FIGHTINIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 격투타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fightinium Z",
+   "id": "FIGHTINIUMZ",
+   "ident": "fightinium-z",
+   "kr": "격투Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "FIGHTING"
+  },
   "FIGYBERRY": {
    "cat": "held",
    "chance": 0.010217,
@@ -2281,6 +2425,23 @@
    "rarity": "rare",
    "sell": 1500,
    "weight": 14
+  },
+  "FIRIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 불꽃타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Firium Z",
+   "id": "FIRIUMZ",
+   "ident": "firium-z",
+   "kr": "불꽃Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "FIRE"
   },
   "FISTPLATE": {
    "cat": "held",
@@ -2362,6 +2523,23 @@
    "ident": "flower-ball",
    "kr": "플라워볼",
    "sell": 0
+  },
+  "FLYINIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 비행타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Flyinium Z",
+   "id": "FLYINIUMZ",
+   "ident": "flyinium-z",
+   "kr": "비행Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "FLYING"
   },
   "FOCUSBAND": {
    "cat": "held",
@@ -2565,6 +2743,23 @@
    "sell": 500,
    "weight": 100
   },
+  "GHOSTIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 고스트타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ghostium Z",
+   "id": "GHOSTIUMZ",
+   "ident": "ghostium-z",
+   "kr": "고스트Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "GHOST"
+  },
   "GLALITITE": {
    "cat": "megastone",
    "chance": 0,
@@ -2651,6 +2846,23 @@
    "sell": 0,
    "weight": 0
   },
+  "GRASSIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 풀타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Grassium Z",
+   "id": "GRASSIUMZ",
+   "ident": "grassium-z",
+   "kr": "풀Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "GRASS"
+  },
   "GREATBALL": {
    "cat": "ball",
    "chance": 0.004597,
@@ -2702,6 +2914,23 @@
    "rarity": "common",
    "sell": 40,
    "weight": 100
+  },
+  "GROUNDIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 땅타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Groundium Z",
+   "id": "GROUNDIUMZ",
+   "ident": "groundium-z",
+   "kr": "땅Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "GROUND"
   },
   "GYARADOSITE": {
    "cat": "megastone",
@@ -2960,6 +3189,44 @@
    "sell": 1500,
    "weight": 45
   },
+  "ICIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 얼음타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Icium Z",
+   "id": "ICIUMZ",
+   "ident": "icium-z",
+   "kr": "얼음Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "ICE"
+  },
+  "INCINIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 어흥염의 DD래리어트를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Incinium Z",
+   "id": "INCINIUMZ",
+   "ident": "incinium-z",
+   "kr": "어흥염Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "DARKESTLARIAT",
+   "zFor": [
+    "INCINEROAR"
+   ],
+   "zMove": "MALICIOUSMOONSAULT"
+  },
   "INSECTPLATE": {
    "cat": "held",
    "chance": 0.004597,
@@ -3125,6 +3392,27 @@
    "rarity": "rare",
    "sell": 2500,
    "weight": 14
+  },
+  "KOMMONIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 짜랑고우거의 스케일노이즈를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Kommonium Z",
+   "id": "KOMMONIUMZ",
+   "ident": "kommonium-z",
+   "kr": "짜랑고우거Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "CLANGINGSCALES",
+   "zFor": [
+    "KOMMOO"
+   ],
+   "zMove": "CLANGOROUSSOULBLAZE"
   },
   "LAGGINGTAIL": {
    "cat": "held",
@@ -3452,6 +3740,27 @@
    "sell": 500,
    "weight": 100
   },
+  "LUNALIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 루나아라의 섀도레이를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Lunalium Z",
+   "id": "LUNALIUMZ",
+   "ident": "lunalium-z",
+   "kr": "루나아라Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "MOONGEISTBEAM",
+   "zFor": [
+    "LUNALA"
+   ],
+   "zMove": "MENACINGMOONRAZEMAELSTROM"
+  },
   "LUXURYBALL": {
    "cat": "ball",
    "chance": 0.00143,
@@ -3469,6 +3778,27 @@
    "rarity": "rare",
    "sell": 1500,
    "weight": 14
+  },
+  "LYCANIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 루가루암의 스톤에지를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Lycanium Z",
+   "id": "LYCANIUMZ",
+   "ident": "lycanium-z",
+   "kr": "루가루암Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "STONEEDGE",
+   "zFor": [
+    "LYCANROC"
+   ],
+   "zMove": "SPLINTEREDSTORMSHARDS"
   },
   "MACHOBRACE": {
    "cat": "held",
@@ -3605,6 +3935,27 @@
    "rarity": "legendary",
    "sell": 0,
    "weight": 0
+  },
+  "MARSHADIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 마샤도의 섀도스틸을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Marshadium Z",
+   "id": "MARSHADIUMZ",
+   "ident": "marshadium-z",
+   "kr": "마샤도Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "SPECTRALTHIEF",
+   "zFor": [
+    "MARSHADOW"
+   ],
+   "zMove": "SOULSTEALING7STARSTRIKE"
   },
   "MASTERBALL": {
    "buyable": false,
@@ -3798,6 +4149,27 @@
    "sell": 4000,
    "weight": 14
   },
+  "MEWNIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 뮤의 사이코키네시스를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Mewnium Z",
+   "id": "MEWNIUMZ",
+   "ident": "mewnium-z",
+   "kr": "뮤Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "PSYCHIC",
+   "zFor": [
+    "MEW"
+   ],
+   "zMove": "GENESISSUPERNOVA"
+  },
   "MEWTWONITEX": {
    "cat": "megastone",
    "chance": 0,
@@ -3847,6 +4219,27 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "MIMIKIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 따라큐의 치근거리기를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Mimikium Z",
+   "id": "MIMIKIUMZ",
+   "ident": "mimikium-z",
+   "kr": "따라큐Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "PLAYROUGH",
+   "zFor": [
+    "MIMIKYU"
+   ],
+   "zMove": "LETSSNUGGLEFOREVER"
   },
   "MINDPLATE": {
    "cat": "held",
@@ -4023,6 +4416,23 @@
    "rarity": "uncommon",
    "sell": 1500,
    "weight": 45
+  },
+  "NORMALIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 노말타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Normalium Z",
+   "id": "NORMALIUMZ",
+   "ident": "normalium-z",
+   "kr": "노말Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "NORMAL"
   },
   "NUGGET": {
    "cat": "misc",
@@ -4222,6 +4632,27 @@
    "sell": 0,
    "weight": 0
   },
+  "PIKANIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 피카츄의 볼트태클을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Pikanium Z",
+   "id": "PIKANIUMZ",
+   "ident": "pikanium-z",
+   "kr": "피카츄Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "VOLTTACKLE",
+   "zFor": [
+    "PIKACHU"
+   ],
+   "zMove": "CATASTROPIKA"
+  },
   "PINSIRITE": {
    "cat": "megastone",
    "chance": 0,
@@ -4254,6 +4685,23 @@
    "rarity": "uncommon",
    "sell": 1500,
    "weight": 45
+  },
+  "POISONIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 독타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Poisonium Z",
+   "id": "POISONIUMZ",
+   "ident": "poisonium-z",
+   "kr": "독Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "POISON"
   },
   "POKEBALL": {
    "cat": "ball",
@@ -4420,6 +4868,27 @@
    "sell": 500,
    "weight": 100
   },
+  "PRIMARIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 누리레느의 물거품아리아를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Primarium Z",
+   "id": "PRIMARIUMZ",
+   "ident": "primarium-z",
+   "kr": "누리레느Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "SPARKLINGARIA",
+   "zFor": [
+    "PRIMARINA"
+   ],
+   "zMove": "OCEANICOPERETTA"
+  },
   "PRISMSCALE": {
    "cat": "stone",
    "chance": 0.00143,
@@ -4472,6 +4941,23 @@
    "ident": "protein",
    "kr": "타우린",
    "sell": 5000
+  },
+  "PSYCHIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 에스퍼타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Psychium Z",
+   "id": "PSYCHIUMZ",
+   "ident": "psychium-z",
+   "kr": "에스퍼Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "PSYCHIC"
   },
   "PYROARITE": {
    "cat": "megastone",
@@ -4766,6 +5252,23 @@
    "rarity": "uncommon",
    "sell": 3000,
    "weight": 45
+  },
+  "ROCKIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 바위타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Rockium Z",
+   "id": "ROCKIUMZ",
+   "ident": "rockium-z",
+   "kr": "바위Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "ROCK"
   },
   "ROSEINCENSE": {
    "cat": "held",
@@ -5218,6 +5721,27 @@
    "sell": 4000,
    "weight": 14
   },
+  "SNORLIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 잠만보의 기가임팩트를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Snorlium Z",
+   "id": "SNORLIUMZ",
+   "ident": "snorlium-z",
+   "kr": "잠만보Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "GIGAIMPACT",
+   "zFor": [
+    "SNORLAX"
+   ],
+   "zMove": "PULVERIZINGPANCAKE"
+  },
   "SOFTSAND": {
    "cat": "held",
    "chance": 0.004597,
@@ -5233,6 +5757,27 @@
    "rarity": "uncommon",
    "sell": 1500,
    "weight": 45
+  },
+  "SOLGANIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 솔가레오의 메테오드라이브를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Solganium Z",
+   "id": "SOLGANIUMZ",
+   "ident": "solganium-z",
+   "kr": "솔가레오Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "SUNSTEELSTRIKE",
+   "zFor": [
+    "SOLGALEO"
+   ],
+   "zMove": "SEARINGSUNRAZESMASH"
   },
   "SOOTHEBELL": {
    "cat": "held",
@@ -5379,6 +5924,23 @@
    "rarity": "rare",
    "sell": 6000,
    "weight": 14
+  },
+  "STEELIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 강철타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Steelium Z",
+   "id": "STEELIUMZ",
+   "ident": "steelium-z",
+   "kr": "강철Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "STEEL"
   },
   "STEELIXITE": {
    "cat": "megastone",
@@ -5557,6 +6119,30 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "TAPUNIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "Z파워의 결정. 카푸들의 자연의분노를 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Tapunium Z",
+   "id": "TAPUNIUMZ",
+   "ident": "tapunium-z",
+   "kr": "카푸Z",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0,
+   "zBase": "NATURESMADNESS",
+   "zFor": [
+    "TAPUKOKO",
+    "TAPULELE",
+    "TAPUBULU",
+    "TAPUFINI"
+   ],
+   "zMove": "GUARDIANOFALOLA"
   },
   "TARTAPPLE": {
    "cat": "stone",
@@ -5821,6 +6407,23 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "WATERIUMZ": {
+   "cat": "zcrystal",
+   "chance": 0,
+   "cost": 20000,
+   "desc": "Z파워의 결정. 물타입 기술을 Z기술로 업그레이드한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Waterium Z",
+   "id": "WATERIUMZ",
+   "ident": "waterium-z",
+   "kr": "물Z",
+   "rarity": "epic",
+   "sell": 10000,
+   "weight": 0,
+   "zType": "WATER"
   },
   "WATERSTONE": {
    "cat": "stone",

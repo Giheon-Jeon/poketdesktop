@@ -126,6 +126,9 @@ class Player(object):
         self.keystone = False
         self.mega_done = set()
         self.mega_req = False
+        # Z기술 (시즌 4). 이것도 사람마다 제 판에서 한 번씩 (zring["me"]).
+        B.gimmick_init(self)
+        self.z_req = False
 
     @property
     def mon(self):
@@ -206,6 +209,7 @@ class RaidBattle(object):
             bt.turn_no = self.round
             bt.keystone = {"me": p.keystone, "foe": False}
             bt.mega_done = p.mega_done       # 같은 객체 - 판을 다시 만들어도 한 번이 지켜진다
+            B.gimmick_share(p, bt)
             p.bt = bt
         self._sync_weather()
 
@@ -276,10 +280,11 @@ class RaidBattle(object):
         return events
 
     # ---------------- 고르기 ----------------
-    def choose(self, i, kind, value=None, mega=False):
+    def choose(self, i, kind, value=None, mega=False, z=False):
         """이번 라운드에 할 것을 적어 둔다. 라운드는 아직 안 돈다.
 
         mega: 이 라운드에 메가진화 (기술을 고를 때만, 될 때만 받는다).
+        z: 고른 기술을 Z기술로 (시즌 4, 같은 조건).
         """
         p = self.players[i]
         if self.over:
@@ -300,8 +305,9 @@ class RaidBattle(object):
                     raise ValueError(why)
             p.choice = ("move", key)
             p.mega_req = bool(mega) and p.bt.can_mega("me") is not None
+            p.z_req = bool(z) and key in p.bt.z_moves("me")
         elif kind == "switch":
-            p.mega_req = False
+            p.mega_req = p.z_req = False
             slot = int(value)
             if slot == p.slot or slot not in p.alive_slots():
                 raise ValueError("그 포켓몬으로는 바꿀 수 없습니다.")
@@ -388,6 +394,10 @@ class RaidBattle(object):
                 p.bt.mega_step({"me": True}, got)
                 ev.extend(self._tag(got, i))
             p.mega_req = False
+            # Z기술 (시즌 4): 메가진화 다음에
+            if p.playing() and p.choice and p.choice[0] == "move":
+                p.bt.z_request("me", p.choice[1], p.z_req)
+            p.z_req = False
 
         # 4) 기술
         for actor in self._order():
@@ -744,6 +754,8 @@ class RaidBattle(object):
                          "canMega": bool(p.playing() and p.bt is not None
                                          and p.bt.can_mega("me")),
                          "megaUsed": "me" in p.mega_done}
+            if p.bt is not None:
+                out["me"]["gimmick"] = B.gimmick_view(p.bt, "me", p.playing())   # 시즌 4
         return out
 
     # ---------------- 저장 ----------------
@@ -786,6 +798,7 @@ class RaidBattle(object):
                 "auto": p.auto, "choice": list(p.choice) if p.choice else None,
                 "keystone": p.keystone, "megaDone": sorted(p.mega_done),
                 "megaReq": p.mega_req,
+                "gimmick": B.gimmick_dump(p), "zReq": p.z_req,
             } for p in self.players],
             "field": self.field.dump(),
             "rng": [st[0], list(st[1]), st[2]],
@@ -814,6 +827,8 @@ class RaidBattle(object):
             p.keystone = bool(x.get("keystone"))
             p.mega_done = set(x.get("megaDone") or [])
             p.mega_req = bool(x.get("megaReq"))
+            B.gimmick_load(p, x.get("gimmick"))
+            p.z_req = bool(x.get("zReq"))
             self.players.append(p)
         self.round = int(d["round"])
         self.over = bool(d["over"])

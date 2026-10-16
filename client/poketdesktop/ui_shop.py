@@ -45,7 +45,7 @@ MAX_QTY = 999                 # 서버 item_routes.MAX_QTY 와 같은 값
 PANEL = "#101623"             # 액자 안 (ui_box 상세와 같은 색)
 
 # (분류 키, 보여줄 이름)
-CATS = [("all", "전체"), ("held", "지닌 도구"), ("ball", "몬스터볼"),
+CATS = [("all", "전체"), ("held", "지닌 도구"), ("zcrystal", "Z크리스탈"), ("ball", "몬스터볼"),
         ("stone", "진화의돌"), ("ev", "노력치"), ("iv", "개체값"),
         ("misc", "기타")]
 

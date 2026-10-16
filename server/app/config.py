@@ -161,6 +161,8 @@ WARM_SPRITES = _bool("POKET_WARM_SPRITES", True)
 # ---- 관장 도전 ----
 GYMS_PATH = os.environ.get("POKET_GYMS", os.path.join(ROOT, "data", "gyms.json"))
 KOREA_MAP_PATH = os.environ.get("POKET_KOREA_MAP", os.path.join(ROOT, "data", "korea_map.json"))
+# 악당 조직 표 (시즌 4, tools/build_villains.py). 간부의 팀은 gyms.json 의 것을 쓴다.
+VILLAINS_PATH = os.environ.get("POKET_VILLAINS", os.path.join(ROOT, "data", "villains.json"))
 TRAINER_SPRITE_DIR = os.environ.get("POKET_TRAINER_SPRITES",
                                     os.path.join(ROOT, "data", "trainer_sprites"))
 # 처음 이기면 레벨 x 50원 (Lv.20 1,000원 ~ Lv.100 5,000원). 원작 상금 느낌.

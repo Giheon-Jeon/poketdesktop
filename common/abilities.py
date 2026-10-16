@@ -320,8 +320,8 @@ def key_of(move):
 # ---------------------------------------------------------------- 타입
 def move_type(user, move):
     t = move.get("type")
-    if not on(user):
-        return t
+    if not on(user) or move.get("_z"):
+        return t                  # Z기술의 타입은 스킨·노말라이즈·촉촉보이스가 못 바꾼다 (본가와 같다)
     a = user.ability
     if a in ATE and t == "NORMAL":
         return ATE[a]
@@ -333,6 +333,8 @@ def move_type(user, move):
 
 
 def type_power_mult(user, move):
+    if move.get("_z"):
+        return 1.0
     a = user.ability if on(user) else None
     if a in ATE and move.get("type") == "NORMAL":
         return 1.2
@@ -1355,8 +1357,9 @@ def _end_of_turn(bt, f, who, ev):
 
 
 def _is_mega_stone(item):
+    """뺏을 수 없는 도구인가 (메가스톤, 시즌 4 부터 Z크리스탈도)."""
     from . import held as H
-    return H.is_mega_stone(item)
+    return H.stuck(item)
 
 
 def _item_name(item):

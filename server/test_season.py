@@ -7,7 +7,8 @@
 
   1. **RP 는 한 만큼 오른다.** 비슷한 상대면 이기면 +20, 지면 -15. 슈퍼볼에
      한 번 오르면 그 아래로 안 떨어진다. 하루 첫 승·연패 보호.
-  2. **받는 쪽이 거는 쪽보다 적으면 안 붙인다.** 전력이 비슷한 사람과 붙인다.
+  2. **받는 쪽이 거는 쪽보다 적으면 안 붙인다.** (누구를 먼저 고르는지는 test_match_rp.py -
+     시즌 4 부터 점수가 가까운 사람이 먼저다.)
   3. **랭크 배틀은 Lv.50 상한, 친구 배틀은 원래 레벨.**
   4. 랭크 팀이 있으면 그 팀으로, 놓아준 포켓몬은 팀에서 빠진다.
   5. 칭호·명패는 선물로 받아 달 수 있고, 가진 것만 달 수 있다.
@@ -420,14 +421,15 @@ def main():
         pvp.team_power([{"species": "PIKACHU", "level": 40}])
         > pvp.team_power([{"species": "PIKACHU", "level": 20}] * 2))
     # 이 DB 에 사람을 더 넣고 고른 사람이 규칙을 지키는지만 본다.
+    # 랭크전은 Lv.50 이상 여섯 마리만 걸고 받는다 (시즌 4, 10/16 결정) - 여섯 마리 팀은 Lv.50 이상으로 둔다.
     for i in range(4):
-        mkuser("ss_mm6_%d" % i, 6, 30 + i)
-    for i in range(3):
-        mkuser("ss_mm2_%d" % i, 2, 12 + i)
-    a6 = mkuser("ss_att6", 6, 31)
-    a2 = mkuser("ss_att2", 2, 13)
+        mkuser("ss_mm6_%d" % i, 6, 50 + i)
+    two = [mkuser("ss_mm2_%d" % i, 2, 50 + i) for i in range(3)]
+    low6 = mkuser("ss_mm6_low", 6, 49)
+    a6 = mkuser("ss_att6", 6, 51)
+    a2 = mkuser("ss_att2", 2, 52)
     teams = pvp._all_teams()
-    for att in (a6, a2):
+    for att in (a6,):
         mine = teams[att]
         seen_ops = set()
         for k in range(12):
@@ -435,20 +437,53 @@ def main():
             if op is None:
                 continue
             seen_ops.add(op)
-            gap = abs(pvp.team_power(teams[op]) / pvp.team_power(mine) - 1)
-            if gap > pvp.POWER_BANDS[-1] or not pvp.can_defend(len(mine), len(teams[op])):
-                chk("고른 상대가 규칙 안에 있다 (%s)" % att, False, (op, gap, len(teams[op])))
+            if not pvp.can_defend(len(mine), len(teams[op])):
+                chk("고른 상대가 규칙 안에 있다 (%s)" % att, False, (op, len(teams[op])))
                 break
         else:
-            chk("%d마리로 걸 때 고른 상대가 전부 규칙 안 (전력 %d%% · 마릿수)"
-                % (len(mine), int(pvp.POWER_BANDS[-1] * 100)), bool(seen_ops), seen_ops)
-    chk("두 마리 초보도 상대를 찾는다", pvp.find_opponent(a2) is not None)
-    lonely = mkuser("ss_lonely", 6, 100, species="ARCEUS")
+            chk("%d마리로 걸 때 고른 상대가 전부 규칙 안 (마릿수)"
+                % len(mine), bool(seen_ops), seen_ops)
+    print("\n=== 랭크전 조건: Lv.50 이상 여섯 마리 (시즌 4) ===")
+    chk("숫자는 시즌 규칙에 (화면도 같은 값을 쓴다)", season.RANK_MIN_COUNT == 6 and season.RANK_MIN_LEVEL == 50
+        and season.rules_public().get("rankMin") == {"count": 6, "level": 50}, season.rules_public().get("rankMin"))
+    why = pvp.can_start(a2, "random")
+    chk("두 마리 팀은 랭크전을 걸 수 없다 (몇 마리인지 알려 준다)", bool(why) and "Lv.50" in why
+        and "6마리" in why and "지금 2마리" in why, why)
+    chk("  상대도 못 찾는다", pvp.find_opponent(a2) is None)
+    why = pvp.can_start(low6, "random")
+    chk("여섯 마리여도 Lv.50 미만이 있으면 못 건다", bool(why) and "지금 0마리" in why, why)
+    chk("Lv.50 이상 여섯 마리면 걸 수 있다", pvp.can_start(a6, "random") is None, pvp.can_start(a6, "random"))
+    picked = set(filter(None, (pvp.find_opponent(a6, random.Random(k)) for k in range(30))))
+    chk("  조건을 못 채운 사람은 상대로도 안 뽑힌다", picked and not (picked & (set(two) | {low6, a2})), picked)
+    chk("  골라 붙이는 길도 막는다 (조건 밖 상대)", "랭크전 조건" in (pvp.can_fight(a6, low6, "random") or ""),
+        pvp.can_fight(a6, low6, "random"))
+    chk("친구 배틀은 랭크전이 아니라 그대로 된다", pvp.can_start(a2, "friend") is None
+        and "랭크전" not in (pvp.can_fight(a6, low6, "friend") or ""), pvp.can_fight(a6, low6, "friend"))
+    legends = mkuser("ss_lg6", 6, 50, species="MEWTWO")
+    why = pvp.can_start(legends, "random")
+    chk("전설·환상이 빠져 모자라면 그 까닭도 알려 준다", bool(why) and "지금 1마리" in why and "전설" in why, why)
+    s_me = pvp.summary(a2)
+    chk("내 정보에 조건을 채웠는지 싣는다", s_me.get("rankReady") is False and s_me.get("rankReadyCount") == 2
+        and pvp.summary(a6).get("rankReady") is True, (s_me.get("rankReady"), s_me.get("rankReadyCount")))
+    from app import pvp_routes as _pr
+    tv = _pr._team_view(low6)
+    chk("팀 창에도 (조건·지금 몇 마리)", tv.get("rankMin") == {"count": 6, "level": 50}
+        and tv.get("rankReady") is False and tv.get("rankReadyCount") == 0, (tv.get("rankReady"), tv.get("rankReadyCount")))
+    pvp.set_team(low6, [])
+    reg = [r["id"] for r in db.q("SELECT id FROM pokemon WHERE user_id=? ORDER BY slot", (low6,))]
+    db.run("UPDATE pokemon SET level=50 WHERE user_id=?", (low6,))
+    pvp.set_team(low6, reg[:4])
+    why = pvp.can_start(low6, "random")
+    chk("등록한 랭크 팀이 네 마리면 바탕화면이 여섯이어도 못 건다 (등록한 팀으로 센다)",
+        bool(why) and "지금 4마리" in why, why)
+    pvp.set_team(low6, reg)
+    chk("  여섯 마리로 등록하면 건다", pvp.can_start(low6, "random") is None, pvp.can_start(low6, "random"))
+    # 전설은 한 팀에 한 마리만 나가서 아르세우스 여섯은 랭크전 조건에 못 든다 - 전설이 아닌 센 팀으로
+    lonely = mkuser("ss_lonely", 6, 100, species="DRAGONITE")
     op = pvp.find_opponent(lonely)
-    chk("전력이 동떨어지면 안 붙인다",
-        op is None or abs(pvp.team_power(pvp._all_teams()[op])
-                          / pvp.team_power(pvp._all_teams()[lonely]) - 1)
-        <= pvp.POWER_BANDS[-1], op)
+    # 시즌 4: 전력은 사람을 떨어뜨리지 않는다. 받을 수 있는 여섯 마리 팀이 있으면 붙는다.
+    chk("전력이 동떨어져도 받을 사람이 있으면 붙인다",
+        op is not None and pvp.can_defend(6, len(pvp._all_teams()[op])), op)
 
     print("\n=== 자리 (사천왕·챔피언) ===")
     seat_users = []
@@ -681,8 +716,9 @@ def main():
     i = names.index("0290-season3-open")
     chk("손질 차례: 0290(시즌 3 열기) 다음에 0300", names[i:i + 2]
         == ["0290-season3-open", "0300-s3-void-early"], names[-3:])
-    chk("시즌 3 은 10/2 부터 2주", (season.SEASON, season.SEASON_STARTS, season.SEASON_ENDS)
-        == (3, "2026-10-02", "2026-10-16"))
+    chk("시즌 4 는 10/17 부터 2주", (season.SEASON, season.SEASON_STARTS, season.SEASON_ENDS)
+        == (4, "2026-10-17", "2026-10-31"))
+    chk("시즌 4 열기는 손질 목록의 맨 끝", names[-1] == "0320-season4-open", names[-2:])
 
     print("\n=== 규칙표 ===")
     rules = season.rules_public()

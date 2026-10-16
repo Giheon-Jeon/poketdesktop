@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 """유저 배틀 걸기 검사 — HTTP 로 실제 라우트를 두드린다.
 
-    python server/test_arena.py [http://127.0.0.1:8788]
+    python server/test_arena.py http://127.0.0.1:8788 /tmp/poket-test.db
+
+랭크전(랜덤 배틀)은 Lv.50 이상 여섯 마리가 있어야 걸고 받는다 (시즌 4). 갓 가입한 계정은 Lv.5 한 마리라
+DB 에 바로 넣어 채운다 - 그래서 서버가 쓰는 DB 경로가 필요하다 (관장 검사와 같다).
 
 대전은 비동기다. 상대가 접속해 있지 않아도 그 사람의 지금 파티를 가져와
 붙인다. 그래서 '자는 사람을 계속 때릴 수 있는가' 를 특히 본다.
 """
 import json
 import random
+import sqlite3
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8788").rstrip("/")
+DB = sys.argv[2] if len(sys.argv) > 2 else None
 OK = FAIL = 0
 
 
@@ -53,6 +58,23 @@ def mkuser(tag):
     return name, r["token"]
 
 
+def rank_team(uid):
+    """랭크전 조건을 채운다: Lv.50 피카츄 여섯 마리를 데리고 다니게 (스타팅은 바탕화면에서 내린다)."""
+    con = sqlite3.connect(DB)
+    con.execute("UPDATE pokemon SET on_desktop=0, slot=NULL WHERE user_id=?", (uid,))
+    for slot in range(6):
+        con.execute("INSERT INTO pokemon (user_id, species, nickname, level, exp, nature, ability,"
+                    " hidden_ability, gender, shiny, happiness, ivs, evs, moves, on_desktop, slot,"
+                    " met_level, caught_at, hyper, no_evolve, luxury, held)"
+                    " VALUES (?,'PIKACHU',NULL,50,125000,'HARDY','STATIC',0,'M',0,70,?,?,?,1,?,50,"
+                    "'2026-01-01','{}',0,0,NULL)",
+                    (uid, json.dumps({k: 20 for k in ("hp", "atk", "def", "spa", "spd", "spe")}),
+                     json.dumps({k: 0 for k in ("hp", "atk", "def", "spa", "spd", "spe")}),
+                     json.dumps(["THUNDERBOLT", "QUICKATTACK", "IRONTAIL", "THUNDERWAVE"]), slot))
+    con.commit()
+    con.close()
+
+
 def uid_of(name, token):
     s, r = call("GET", "/api/friends/search?name=" +
                 urllib.parse.quote(name), None, token)
@@ -60,11 +82,15 @@ def uid_of(name, token):
 
 
 def main():
+    if not DB:
+        print(__doc__)
+        return 2
     an, at = mkuser("a")
     bn, bt = mkuser("b")
     cn, ct = mkuser("c")
     ID_A, ID_B, ID_C = uid_of(an, bt), uid_of(bn, at), uid_of(cn, at)
     print("계정: %s(%s) / %s(%s) / %s(%s)" % (an, ID_A, bn, ID_B, cn, ID_C))
+    dt = None
 
     try:
         print("\n=== 친구가 아니면 못 건다 ===")
@@ -108,6 +134,16 @@ def main():
         chk("바로 다시 걸면 막힌다", s == 409, (s, r))
         chk("이유를 알려준다", "분에 한 번" in str(r.get("error", "")), r)
 
+        print("\n=== 랭크전 조건 (시즌 4) ===")
+        s, r = call("POST", "/api/pvp/random", {}, ct)
+        chk("Lv.50 이상 여섯 마리가 없으면 랜덤 배틀을 못 건다", s == 409
+            and "Lv.50" in str(r.get("error", "")) and "6마리" in str(r.get("error", "")), (s, r))
+        for who in (ID_A, ID_B, ID_C):
+            rank_team(who)
+        s, r = call("GET", "/api/pvp/team", None, ct)
+        chk("팀 창이 조건을 채웠다고 알려 준다", r.get("rankReady") is True and r.get("rankReadyCount") == 6
+            and r.get("rankMin") == {"count": 6, "level": 50}, (r.get("rankReady"), r.get("rankReadyCount")))
+
         print("\n=== 랜덤 배틀 ===")
         s, r = call("POST", "/api/pvp/random", {}, ct)
         chk("상대를 찾아 붙는다", s == 200 and r.get("matchId"), (s, r))
@@ -122,7 +158,8 @@ def main():
         # 걸려 "붙을 상대가 없습니다" 로 끝난다. 앞의 랜덤 배틀이 누구를
         # 고르냐에 따라 갈려서 세 번에 한 번쯤 실패했다. 아직 아무와도
         # 안 붙은 상대를 하나 넣어 두면 항상 성사된다.
-        mkuser("d")
+        dn, dt = mkuser("d")
+        rank_team(uid_of(dn, at))
         # 응답에 양쪽 결과가 다 들어 있다. 상대의 전적을 따로 조회하면
         # 안 된다 - 상대가 누구인지 모르고(서버가 고른다), 그 사람의
         # 최근 전적이 이 판이라는 보장도 없다.
@@ -191,7 +228,9 @@ def main():
             f.get("dailyBattles") == 20 and f.get("left") == 20 - f.get("foughtToday", -1), f)
     finally:
         print("\n=== 정리 ===")
-        for t in (at, bt, ct):
+        for t in (at, bt, ct, dt):
+            if not t:
+                continue
             call("DELETE", "/api/auth/account", {"password": "1234"}, t)
 
     print("\n======================================================")

@@ -43,6 +43,8 @@ ACT_TRIES = 5
 # 판이 바뀔 때마다(열렸다 · 턴이 돌았다 · 끝났다) 불리는 함수들. 길드 친선전(friendly.py)이 여기에
 # 걸어 두고 구경하는 사람들에게 밀어 준다. 받는 쪽에서 난 오류로 판이 깨지면 안 된다.
 listeners = []
+# 싸우는 사람에게 줄 판(public)에 덧붙이는 함수들 (row, out). 길드 친선전이 '관전 N명' 을 얹는다.
+decorators = []
 
 
 def _emit(mid):
@@ -186,6 +188,10 @@ def accept(uid, mid, now=None):
     from . import mega
     lb.keystone["me"] = mega.has_keystone(row["a_id"])
     lb.keystone["foe"] = mega.has_keystone(row["b_id"])
+    # Z기술 (시즌 4): 조건은 키스톤과 같다
+    from . import gimmick
+    lb.zring = gimmick.flags(row["a_id"], row["b_id"])
+    lb.bt.zring = lb.zring
     ev = lb.start()
     cur = db.run(
         "UPDATE live_match SET state='fighting', data=?, events=?, turn=0,"
@@ -265,7 +271,7 @@ def _save(row, lb, ev, now=None):
     return ok
 
 
-def act(uid, kind, value, now=None, mega=False):
+def act(uid, kind, value, now=None, mega=False, z=False):
     """이번 턴에 할 것을 적는다. 둘 다 모이면 그 자리에서 턴이 돈다.
 
     **부딪히면 다시 해본다** - 둘이 같은 판을 동시에 두드리므로, rev 가
@@ -277,7 +283,7 @@ def act(uid, kind, value, now=None, mega=False):
             raise LookupError("진행 중인 실시간 배틀이 없습니다.")
         lb = _load(row)
         who = side_of(row, uid)
-        lb.choose(who, kind, value, mega=mega)
+        lb.choose(who, kind, value, mega=mega, z=z)
         ev = None
         if lb.ready():
             ev = lb.resolve()
@@ -395,13 +401,19 @@ def public(row, uid, now=None):
         if row["result"] in ("a", "b", "draw"):
             out["outcome"] = ("draw" if row["result"] == "draw"
                               else ("win" if row["result"] == who else "lose"))
+    for fn in list(decorators):
+        try:
+            fn(row, out)
+        except Exception:                                   # noqa: BLE001
+            pass
     return out
 
 
 SPECTATE_MON = ("species", "num", "name", "level", "hp", "maxhp", "status", "shiny", "tint",
                 "fainted", "mega")
 SPECTATE_EVENT = ("t", "who", "target", "text", "move", "moveType", "cat", "hp", "maxhp", "damage",
-                  "crit", "eff", "slot", "status", "num", "newName", "to", "result")
+                  "crit", "eff", "slot", "status", "num", "newName", "to", "result",
+                  "base", "z")                                # Z기술 (시즌 4)
 _RECALL = re.compile(r"^(?:상대는 )?(.+?)(?:, 돌아와!| 을\(를\) 불러들였다!)$")
 
 

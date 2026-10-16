@@ -97,7 +97,7 @@ def wait_of(ev):
         return 0.5
     if t == "faint":
         return STEP_S + 0.2
-    if t == "mega":
+    if t in ("mega", "zpower"):
         return 0.9
     if t == "ability":
         return 0.8
@@ -651,6 +651,8 @@ class FightScene(object):
             mon["mega"] = True
             self._flash(who, mon, now)
             self.say("메가진화!", who, "#ffe08a", 1200)
+        elif t == "zpower" and who in SIDES and self.sides[who].mon:      # 시즌 4
+            self.say("Z기술!", who, "#ffd23c", 1200)
         elif t == "move":
             other = "b" if who == "a" else "a"
             if who in SIDES:

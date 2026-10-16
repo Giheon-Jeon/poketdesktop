@@ -37,7 +37,9 @@ from . import battle_zoom as Z
 from . import platform_os as PLAT
 from .ui_common import run_async
 from .ui_gym import shade
+from . import ui_spectate as SP
 from .ui_gym_battle import CAT_COLOR, CAT_KR, FX_SCALE, _FxStage, hp_color
+from . import ui_gimmick
 from . import ui_mega
 from .ui_mega import MegaToggle
 
@@ -93,6 +95,8 @@ class LiveBattleWindow(Z.Resizable):
         self.alive = True
         self.room = data
         self.view = data.get("battle") or {}
+        # 관전 N명 (길드원끼리의 판 - 친선전). 서버가 안 주면(다른 판) None 이고 아무것도 안 적는다.
+        self.watchers = data.get("watchers")
         # **turn 이 아니라 step 을 센다.** 교체는 턴을 안 올리므로 turn 만
         # 보면 상대가 다음 포켓몬을 내보낸 것을 못 알아채고, 제한 시간이
         # 다 갈 때까지 "고르고 있습니다" 인 채로 앉아 있게 된다.
@@ -273,6 +277,7 @@ class LiveBattleWindow(Z.Resizable):
         self.box = {"foe": self._namebox(s(16), s(12), False),
                     "me": self._namebox(sw - s(316), sh - s(104) - s(10), True)}
         self.banner = []
+        self._paint_watchers()
 
     def _namebox(self, x, y, mine):
         s = U.h
@@ -330,6 +335,10 @@ class LiveBattleWindow(Z.Resizable):
         self.msg.pack(side="left", fill="both", expand=True, padx=14)
         U.wrap_to_width(self.msg)
         self.mega = MegaToggle(f, before=self.msg, make=U.ghost_button)   # 시즌 3, 고를 때만 보인다
+        # Z기술 단추 (시즌 4). Z기술을 켜고 끄면 기술 칸을 다시 그린다 (이름·위력이 바뀐다)
+        self.gim = ui_gimmick.GimmickBar(f, before=self.msg, make=U.ghost_button,
+                                         on_change=self._gim_changed,
+                                         prev=getattr(self, "gim", None))
 
     def _commands(self):
         self.cmd = tk.Frame(self.win, bg=U.BG)
@@ -682,6 +691,10 @@ class LiveBattleWindow(Z.Resizable):
         if t == "mega":
             self._mega(ev)
             return None
+        if t == "zpower":                    # Z파워를 두른다 - 기술은 뒤따르는 move 가 그린다
+            ui_gimmick.z_event(self, ev, size=Z.px(MON_H.get(who, 100)) * 0.55,
+                               banner=lambda s: self._banner(who, s))
+            return None
         if t == "move":
             self.say(text)
             other = "foe" if who == "me" else "me"
@@ -762,6 +775,9 @@ class LiveBattleWindow(Z.Resizable):
     # ---------------- 서버 값으로 맞추기 ----------------
     def sync(self, room):
         self.room = room or self.room
+        if "watchers" in (room or {}):
+            self.watchers = room.get("watchers")
+            self._paint_watchers()
         self.view = self.room.get("battle") or self.view
         self.played = max(self.played, step_of(self.room))
         if self.room.get("deadlineIn") is not None:
@@ -780,6 +796,17 @@ class LiveBattleWindow(Z.Resizable):
                 self._paint_box(who)
         self._balls()
         self._paint_turn()
+
+    # ---- 관전 N명 (길드원끼리의 판)
+    def _paint_watchers(self):
+        SP.draw_watchers(self.cv, self.sw, getattr(self, "watchers", None))
+
+    def set_watchers(self, mid, n):
+        """길드에 '관전 N명' 이 밀려왔다 - 이 판의 것이면 고친다 (ui_spectate.Friendly.counted)."""
+        if str(mid) != str((self.room or {}).get("id")):
+            return
+        self.watchers = n
+        self._paint_watchers()
 
     def _paint_turn(self):
         me = self.view.get("me") or {}
@@ -894,6 +921,12 @@ class LiveBattleWindow(Z.Resizable):
         for b in (self.switch_btn, self.forfeit_btn):
             b.configure(state="disabled")
         self.mega.show(False)
+        self.gim.hide()
+
+    def _gim_changed(self):
+        """Z기술 단추를 켜고 껐다 - 기술을 고르는 중이면 칸을 다시 그린다."""
+        if self.alive and not self.busy and not self.sent and not self._switching:
+            self.show_commands()
 
     def show_commands(self):
         self.zoom_use()
@@ -909,6 +942,7 @@ class LiveBattleWindow(Z.Resizable):
         self.forfeit_btn.configure(state="normal")
         # 폴링이 명령 칸을 다시 그려도 켜 둔 메가는 그대로다 (이미 보이면 안 건드린다)
         self.mega.show(self.view.get("canMega") and not (self.sent or me.get("chosen")))
+        self.gim.show(None if (self.sent or me.get("chosen")) else self.view.get("gimmick"))
         if not self.view.get("canAct"):
             self.switch_btn.configure(state="disabled")
             why = ("%s 님이 다음 포켓몬을 고르고 있습니다."
@@ -938,7 +972,7 @@ class LiveBattleWindow(Z.Resizable):
         grid = tk.Frame(self.left, bg=U.BG)
         grid.pack(fill="both", expand=True)
         for i, m in enumerate((me.get("moves") or [])[:4]):
-            self._move_cell(grid, i, m)
+            self._move_cell(grid, i, self.gim.decorate(m))
         for c in (0, 1):
             grid.grid_columnconfigure(c, weight=1, uniform="mv")
         for r in (0, 1):
@@ -1018,6 +1052,7 @@ class LiveBattleWindow(Z.Resizable):
             grid.grid_columnconfigure(c, weight=1, uniform="pt")
         self.switch_btn.configure(state="disabled")
         self.mega.show(False)
+        self.gim.hide()
         self.hint.configure(text="쓰러진 포켓몬과 지금 나와 있는 포켓몬은 고를 수 없습니다.")
 
     def _party_cell(self, grid, i, m, active, ok):
@@ -1047,6 +1082,7 @@ class LiveBattleWindow(Z.Resizable):
         if self.busy or self.sent:
             return
         mega = self.mega.take() if kind == "move" else False
+        z = self.gim.take(move) if kind == "move" else False
         self.sent = True
         self.hide_commands()
         self.say("...")
@@ -1067,7 +1103,8 @@ class LiveBattleWindow(Z.Resizable):
                 return self.play(r.get("events") or [], r)
             self.sync(r)
             self.show_commands()
-        run_async(self.root, lambda: self.app.api.live_act(kind, move, slot, mega=mega), done)
+        run_async(self.root, lambda: self.app.api.live_act(kind, move, slot,
+                                                          **ui_gimmick.act_kwargs(mega, z)), done)
 
     def _leave_after_forfeit(self, room):
         """내가 기권했다 - 결과 창을 따로 띄우지 않고 닫는다 (제보, 1.9.2).

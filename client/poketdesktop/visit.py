@@ -33,6 +33,7 @@
 import math
 import time
 import tkinter as tk
+import tkinter.font as tkfont
 
 from PIL import Image, ImageDraw
 
@@ -48,13 +49,21 @@ from .ui_common import run_async
 PARTY_MS = 1000              # 주인이 내 파티가 바뀌었나 보는 간격 (서버는 0.5초보다 자주는 안 받는다)
 LOOK_MS = 500                # 손님이 보낸 포켓몬의 모습(메가진화)이 바뀌었나 보는 간격
 SAY_GAP = 0.65               # 말·동작을 이보다 자주 보내지 않는다 (서버는 0.6초 안의 것을 버린다)
-BUBBLE_MS = 6000             # 말풍선이 떠 있는 시간
+BUBBLE_MS = 5000             # 말풍선이 떠 있는 시간 (그 뒤 FADE_MS 동안 스르륵 사라진다)
+FADE_MS = 500                # 말풍선이 흐려지며 사라지는 시간
+STACK_MAX = 4                # 한 도트 위에 쌓아 두는 말풍선 수 (넘치면 가장 오래된 것부터 사라진다)
+STACK_GAP = 4                # 쌓인 말풍선 사이
+GLIDE = 0.35                 # 밀려 올라갈 때 한 번에 남은 거리의 이만큼 움직인다
+QUICK_MS = 30                # 미끄러지거나 사라지는 동안의 간격 (가만히 있을 때는 FOLLOW_MS)
 HINT_MS = 9000               # 처음에 알려 주는 말풍선
 FOLLOW_MS = 90               # 말풍선이 도트를 따라가는 간격
 STROLL = 1.6                 # 들어오고 나가는 걸음 (평소 걸음의 배수)
 POSE_MS = 9000               # 자기·앉기·눕기·기절을 이만큼 한다
 HOP_GAP = 380                # 춤·점프의 한 박자
 SAY_MAX = 60                 # 서버와 같다
+ENTER_GRACE = 0.5            # 입력 말풍선이 뜬 뒤 이만큼은 'Enter 뗌' 을 보내기로 안 읽는다 (말풍선을 연 Enter 의 뗌)
+IME_POLL_MS = 30             # 윈도우: 조합 중인 글자를 보는 간격
+KB_RECLAIM_MS = 60           # 키보드를 쥔 포켓몬이 포커스를 뺏기면 이만큼 뒤에 되찾는다 (그사이 누른 것이면 놓아준다)
 FETCH_RETRY = 60.0           # 못 받은 도트는 이만큼 지나서야 다시 받아 본다 (못 받으면 끝없이 다시 받던 것을 막는다)
 PAPER, INK, FAINT = "#fbfbf6", "#1b1b22", "#6e6e66"   # 말풍선 종이·글씨·흐린 글씨
 
@@ -68,7 +77,15 @@ HINT = "/춤 /자기 /앉기 /눕기 /점프 /인사 /기절 /일어나"
 TALK_HINT = "나를 누르고 Enter 를 치면 말할 수 있어요"
 GUEST_HINT = TALK_HINT + "\n우클릭: 여기에 두기 · 집으로 돌아오기"
 HOST_HINT = TALK_HINT + "\n놀러 온 포켓몬 우클릭: 돌려보내기"
+ARRIVED = "%s 님이 놀러 왔어요!"   # 놀러 온 포켓몬이 구석에 서면 그 머리 위에 (주인 화면)
 DROP_MS = 380                # 보따리가 머리 위에서 떨어지는 시간
+# 바탕화면에서 싸우는 동안에는 못 간다 (Visit.busy)
+CANT_GO = {"battle": "배틀 중에는 놀러 갈 수 없습니다.",
+           "pvp": "대전 상대를 찾는 중에는 놀러 갈 수 없습니다.",
+           "spectate": "친선전을 구경하는 동안에는 놀러 갈 수 없습니다."}
+GAVE_UP = {"battle": "배틀이 시작돼서 놀러 가지 않았습니다.",
+           "pvp": "대전 상대를 찾는 중이라 놀러 가지 않았습니다.",
+           "spectate": "친선전을 구경하는 중이라 놀러 가지 않았습니다."}
 # 자세마다 쓸 동작 (그 종에 있는 것 중 앞에서부터)
 POSES = {"sleep": ("Sleep", "EventSleep", "Laying"), "sit": ("Sit", "Idle"),
          "lie": ("Laying", "Sleep", "Sit"), "faint": ("Laying", "Sleep")}
@@ -400,9 +417,77 @@ class BundleObj(object):
             pass
 
 
+# ---------------------------------------------------------------- 키보드를 쥔 포켓몬
+def install_key_watch(app):
+    """앱 전체의 포커스 이동과 누르기를 본다 (한 번만 건다). 지금의 app.visit 에게 넘긴다.
+
+    맥 Tk 는 자기 창이 하나라도 없어질 때(입력 말풍선·말풍선·툴팁) 키보드를 받을 수 있는 맨 앞 창에 포커스를
+    넘긴다 (TkWmDeadWindow). 제목 있는 창(친구 창·허브)이 떠 있으면 그리로 가서, 말하고 나서 Enter 가 안 먹고
+    매번 포켓몬을 다시 눌러야 했다 (10/16 제보). Visit.on_focus_in 이 되찾는다.
+    """
+    root = app.root
+    if getattr(root, "_visit_key_watch", False):
+        return
+
+    def focus_in(e):
+        vis = getattr(app, "visit", None)
+        if vis is not None:
+            vis.on_focus_in(e)
+
+    def press(e):
+        vis = getattr(app, "visit", None)
+        if vis is not None:
+            vis.on_any_press(e)
+    try:
+        root.bind_all("<FocusIn>", focus_in, add="+")
+        root.bind_all("<ButtonPress>", press, add="+")
+        root._visit_key_watch = True
+    except tk.TclError:
+        pass
+
+
 # ---------------------------------------------------------------- 말풍선
+SCREENS_MS = 2000            # 모니터 목록을 이만큼 기억해 둔다 (말풍선은 0.09초마다 자리를 잡는다)
+_SCREENS = {"at": 0.0, "got": None, "told": False}
+
+
+def screen_of(root, x, y):
+    """그 점이 있는 모니터 (x1, y1, x2, y2). 어느 모니터에도 없으면(걸어 들어오는 중) 가장 가까운 것.
+
+    운영체제에 물은 모니터다 - 도트를 놓는 자리(Overlay.area 의 work_area)와 같은 좌표다. Tk 의
+    winfo_screenwidth 는 Tk 가 켜질 때 재 둔 주 화면 폭이라, 그 값이 실제와 다른 윈도우 PC 에서는 말풍선이
+    늘 화면 왼쪽 같은 자리에 떴다 (10/16 제보). 그 폭은 모니터를 못 물었을 때만 쓴다.
+    """
+    now = time.time()
+    got = _SCREENS["got"]
+    if got is None or now - _SCREENS["at"] > SCREENS_MS / 1000.0:
+        sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+        try:
+            got = [tuple(int(v) for v in s) for s in PLAT.screens(sw, sh) if s[2] > s[0] and s[3] > s[1]]
+        except Exception:                                   # noqa: BLE001
+            got = []
+        got = got or [(0, 0, sw, sh)]
+        _SCREENS["at"], _SCREENS["got"] = now, got
+        if not _SCREENS["told"] and abs((got[0][2] - got[0][0]) - sw) > 2:
+            _SCREENS["told"] = True                         # 한 번만 남긴다 (원인을 짚을 때 본다)
+            config.log("Tk 의 화면 폭(%d)이 주 모니터(%s)와 다릅니다 - 말풍선은 모니터 기준으로 놓습니다."
+                       % (sw, got[0]))
+
+    def dist(s):
+        return max(s[0] - x, 0, x - s[2] + 1) + max(s[1] - y, 0, y - s[3] + 1)
+    return min(got, key=dist)
+
+
 class _Floater(object):
-    """도트 머리 위에 떠서 따라다니는 작은 창 (말풍선·입력 말풍선)."""
+    """도트 머리 위에 떠서 따라다니는 작은 창 (말풍선·입력 말풍선).
+
+    말풍선은 도트마다 쌓인다 (Visit._restack): offset 은 기본 자리(도트 바로 위)에서 몇 픽셀 위에 설지,
+    _shown 은 지금 그려진 높이 - offset 쪽으로 미끄러진다. 시간이 다 되면 FADE_MS 동안 흐려지다 닫힌다.
+    """
+    offset = 0
+    _shown = 0.0
+    _fade_at = None
+    on_gone = None
 
     def _make_win(self, root, border):
         self.win = tk.Toplevel(root)
@@ -417,23 +502,59 @@ class _Floater(object):
         self._job = None
         if self.dead:
             return
-        if self.until is not None and time.time() >= self.until:
-            return self.close()
+        now = time.time()
+        if self.until is not None and now >= self.until:
+            self.fade()
+        alpha = None
+        if self._fade_at is not None:
+            alpha = 1.0 - (now - self._fade_at) * 1000.0 / FADE_MS
+            if alpha <= 0:
+                return self.close()
+        gap = self.offset - self._shown
+        self._shown = float(self.offset) if abs(gap) < 1 else self._shown + gap * GLIDE
         try:
             p = self.pet
             self.win.update_idletasks()
             w, h = self.win.winfo_reqwidth(), self.win.winfo_reqheight()
             lift = (getattr(p, "name_h", 0) + 6) if getattr(p, "name_win", None) else 0
-            x = int(p.x + getattr(p, "ax", p.fw / 2.0) - w / 2.0)
-            y = int(p.y - h - lift - 4)
-            sw = self.root.winfo_screenwidth()
-            x = max(4, min(x, sw - w - 4))
-            y = max(4, y)
+            cx = p.x + getattr(p, "ax", p.fw / 2.0)
+            x = int(cx - w / 2.0)
+            y = int(round(p.y - h - lift - 4 - self._shown))
+            sx1, sy1, sx2, _sy2 = screen_of(self.root, cx, p.y)    # 그 도트가 있는 모니터 안으로만 당긴다
+            x = max(sx1 + 4, min(x, sx2 - w - 4))
+            y = max(sy1 + 4, y)
             self.win.geometry("+%d+%d" % (x, y))
+            if alpha is not None:
+                self.win.attributes("-alpha", max(0.0, min(1.0, alpha)))
             PLAT.raise_above(self.win)
         except Exception:                                   # noqa: BLE001
             return self.close()
-        self._job = self.root.after(FOLLOW_MS, self.follow)
+        busy = alpha is not None or self._shown != self.offset
+        self._job = self.root.after(QUICK_MS if busy else FOLLOW_MS, self.follow)
+
+    def kick(self):
+        """자리를 지금 다시 잡는다 (쌓인 자리가 바뀌었다 - 기다리지 않고 미끄러지기 시작한다)."""
+        if self.dead:
+            return
+        if self._job is not None:
+            try:
+                self.root.after_cancel(self._job)
+            except Exception:                               # noqa: BLE001
+                pass
+            self._job = None
+        self.follow()
+
+    def fade(self):
+        """스르륵 사라지기 시작한다 (이미 사라지는 중이면 그대로)."""
+        if self._fade_at is None and not self.dead:
+            self._fade_at = time.time()
+
+    def height(self):
+        try:
+            self.win.update_idletasks()
+            return int(self.win.winfo_reqheight())
+        except Exception:                                   # noqa: BLE001
+            return 0
 
     def _stop_follow(self):
         self.dead = True
@@ -448,11 +569,12 @@ class _Floater(object):
 class Bubble(_Floater):
     """도트 머리 위의 말풍선. 정한 시간 동안 도트를 따라다니다 사라진다. hint 는 흐린 글씨(알림)."""
 
-    def __init__(self, root, pet, text, ms=BUBBLE_MS, hint=False, icon=None, gift=False):
+    def __init__(self, root, pet, text, ms=BUBBLE_MS, hint=False, icon=None, gift=False, on_gone=None):
         self.root = root
         self.pet = pet
         self.dead = False
         self._job = None
+        self.on_gone = on_gone        # 닫히면 부른다 (쌓인 말풍선 자리를 다시 잡는다)
         self._make_win(root, U.ACCENT if gift else U.LINE2)
         self.label = tk.Label(self.win, text=text, bg=PAPER, fg=FAINT if hint else INK,
                               font=U.FONT_XS if hint else (U.FONT_B if gift else U.FONT_S),
@@ -465,11 +587,19 @@ class Bubble(_Floater):
         self.follow()
 
     def close(self):
+        if self.dead:
+            return
         self._stop_follow()
         try:
             self.win.destroy()
         except Exception:                                   # noqa: BLE001
             pass
+        gone, self.on_gone = self.on_gone, None
+        if gone is not None:
+            try:
+                gone()
+            except Exception:                               # noqa: BLE001
+                pass
 
 
 class InputBubble(_Floater):
@@ -477,6 +607,11 @@ class InputBubble(_Floater):
 
     다른 데를 눌러 포커스를 잃었을 때 친 것이 없으면 닫는다 (친 것이 있으면 남겨 둔다 - 다시 포켓몬을
     누르면 이어서 친다).
+
+    한글 입력 (1.11.0 뒤 제보): 맥은 글자를 짜던 중에 친 Enter 를 입력기가 '짜기 끝내기' 로 먹어서 칸이
+    Enter 눌림을 못 받는다 - Enter 를 두 번 쳐야 보내졌다. 뗌은 오므로 눌림 없이 뗌만 오면 보낸다.
+    윈도우는 Tk 가 짜는 중인 글자를 칸에 그리지 않아 한 글자씩 늦게 보였다 - 입력기에 직접 물어 커서
+    자리에 따로 그린다 (PLAT.ime_composition).
     """
 
     def __init__(self, visit, pet):
@@ -484,6 +619,11 @@ class InputBubble(_Floater):
         self.dead = False
         self._job = None
         self.until = None
+        self._born = time.monotonic()
+        self._enter_down = False      # Enter 눌림을 받았다 (그 뗌은 넘긴다)
+        self.comp = None              # 윈도우: 조합 중인 글자를 그리는 칸
+        self._comp_text = ""
+        self._ime_job = None
         self._make_win(self.root, U.ACCENT)
         box = tk.Frame(self.win, bg=PAPER)
         box.pack(padx=1, pady=1)
@@ -496,10 +636,16 @@ class InputBubble(_Floater):
                             justify="left", anchor="w", wraplength=U.h(230))
         self.tip.pack(fill="x", padx=8, pady=(0, 5))
         for seq in ("<Return>", "<KP_Enter>"):
-            self.entry.bind(seq, self.send)
+            self.entry.bind(seq, self.press_enter)
+        for seq in ("<KeyRelease-Return>", "<KeyRelease-KP_Enter>"):
+            self.entry.bind(seq, self.release_enter)
         self.entry.bind("<Escape>", lambda _e: self.close(refocus=True) or "break")
         self.win.bind("<Escape>", lambda _e: self.close(refocus=True) or "break")
         self.entry.bind("<FocusOut>", self._lost)
+        if PLAT.ime_composition is not None:
+            self.comp = tk.Label(box, text="", bg=PAPER, fg=INK, font=U.FONT_S + ("underline",),
+                                 bd=0, padx=0, pady=0)
+            self._ime_job = self.root.after(IME_POLL_MS, self._poll_ime)
         self.follow()
         self.focus()
         self.root.after(60, self._focus_again)       # 윈도우는 새 창이 뜬 바로 그때 포커스를 안 주기도 한다
@@ -547,6 +693,69 @@ class InputBubble(_Floater):
         except tk.TclError:
             pass
 
+    def press_enter(self, _e=None):
+        self._enter_down = True
+        return self.send()
+
+    def release_enter(self, _e=None):
+        """Enter 를 뗐다. 눌림을 이미 받았으면 그것으로 끝났다. 눌림 없이 뗌만 왔으면 맥 입력기가 눌림을
+        '글자 짜기 끝내기' 로 먹은 것이다 - 친 글이 있으면 그때 보낸다. 막 뜬 말풍선이거나 빈 칸이면
+        말풍선을 연 Enter 의 뗌이라 그냥 둔다."""
+        down, self._enter_down = self._enter_down, False
+        if down or self.dead:
+            return "break"
+        if time.monotonic() - self._born < ENTER_GRACE or not self.var.get().strip():
+            return "break"
+        return self.send()
+
+    def _mine_focus(self):
+        """글자 포커스가 이 말풍선이나 그 포켓몬 창에 있나 (모르면 그렇다고 본다)."""
+        try:
+            f = self.root.focus_get()
+        except Exception:                                   # noqa: BLE001
+            return True
+        if f is None:
+            return True
+        name = str(f)
+        for w in (self.win, getattr(self.pet, "win", None)):
+            if w is not None and (name == str(w) or name.startswith(str(w) + ".")):
+                return True
+        return False
+
+    def _poll_ime(self):
+        self._ime_job = None
+        if self.dead:
+            return
+        text = ""
+        if self._mine_focus():
+            try:
+                text = PLAT.ime_composition() or ""
+            except Exception:                               # noqa: BLE001
+                text = ""
+        self.show_composition(text)
+        self._ime_job = self.root.after(IME_POLL_MS, self._poll_ime)
+
+    def show_composition(self, text):
+        """조합 중인 글자를 칸의 커서 자리에 밑줄 글씨로 그린다 (없으면 치운다). 다 짜면 칸에 들어간다."""
+        if self.comp is None or self.dead or text == self._comp_text:
+            return
+        self._comp_text = text
+        try:
+            if not text:
+                self.comp.place_forget()
+                return
+            whole = self.entry.get()
+            first = self.entry.index("@0")              # 칸이 옆으로 밀렸으면 보이는 첫 글자
+            cur = self.entry.index("insert")
+            font = tkfont.Font(root=self.root, font=self.entry.cget("font"))
+            inset = int(self.entry.cget("highlightthickness")) + int(self.entry.cget("bd")) + 1
+            x = inset + font.measure(whole[first:cur])
+            self.comp.configure(text=text)
+            self.comp.place(in_=self.entry, x=x, y=0, relheight=1.0)
+            self.comp.lift()
+        except tk.TclError:
+            pass
+
     def send(self, _e=None):
         text = self.var.get()
         got = parse(text)
@@ -577,6 +786,12 @@ class InputBubble(_Floater):
         if self.dead:
             return
         self._stop_follow()
+        if self._ime_job is not None:
+            try:
+                self.root.after_cancel(self._ime_job)
+            except Exception:                               # noqa: BLE001
+                pass
+            self._ime_job = None
         try:
             PLAT.drop_keys(self.win)
         except Exception:                                   # noqa: BLE001
@@ -587,6 +802,7 @@ class InputBubble(_Floater):
             pass
         if self.visit.input is self:
             self.visit.input = None
+        self.visit._restack(self.pet)                 # 이 위에 얹혀 있던 말풍선이 내려온다
         if refocus:
             self.visit.focus_pet(self.pet)
 
@@ -618,11 +834,16 @@ class Visit(object):
         self._home = None             # 손님: 집으로 걸어 들어오는 중인 (도트, 원래 battling)
         self._leaving = []            # 걸어 나가는 중인 남의 도트 (다 나가면 치운다)
         self._keyed = set()           # 글자를 받게 열어 준 창 (끝나면 닫는다)
-        self.bubbles = {}             # {id(도트): Bubble}
+        self.bubbles = {}             # {id(도트): 그 도트의 가장 새 말풍선}
+        self._stacks = {}             # {id(도트): [말풍선, ...]} - 오래된 것부터 (새 것이 도트 바로 위)
         self.input = None             # 입력 말풍선 (하나만)
         self.bundle_objs = {}         # {보따리 번호: BundleObj} - 두 화면 모두 보인다
         self._tips = {}               # {보따리 번호: Bubble} - 마우스를 올리면 뜨는 안내
         self._claims_told = set()     # '받았다' 를 이미 띄운 보따리 (응답과 소켓이 둘 다 온다)
+        self._refused = set()         # 들어가지 않고 끝낸 놀러 가기 (보내는 사이에 배틀이 시작됐다)
+        self._kb = None               # 키보드를 쥔 내 포켓몬 (누르면 쥔다 - 다른 창을 누르거나 새 창이 뜨면 놓는다)
+        self._kb_known = set()        # 쥘 때 이미 있던 창 - 이것들이 포커스를 가져가면 되찾는다
+        self._kb_job = None
 
     # ---------------- 소켓 ----------------
     def start(self):
@@ -689,13 +910,31 @@ class Visit(object):
             config.log("놀러 가기 오류 (%s): %s\n%s" % (t, e, traceback.format_exc()))
 
     # ---------------- 보내기 ----------------
+    def busy(self):
+        """바탕화면에서 배틀이 돌거나 곧 열리나. 그렇다면 무엇인지 ("battle" / "pvp" / "spectate"), 아니면 None.
+
+        야생 배틀·대전 재생·친선전 구경은 내 바탕화면에서 한다. 놀러 가면 화면이 친구 집이 되고 내 도트가
+        빠져서 둘이 섞인다. 배틀 창(실시간·관장·레이드)은 따로 뜨는 창이라 상관없다.
+        """
+        app = self.app
+        wild = getattr(app, "wild", None)
+        if (getattr(app, "battle", None) or getattr(app, "arena", None)
+                or getattr(wild, "throwing", False)):          # 야생을 눌러 배틀을 여는 중·볼을 던지는 중
+            return "battle"
+        if getattr(app, "_pvp_busy", False):                   # 랜덤 배틀: 상대를 찾는 중 (끝나면 바로 재생한다)
+            return "pvp"
+        fr = getattr(app, "friendly", None)
+        if fr is not None and fr.watching():
+            return "spectate"
+        return None
+
     def can_go(self):
         """지금 놀러 갈 수 있나. 못 가면 그 까닭."""
-        app = self.app
         if self.active:
             return "이미 친구와 연결돼 있습니다."
-        if getattr(app, "battle", None) or getattr(app, "arena", None):
-            return "배틀 중에는 놀러 갈 수 없습니다."
+        busy = self.busy()
+        if busy:
+            return CANT_GO[busy]
         if self.sock is None:
             return "이 PC 에서는 친구 채팅을 쓸 수 없습니다 (연결 라이브러리가 없습니다)."
         if not getattr(self.sock, "connected", False):
@@ -752,6 +991,8 @@ class Visit(object):
                 self.apply_party(v["party"], v.get("hostLead"))
             self.set_bundles(v.get("bundles") or [], v.get("carry"), fall=False)
             return
+        if v.get("role") == "guest" and self.busy():
+            return self._refuse(v)
         if self.v is not None:
             self.leave(None, tell=False, walk=False)
         self._finish_outro()              # 걸어 나가던 것은 바로 마무리한다
@@ -769,6 +1010,20 @@ class Visit(object):
             self.set_bundles(v["bundles"], v.get("carry"), fall=False)
         vid = v.get("id")
         self.root.after(1800, lambda: self._hint(vid))
+
+    def _refuse(self, v):
+        """보내는 사이에 배틀이 시작됐다 (놀러 가기를 누르고 답을 기다리는 동안 야생을 눌렀다 등).
+
+        들어가면 싸우던 바탕화면이 친구 집이 된다 - 들어가지 않고 서버에서도 끝낸다 (친구 화면에서는 들어왔다가
+        바로 돌아간다). 들고 간 도구는 보여 주기만 했던 것이라 가방에서 빠지지 않았다.
+        """
+        vid = v.get("id")
+        if vid in self._refused:          # 응답과 다시 붙은 소켓이 같은 것을 또 준다
+            return
+        self._refused.add(vid)
+        busy = self.busy()
+        run_async(self.root, self.app.api.visit_end, lambda _r, _e: None)
+        self.app.notify(GAVE_UP.get(busy, GAVE_UP["battle"]))
 
     def _hint(self, vid):
         """어떻게 말하는지 내 포켓몬 머리 위에 한 번 알려 준다."""
@@ -794,9 +1049,7 @@ class Visit(object):
             self._job = None
         if self.input is not None:
             self.input.close()
-        for b in list(self.bubbles.values()):
-            b.close()
-        self.bubbles = {}
+        self._close_bubbles()
         self.set_bundles([], None)
         for w in list(self._keyed):
             try:
@@ -804,6 +1057,7 @@ class Visit(object):
             except Exception:                               # noqa: BLE001
                 pass
         self._keyed = set()
+        self.release_keys()
         ov = self.app.overlay
         if role == "guest":
             for p in list(self.mirrors.values()):
@@ -863,9 +1117,7 @@ class Visit(object):
         st = getattr(p, "_stroll", None)
         if st is not None:
             st.cancel()
-        b = self.bubbles.pop(id(p), None)
-        if b is not None:
-            b.close()
+        self._close_bubbles(p)
         try:
             if ov is not None and p in ov.extra:
                 ov.extra.remove(p)
@@ -971,13 +1223,12 @@ class Visit(object):
             return
         if self.input is not None:
             self.input.close()
-        for b in list(self.bubbles.values()):
-            b.close()
-        self.bubbles = {}
+        self._close_bubbles()
         self._leaving = []                                   # 걸어 나가던 남의 도트는 이미 지워졌다
         self._finish_outro()                                 # 걸어 나가던 손님은 바로 집으로
         self._home = None                                    # 집으로 걸어 들어오던 도트도 새 것이다
         self._keyed = set()
+        self.release_keys()                                  # 쥐고 있던 도트도 새 것이다
         self.mirrors = {}
         self.visitor = None
         if not self.active:
@@ -1233,7 +1484,17 @@ class Visit(object):
             return
         pet.x, pet.y = self._offstage(pet), cy             # 화면 오른쪽 밖에서 걸어 들어온다
         pet.place()
-        self._walk(pet, cx, cy)
+        vid = v.get("id")
+        self._walk(pet, cx, cy, done=lambda: self._arrived(pet, vid))
+
+    def _arrived(self, pet, vid):
+        """놀러 온 포켓몬이 걸어 들어와 구석에 섰다: 그 머리 위에 'OO 님이 놀러 왔어요!' (10/16 요청).
+
+        알림(notify)만으로는 누가 왔는지 놓치기 쉬웠다. 다시 세울 때(크기 바꾸기·다시 붙기)는 걷지 않아서 안 뜬다.
+        """
+        if self.v is None or self.v.get("id") != vid or self.visitor is not pet or self.guest:
+            return None
+        return self.show_bubble(pet, ARRIVED % (self.v.get("partner") or "친구"), ms=BUBBLE_MS + 2000, gift=True)
 
     def visitor_look(self, look):
         pet = self.visitor
@@ -1389,6 +1650,92 @@ class Visit(object):
     def focus_pet(self, pet):
         if not self.active or pet is None:
             return
+        self._hold_keys(pet)
+        try:
+            PLAT.take_keys(pet.win)
+            self._keyed.add(pet.win)
+        except Exception:                                   # noqa: BLE001
+            pass
+
+    # ---- 키보드를 쥔 포켓몬 (install_key_watch) ----
+    def _hold_keys(self, pet):
+        self._kb = pet
+        self._kb_known = set(str(w) for w in self.root.winfo_children() if isinstance(w, tk.Toplevel))
+        self._kb_known.add(str(self.root))
+        install_key_watch(self.app)
+
+    def release_keys(self):
+        self._kb, self._kb_known = None, set()
+        if self._kb_job is not None:
+            try:
+                self.root.after_cancel(self._kb_job)
+            except Exception:                               # noqa: BLE001
+                pass
+            self._kb_job = None
+
+    def _kb_window(self, top):
+        """키보드를 쥔 쪽의 창인가 (그 포켓몬 창, 그 포켓몬의 입력 말풍선)."""
+        pet = self._kb
+        if pet is None or top is None:
+            return False
+        name = str(top)
+        if name == str(pet.win):
+            return True
+        inp = self._input_of(pet)
+        return inp is not None and name == str(inp.win)
+
+    def on_any_press(self, e):
+        """앱 어디든 눌렀다. 제목 있는 창(친구 창·허브·설정)을 누른 것이면 그 창에 쓰려는 것이다 - 키보드를 놓는다."""
+        if self._kb is None:
+            return
+        try:
+            top = e.widget.winfo_toplevel()
+            if self._kb_window(top):
+                return
+            if not top.overrideredirect():
+                self.release_keys()
+        except Exception:                                   # noqa: BLE001
+            pass
+
+    def on_focus_in(self, e):
+        """앱 안에서 포커스가 옮겨 갔다. 키보드를 쥔 포켓몬이 있으면: 원래 있던 창이 가져간 것은 되찾고
+        (Tk 가 창을 닫으며 넘긴 것), 새로 뜬 창이 받은 것은 그 창 몫으로 놓아준다."""
+        pet = self._kb
+        if pet is None:
+            return
+        if not self.active or pet not in self.speakers():
+            return self.release_keys()
+        try:
+            top = e.widget.winfo_toplevel()
+        except Exception:                                   # noqa: BLE001
+            return
+        if self._kb_window(top):
+            return
+        if str(top) not in self._kb_known:
+            return self.release_keys()
+        if self._kb_job is None:
+            self._kb_job = self.root.after(KB_RECLAIM_MS, self._reclaim_keys)
+
+    def _reclaim_keys(self):
+        self._kb_job = None
+        pet = self._kb
+        if pet is None or not self.active or pet not in self.speakers():
+            return
+        try:
+            f = self.root.focus_get()
+        except Exception:                                   # noqa: BLE001
+            f = None
+        if f is None:
+            return                                          # 다른 프로그램으로 갔다 - 끌어오지 않는다
+        try:
+            if self._kb_window(f.winfo_toplevel()) or PLAT.mouse_buttons_down():
+                return                                      # 이미 돌아왔거나, 지금 무언가를 누르는 중이다
+        except Exception:                                   # noqa: BLE001
+            return
+        inp = self._input_of(pet)
+        if inp is not None:
+            inp.focus()
+            return
         try:
             PLAT.take_keys(pet.win)
             self._keyed.add(pet.win)
@@ -1405,15 +1752,13 @@ class Visit(object):
                 inp.focus()
                 return inp
             inp.close()
-        old = self.bubbles.pop(id(pet), None)
-        if old is not None:
-            old.close()
         try:
             self.input = InputBubble(self, pet)
         except Exception as e:                              # noqa: BLE001
             import traceback
             config.log("입력 말풍선을 못 열었습니다: %s\n%s" % (e, traceback.format_exc()))
             self.input = None
+        self._restack(pet)                                  # 떠 있던 말풍선은 입력 말풍선 위로 올라간다
         return self.input
 
     def say(self, text, pet=None):
@@ -1455,21 +1800,87 @@ class Visit(object):
         self.show_bubble(self.partner_pet(pid), text)
 
     def show_bubble(self, pet, text, ms=BUBBLE_MS, hint=False, gift=False, icon=None):
+        """그 도트 위에 말풍선을 띄운다. 떠 있던 것은 지우지 않고 위로 밀어 올린다 (10/16 요청: 쌓이는 말풍선).
+
+        새 것이 도트 바로 위, 먼저 한 말일수록 위에 선다. 각자 BUBBLE_MS 동안 떠 있다가 스르륵 사라진다.
+        STACK_MAX 개를 넘으면 가장 오래된 것부터 사라진다.
+        """
         if pet is None or not text:
             return None
         inp = self.input
         if inp is not None and not inp.dead and inp.pet is pet and hint:
             return None                   # 치는 중인 사람에게 알림은 덮지 않는다
-        old = self.bubbles.pop(id(pet), None)
-        if old is not None:
-            old.close()
+        st = self._stack_of(pet)
         try:
-            b = Bubble(self.root, pet, text, ms=ms, hint=hint, gift=gift, icon=icon)
+            b = Bubble(self.root, pet, text, ms=ms, hint=hint, gift=gift, icon=icon,
+                       on_gone=lambda: self._bubble_gone(pet))
         except Exception as e:                              # noqa: BLE001
             config.log("말풍선 실패: %s" % e)
             return None
+        st.append(b)
+        self._stacks[id(pet)] = st
+        live = [x for x in st if x._fade_at is None]
+        for old in live[:-STACK_MAX]:
+            old.fade()
         self.bubbles[id(pet)] = b
+        self._restack(pet, new=b)
         return b
+
+    def _stack_of(self, pet):
+        """그 도트 위에 떠 있는 말풍선 (오래된 것부터). 닫힌 것은 뺀다."""
+        st = [b for b in self._stacks.get(id(pet), []) if not b.dead]
+        if st:
+            self._stacks[id(pet)] = st
+        else:
+            self._stacks.pop(id(pet), None)
+        return st
+
+    def _restack(self, pet, new=None):
+        """쌓인 자리를 다시 정한다: 새 것이 도트 바로 위(입력 말풍선이 열려 있으면 그 위), 오래된 것일수록 위로.
+
+        자리가 바뀐 말풍선은 미끄러져 간다. new(방금 띄운 것)는 제자리에 바로 선다 - 밀려 올라가는 것은 예전 것들이다.
+        """
+        if pet is None:
+            return
+        st = self._stack_of(pet)
+        if not st:
+            return
+        off = 0
+        inp = self.input
+        if inp is not None and not inp.dead and inp.pet is pet:
+            off = inp.height() + STACK_GAP
+        for b in reversed(st):
+            moved = b.offset != off
+            b.offset = off
+            if b is new:
+                b._shown = float(off)
+                b.kick()
+            elif moved:
+                b.kick()
+            off += b.height() + STACK_GAP
+
+    def _bubble_gone(self, pet):
+        """말풍선 하나가 닫혔다 (시간이 다 됐거나 밀려났다). 남은 것을 다시 쌓는다."""
+        st = self._stack_of(pet)
+        cur = self.bubbles.get(id(pet))
+        if cur is None or cur.dead:
+            if st:
+                self.bubbles[id(pet)] = st[-1]
+            else:
+                self.bubbles.pop(id(pet), None)
+        self._restack(pet)
+
+    def _close_bubbles(self, pet=None):
+        """말풍선을 바로 치운다 (pet 을 주면 그 도트 것만, 아니면 전부)."""
+        if pet is None:
+            stacks, self._stacks = list(self._stacks.values()), {}
+            heads, self.bubbles = list(self.bubbles.values()), {}
+        else:
+            stacks = [self._stacks.pop(id(pet), [])]
+            heads = [b for b in [self.bubbles.pop(id(pet), None)] if b is not None]
+        for b in [x for st in stacks for x in st] + heads:
+            b.on_gone = None
+            b.close()
 
     def _hold(self, pet):
         """동작 동안 스스로 안 움직이게 한다 (원래 값을 기억해 둔다).

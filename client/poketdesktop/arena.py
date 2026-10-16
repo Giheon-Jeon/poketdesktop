@@ -615,6 +615,9 @@ class Arena(object):
         # 이 판 동안 그 모습으로 싸운다 (1.8.0). 끝나면 cleanup 이 되돌린다.
         if t == "mega" and src:
             return mega_fx.battle(self, src, ev.get("num"), done)
+        # Z기술 (시즌 4). 머리 위 글씨로 알린다 - 기술 자체는 뒤따르는 move 가 그린다.
+        if t == "zpower" and src:
+            self.float_over(src, "Z기술!", "#ffd23c")
         if t == "faint":
             side = self.active.get(who)
             if side:

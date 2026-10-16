@@ -1056,7 +1056,7 @@ class App(object):
 
     def _on_guild_ws(self, ev):
         t = (ev or {}).get("t")
-        if self.friendly is not None and t in ("live", "friendly", "friendly_fight"):
+        if self.friendly is not None and t in ("live", "friendly", "friendly_fight", "watchers"):
             self.friendly.on_event(ev)       # 길드 친선전 (ui_spectate)
             return
         if t == "chat":
@@ -1585,6 +1585,12 @@ class App(object):
         if self.battle:
             self.notify("야생 배틀이 끝난 뒤에 해주세요.")
             return tell(None, "야생 배틀이 끝난 뒤에 해주세요.")
+        if self.visit is not None and self.visit.guest:
+            # 대전은 끝나자마자 바탕화면(투기장)에서 재생한다. 놀러 가 있으면 그 바탕화면이 친구 집이라
+            # 재생을 못 하고, 예전에는 판만 치르고 결과 화면이 사라졌다 (watch_match).
+            msg = "친구 집에 놀러 가 있는 동안에는 대전을 걸 수 없습니다. 돌아온 뒤에 해 주세요."
+            self.notify(msg)
+            return tell(None, msg)
         self._pvp_busy = True
         # 상대를 찾고 판을 다 계산해서 받기까지 몇 초 걸린다. 그동안
         # 화면에 아무 변화가 없으면 눌린 건지 아닌지를 알 수가 없다.
@@ -2079,8 +2085,11 @@ class App(object):
         m.add_command(label=title, state="disabled")
         m.add_separator()
         m.add_command(label="정보 보기", command=lambda: self.pet_open(pet))
+        # 못 누르는 줄('여기에 두기 (들고 온 도구 없음)')은 command 가 없다. r["command"] 로 꺼내면
+        # 그 줄에서 메뉴가 통째로 안 열려 윈도우에서는 '돌아오기' 가 안 보였다.
         for r in visit_rows:
-            m.add_command(label=r["text"], command=r["command"])
+            m.add_command(label=r["text"], command=r.get("command"),
+                          state="normal" if r.get("enabled", True) else "disabled")
         if recall:
             m.add_command(label="박스로 거두기", command=lambda: self._recall(pet.id))
         if mega:

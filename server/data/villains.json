@@ -1,0 +1,170 @@
+{
+ "source": "tools/build_villains.py",
+ "teams": [
+  {
+   "boss": "giovanni",
+   "id": "rocket",
+   "legendNames": [
+    "뮤츠"
+   ],
+   "legends": [
+    "MEWTWO"
+   ],
+   "name": "로켓단",
+   "names": {
+    "archer": "로켓단 간부 아폴로",
+    "ariana": "로켓단 간부 아테나",
+    "giovanni": "로켓단 보스 비주기",
+    "petrel": "로켓단 간부 람다",
+    "proton": "로켓단 간부 랜스"
+   },
+   "pool": [
+    "archer",
+    "ariana",
+    "petrel",
+    "proton"
+   ]
+  },
+  {
+   "boss": null,
+   "id": "galactic",
+   "legendNames": [
+    "디아루가",
+    "펄기아",
+    "기라티나"
+   ],
+   "legends": [
+    "DIALGA",
+    "PALKIA",
+    "GIRATINA"
+   ],
+   "name": "갤럭시단",
+   "names": {
+    "jupiter": "갤럭시단 간부 주피터",
+    "mars": "갤럭시단 간부 마스",
+    "saturn": "갤럭시단 간부 새턴"
+   },
+   "pool": [
+    "mars",
+    "jupiter",
+    "saturn"
+   ]
+  },
+  {
+   "boss": "maxie",
+   "id": "magma",
+   "legendNames": [
+    "그란돈"
+   ],
+   "legends": [
+    "GROUDON"
+   ],
+   "name": "마그마단",
+   "names": {
+    "courtney": "마그마단 간부 구열",
+    "maxie": "마그마단 리더 마적",
+    "tabitha": "마그마단 간부 호걸"
+   },
+   "pool": [
+    "tabitha",
+    "courtney"
+   ]
+  },
+  {
+   "boss": "archie",
+   "id": "aqua",
+   "legendNames": [
+    "가이오가"
+   ],
+   "legends": [
+    "KYOGRE"
+   ],
+   "name": "아쿠아단",
+   "names": {
+    "archie": "아쿠아단 리더 아강",
+    "matt": "아쿠아단 간부 해조",
+    "shelly": "아쿠아단 간부 이연"
+   },
+   "pool": [
+    "shelly",
+    "matt"
+   ]
+  },
+  {
+   "boss": "ghetsis",
+   "id": "plasma",
+   "legendNames": [
+    "레시라무",
+    "제크로무",
+    "큐레무"
+   ],
+   "legends": [
+    "RESHIRAM",
+    "ZEKROM",
+    "KYUREM"
+   ],
+   "name": "플라즈마단",
+   "names": {
+    "colress": "플라즈마단 과학자 아크로마",
+    "ghetsis": "플라즈마단 게치스",
+    "zinzolin": "플라즈마단 비오"
+   },
+   "pool": [
+    "zinzolin",
+    "colress"
+   ]
+  },
+  {
+   "boss": null,
+   "id": "star",
+   "legendNames": [
+    "코라이돈",
+    "미라이돈"
+   ],
+   "legends": [
+    "KORAIDON",
+    "MIRAIDON"
+   ],
+   "name": "스타단",
+   "names": {
+    "atticus": "스타단 추명",
+    "eri": "스타단 비파",
+    "giacomo": "스타단 피나",
+    "mela": "스타단 멜로코",
+    "ortega": "스타단 오르티가"
+   },
+   "pool": [
+    "giacomo",
+    "mela",
+    "atticus",
+    "ortega",
+    "eri"
+   ]
+  },
+  {
+   "boss": "lusamine",
+   "id": "aether",
+   "legendNames": [
+    "솔가레오",
+    "루나아라"
+   ],
+   "legends": [
+    "SOLGALEO",
+    "LUNALA"
+   ],
+   "name": "에테르재단·스컬단",
+   "names": {
+    "faba": "에테르재단 지부장 자우보",
+    "guzma": "스컬단 보스 구즈마",
+    "lusamine": "에테르재단 대표 루자미네",
+    "plumeria": "스컬단 간부 플루메리"
+   },
+   "pool": [
+    "plumeria",
+    "guzma",
+    "faba"
+   ]
+  }
+ ],
+ "version": 1
+}

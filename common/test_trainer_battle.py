@@ -541,6 +541,46 @@ def t_상대_AI(dex, gyms):
     chk("예전 자료(숫자 하나)도 읽는다", f["evs"]["hp"] == 40 and f["ivs"]["spe"] == 20, f)
 
 
+def t_길드전_방어_AI(dex, gyms):
+    """길드전 (시즌 4): 사람이 짠 방어팀(이미 mon 인 것)을 센 AI(ai="war")가 굴린다."""
+    print("\n=== 길드전 방어 AI ===")
+    import time
+    full = mon(dex, "GARCHOMP", 50, seed=3, iv=31)
+    full["ivs"]["spe"] = 7
+    got = TB.trainer_mon(full)
+    chk("이미 mon 인 것은 그대로 쓴다 (개체값을 능력마다 그대로)", got["ivs"]["spe"] == 7 and got["moves"] == full["moves"]
+        and got["happiness"] == full.get("happiness", 255), (got["ivs"], got.get("happiness")))
+    team = [TB.trainer_mon(dict(e, level=50, iv=31)) for e in gyms["trainers"][-1]["team"]]
+    tr = {"id": "gw:c01", "name": "AI 수비대", "role": "[로켓단]", "level": 50, "team": team, "noMega": True,
+          "ai": "war", "keystone": True, "zring": True}
+    mine = [TB.trainer_mon(dict(e, level=50, iv=31)) for e in gyms["trainers"][-2]["team"]]
+    tb = TB.TrainerBattle(dex, mine, tr, random.Random(5))
+    chk("키스톤·Z링을 쓰고, Z기술을 알아서 쓴다", tb.war and tb.keystone["foe"] and tb.zring["foe"]
+        and tb.bt.auto_z["foe"])
+    chk("실수하지 않고, 불리하면 늘 바꾼다", tb.mistake() == 0.0 and tb.smartness() == 1.0)
+    tb.start()
+    spent, turns = [], 0
+    while not tb.over and turns < 200:
+        if tb.need_switch:
+            tb.act("switch", tb.valid_switches()[0])
+        else:
+            _d, k = tb._best(tb.me, tb.foe)
+            t0 = time.time()
+            try:
+                tb.act("move", k or tb.bt.usable(tb.me)[0])
+            except ValueError:
+                tb.act("move", tb.bt.usable(tb.me)[0])
+            spent.append(time.time() - t0)
+        if turns == 3:
+            tb = TB.TrainerBattle.load(dex, json.loads(json.dumps(tb.dump())))
+        turns += 1
+    chk("끝까지 돈다 (턴마다 저장했다 되살려도 길드전 AI 그대로)", tb.over and tb.war, (tb.over, turns))
+    chk("한 턴의 셈은 시간 상한 안 (%.0fms)" % (1000 * max(spent)), max(spent) < TB.TrainerBattle.WAR_BUDGET + 0.5,
+        max(spent))
+    gym_tb = TB.TrainerBattle(dex, mine, dict(tr, ai=None), random.Random(5))
+    chk("관장 판은 그대로 (길드전 AI 가 아니다)", not gym_tb.war and not gym_tb.bt.auto_z["foe"])
+
+
 def main():
     dex = load_dex()
     with open(os.path.join(ROOT, "server", "data", "gyms.json"), encoding="utf-8") as f:
@@ -551,6 +591,7 @@ def main():
     t_로스터(dex, gyms)
     t_상대_AI(dex, gyms)
     t_끝까지_돈다(dex, gyms)
+    t_길드전_방어_AI(dex, gyms)
     print()
     print("======================================================")
     print("  합계  OK %d   FAIL %d" % (OK, FAIL))

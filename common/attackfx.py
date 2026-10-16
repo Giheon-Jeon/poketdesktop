@@ -581,7 +581,7 @@ def after_attack(bt, k, move, who, user, target, tw, total, sub_hit, ev):
 
     # ---- 도구
     if k in STEAL and landed and user.alive() and not MC.item_on(user) and MC.item_on(target) \
-            and not H.is_mega_stone(target._held) and not H.is_mega_stone(user._held) \
+            and not H.stuck(target._held) and not H.stuck(user._held) \
             and not (A.has(target, "STICKYHOLD") and not A.breaks(user)):
         # 이 판에서만 옮겨 간다 (트릭·탁쳐서떨구기와 같다 - DB 의 도구는 안 건드린다)
         got = target.held

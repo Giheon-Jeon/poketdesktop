@@ -441,6 +441,15 @@ class WildController(object):
         b = self.app.battle
         return b is not None and not getattr(b, "closed", False)
 
+    def _away(self):
+        """친구 집에 놀러 가 있나 (1.11.0). 그동안 바탕화면은 친구 집이라 풀숲을 돋우지 않는다.
+
+        놀러 갈 때 stop() 으로 끄지만, 그때 이미 물어보던 답이 늦게 오거나 설정에서 풀숲을 다시 켜면
+        친구 집에 야생이 돋고 다시 예약까지 걸렸다. 돌아오면 visit 이 start() 를 부른다.
+        """
+        v = getattr(self.app, "visit", None)
+        return bool(v is not None and getattr(v, "guest", False))
+
     def set_enabled(self, on):
         """설정이 바뀌었다. 지금 화면에 바로 반영한다.
 
@@ -486,7 +495,7 @@ class WildController(object):
         직접 눌렀는데 아무 일도 안 일어나면 고장으로 보이므로,
         그때는 얼마나 기다려야 하는지 알려준다.
         """
-        if not self.app.api:
+        if not self.app.api or self._away():
             return
         if not self.enabled():
             # 껐다. 여기서 예약을 다시 걸지 않는 것이 중요하다 - 걸면
@@ -538,6 +547,8 @@ class WildController(object):
         tell 이면 사용자가 직접 눌러서 온 응답이라 결과를 말로도 알려준다.
         """
         self.app.balls = r.get("balls", self.app.balls)
+        if self._away():
+            return
         # 물어본 뒤 답이 오는 사이에 껐을 수 있다. 볼 개수만 챙기고
         # 화면은 건드리지 않는다.
         if not self.enabled():

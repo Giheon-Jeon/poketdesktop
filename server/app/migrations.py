@@ -358,6 +358,131 @@ def _season3_open(conn):
                gifts, n_eggs, candies, n_all))
 
 
+# 시즌 3 보상표. 시즌 2 와 같은 틀이고, **여기 숫자를 적는다** (규칙 2) - season.py 의 표가
+# 나중에 바뀌어도 이미 끝난 시즌 3 은 그때 정한 그대로다.
+S3_TIER_RP = [("monster", 0), ("super", 150), ("hyper", 350), ("master", 600)]
+S3_SEATS = 5
+S3_REWARDS = {
+    "champion": ("s3_champion", "gold", 1, "legendary"),
+    "elite": ("s3_elite", "silver", 1, "mythical"),
+    "master": ("s3_master", "master", 1, None),
+    "hyper": ("s3_hyper", None, 0, None),
+    "super": ("s3_super", None, 0, None),
+}
+S3_TIER_KR = S2_TIER_KR
+S3_TITLE_KR = {"s3_champion": "시즌 3 챔피언", "s3_elite": "시즌 3 사천왕",
+               "s3_master": "시즌 3 마스터볼", "s3_hyper": "시즌 3 하이퍼볼",
+               "s3_super": "시즌 3 슈퍼볼"}
+S3_FRAME_KR = S2_FRAME_KR
+S3_GIFT_TITLE = "시즌 3 보상"
+
+
+def _s3_tier(peak):
+    key = S3_TIER_RP[0][0]
+    for k, need in S3_TIER_RP:
+        if peak >= need:
+            key = k
+    return key
+
+
+def _season4_open(conn):
+    """시즌 3 을 닫고 시즌 4 를 연다 (2026-10-17, Z기술·길드전·악당 출현과 함께).
+
+    시즌 3 열기(_season3_open)와 같은 순서다 (규칙 1 — 먼저 주고 나중에 지운다).
+      1) 시즌 3 순위표(RP 순)를 season_result 에 옮긴다 - 명예의 전당
+      2) 최고 티어·자리대로 보상을 선물(gift)로 넣는다
+      3) 그다음에 점수를 비운다
+
+    숨은 점수(MMR)는 1000 쪽으로 절반만 남긴다. RP·최고 RP 는 0, 배치도 다시 한다.
+    친구 전적·하루 상금·전적 목록은 건드리지 않는다. 같은 제목의 선물이 있으면 넣지
+    않으므로 두 번 돌아도 두 번 안 준다.
+
+    **이 손질은 서버가 새 판으로 뜨는 순간에 돈다.** 시즌 3 이 끝나는 때(10/17 00:00)에
+    맞춰 배포해야 한다 - 먼저 올리면 그때 시즌 3 이 닫힌다.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc).replace(
+        microsecond=0).isoformat()
+    rows = conn.execute(
+        "SELECT r.user_id, u.username, r.rating, r.rp, r.peak_rp, r.games, r.wins,"
+        " r.losses, r.draws FROM rank_stat r JOIN users u ON u.id=r.user_id"
+        " WHERE r.ranked=1 ORDER BY r.rp DESC, r.rating DESC, r.wins DESC").fetchall()
+    master_rp = S3_TIER_RP[-1][1]
+    seated = gifts = candies = n_eggs = 0
+    tiers = {}
+    for i, r in enumerate(rows, 1):
+        uid = _v(r, "user_id", 0)
+        rp = int(_v(r, "rp", 3) or 0)
+        peak = max(rp, int(_v(r, "peak_rp", 4) or 0))
+        seat = None
+        if rp >= master_rp and seated < S3_SEATS:
+            seat = "champion" if seated == 0 else "elite"
+            seated += 1
+        tier = seat or _s3_tier(peak)
+        tiers[tier] = tiers.get(tier, 0) + 1
+        reward = S3_REWARDS.get(tier)
+        title = reward[0] if reward else None
+        conn.execute(
+            "INSERT INTO season_result (season, user_id, rank, name, rating,"
+            " rp, tier, games, wins, losses, draws, title, at)"
+            " VALUES (3,?,?,?,?,?,?,?,?,?,?,?,?)"
+            " ON CONFLICT(season, user_id) DO NOTHING",
+            (uid, i, _v(r, "username", 1), _v(r, "rating", 2), rp, tier,
+             _v(r, "games", 5), _v(r, "wins", 6), _v(r, "losses", 7),
+             _v(r, "draws", 8), title, now))
+        if reward is None:
+            continue            # 몬스터볼은 보관만 하고 보상은 없다
+        if conn.execute("SELECT 1 FROM gift WHERE user_id=? AND title=?",
+                        (uid, S3_GIFT_TITLE)).fetchone():
+            continue
+        title, frame, n, egg = reward
+        bits = []
+        if egg:
+            bits.append(S1_EGG_KR[egg])
+        bits.append("칭호 '%s'" % S3_TITLE_KR[title])
+        if frame:
+            bits.append(S3_FRAME_KR[frame])
+        if n:
+            bits.append("이로치사탕 %d개" % n)
+        if seat:
+            head = "시즌 3 을 %s 자리로 마쳤습니다 (최종 %d위)." % (S3_TIER_KR[seat], i)
+        else:
+            head = "시즌 3 에서 %s 티어까지 올랐습니다 (최종 %d위)." % (S3_TIER_KR[tier], i)
+        msg = "%s %s을(를) 드립니다. %s은(는) 랭킹 탭에서 바꿀 수 있습니다." % (
+            head, ", ".join(bits), "칭호와 명패" if frame else "칭호")
+        if n:
+            msg += " 이로치사탕은 가방에서 포켓몬에게 먹이면 이로치가 됩니다."
+        if egg:
+            msg += (" 알은 바탕화면에 나타나고, 게임을 켜 둔 시간만큼 자라서 "
+                    "부화합니다.")
+        lines = []
+        if egg:
+            lines.append(("egg", egg, 1))
+            n_eggs += 1
+        lines.append(("title", title, 1))
+        if frame:
+            lines.append(("frame", frame, 1))
+        if n:
+            lines.append(("item", "SHINYCANDY", n))
+            candies += n
+        for kind, rid, cnt in lines:
+            conn.execute(
+                "INSERT INTO gift (user_id, kind, item_id, count, title,"
+                " message, created_at) VALUES (?,?,?,?,?,?,?)",
+                (uid, kind, rid, cnt, S3_GIFT_TITLE, msg, now))
+            gifts += 1
+
+    n_all = conn.execute("SELECT COUNT(*) FROM rank_stat").fetchone()[0]
+    conn.execute(
+        "UPDATE rank_stat SET rating = 1000 + CAST((rating - 1000) / 2 AS INTEGER),"
+        " games=0, wins=0, losses=0, draws=0, streak=0, ranked=0,"
+        " rp=0, peak_rp=0, win_day='', updated_at=?", (now,))
+    conn.execute("UPDATE rank_stat SET best = rating")
+    return ("시즌 3 순위 %d명 보관 (%s), 선물 %d줄 (알 %d개, 이로치사탕 %d개), %d명 점수 전환"
+            % (len(rows), ", ".join("%s %d" % (S3_TIER_KR[k], v) for k, v in
+                                    sorted(tiers.items())),
+               gifts, n_eggs, candies, n_all))
+
+
 # ---- 시즌 3 첫날 0~9시(한국 시각)의 랜덤 배틀을 없던 일로 한다 ----
 # 시즌 3 은 10/2 00:00 에 열렸다. 그날 패치한다는 것을 미리 알리지 않아서
 # 연 직후에는 몇 사람만 있었고, 하루 20판이 UTC 날짜로 세어지던 때라 그
@@ -559,6 +684,8 @@ ONCE = [
     ("0290-season3-open", _season3_open),
     ("0300-s3-void-early", _s3_void_early),
     ("0310-box-overflow", _box_overflow),
+    # 시즌 4 (2026-10-17). **서버가 이 판으로 뜨는 순간 시즌 3 이 닫힌다** - 자정에 맞춰 배포한다.
+    ("0320-season4-open", _season4_open),
 ]
 
 

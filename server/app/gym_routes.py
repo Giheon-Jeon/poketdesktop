@@ -31,7 +31,7 @@ from pydantic import BaseModel
 
 from common import trainer_battle as TB
 
-from . import auth, battle_routes, config, db, deps, gym, items, mega, pvp
+from . import auth, battle_routes, boss, config, db, deps, gimmick, guild_war, gym, items, mega, pvp, watchers
 
 router = APIRouter()
 
@@ -40,6 +40,7 @@ class ActIn(BaseModel):
     kind: str                    # move / switch / forfeit
     move: str = ""
     mega: bool = False           # 이 턴에 메가진화 (시즌 3)
+    z: bool = False              # 고른 기술을 Z기술로 (시즌 4)
     slot: int = -1
     hour: int = -1
 
@@ -69,6 +70,8 @@ def _active(uid):
 def _out(row, tb, events=None, extra=None):
     out = {"id": row["id"], "region": row["region"], "rev": row["rev"],
            "battle": tb.view(), "events": events or []}
+    if guild_war.is_war(row["region"]):
+        out["watchers"] = watchers.count(guild_war.fight_id(row["id"]))     # 길드원이 몇이나 보고 있나
     if extra:
         out.update(extra)
     return out
@@ -95,11 +98,15 @@ def overview(ctx=Depends(deps.current)):
         done += row["today"]
         regions.append(row)
     act = _active(uid)
+    if act and guild_war.is_war(act["region"]):
+        act = None                                    # 길드전 판은 길드 창에서 이어서 한다
     return {"regions": regions, "cleared": len(mine), "total": len(g["regions"]),
             "today": done, "resetIn": gym.reset_in(),
             "tiers": g["tiers"], "digest": g.get("digest"), "mapDigest": gym.korea_map()[1],
             "source": g.get("source"), "active": ({"id": act["id"], "region": act["region"]}
-                                                  if act else None)}
+                                                  if act else None),
+            # 악당 출현 (시즌 4). 나타난 시·도를 지도가 검게 칠한다. 아직이면 {"active": False}.
+            "boss": boss.brief(uid)}
 
 
 @router.get("/api/gym/map")
@@ -146,6 +153,10 @@ def start(region: str, ctx=Depends(deps.current)):
     if old:
         if old["region"] != region:
             other = gym.trainer_at(old["region"]) or {}
+            if boss.is_boss(old["region"]):
+                other = {"name": "악당"}          # 악당 창에서 이어서 한다
+            elif guild_war.is_war(old["region"]):
+                other = {"name": "길드전 상대"}    # 길드 창의 길드전 칸에서 이어서 한다
             raise HTTPException(409, "%s 과(와)의 승부가 아직 끝나지 않았습니다."
                                 % (other.get("name") or "다른 트레이너"))
         tb = TB.TrainerBattle.load(deps.dex(), json.loads(old["data"]))
@@ -156,6 +167,7 @@ def start(region: str, ctx=Depends(deps.current)):
         raise HTTPException(409, "데리고 다니는 포켓몬이 없습니다.")
     tb = TB.TrainerBattle(deps.dex(), party, t, random.Random())
     tb.keystone["me"] = mega.has_keystone(uid)          # 관장 8곳 (시즌 3)
+    tb.zring["me"] = gimmick.has_zring(uid)          # Z기술 (시즌 4)
     events = tb.start()
     if benched:
         # 인사 바로 뒤에 알린다. 교체 목록에 없는 까닭을 판 처음에 말해 둔다.
@@ -189,6 +201,9 @@ def act(bid: int, body: ActIn, ctx=Depends(deps.current)):
         raise HTTPException(409 if row["result"] != "expired" else 410,
                             "시간이 지나 승부가 끝났습니다." if row["result"] == "expired"
                             else "이미 끝난 승부입니다.")
+    war = guild_war.is_war(row["region"])
+    if war and not guild_war.battle_open(row):
+        raise HTTPException(410, "길드전이 끝나 승부가 끝났습니다.")
     d = deps.dex()
     tb = TB.TrainerBattle.load(d, json.loads(row["data"]))
     kind = (body.kind or "").lower()
@@ -197,7 +212,7 @@ def act(bid: int, body: ActIn, ctx=Depends(deps.current)):
     kos_before = len(tb.kos)
     try:
         if kind == "move":
-            events = tb.act("move", body.move or "", mega=bool(body.mega))
+            events = tb.act("move", body.move or "", mega=bool(body.mega), z=bool(body.z))
         elif kind == "switch":
             events = tb.act("switch", int(body.slot))
         else:
@@ -205,9 +220,10 @@ def act(bid: int, body: ActIn, ctx=Depends(deps.current)):
     except ValueError as e:
         raise HTTPException(409, str(e))
 
-    # 스케치로 배운 기술은 영원하다 - 포켓몬에 적는다 (저장본에 남기기 전에 표시를 뗀다)
+    # 스케치로 배운 기술은 영원하다 - 포켓몬에 적는다 (저장본에 남기기 전에 표시를 뗀다).
+    # 길드전의 팀은 전쟁이 시작될 때 베껴 둔 것이라 진짜 포켓몬에 적지 않는다.
     for f in tb.me_team:
-        if f.mon.pop("_sketched", None) and f.mon.get("id"):
+        if f.mon.pop("_sketched", None) and f.mon.get("id") and not war:
             db.run("UPDATE pokemon SET moves=? WHERE id=? AND user_id=?",
                    (json.dumps(f.mon.get("moves") or []), f.mon["id"], uid))
 
@@ -222,8 +238,8 @@ def act(bid: int, body: ActIn, ctx=Depends(deps.current)):
     extra = {}
     hour = body.hour if 0 <= body.hour <= 23 else None
     exp = []
-    # 쓰러뜨릴 때마다 경험치. 그 순간 나와 있던 포켓몬이 받는다.
-    for ko in tb.kos[kos_before:]:
+    # 쓰러뜨릴 때마다 경험치. 그 순간 나와 있던 포켓몬이 받는다 (길드전은 경험치가 없다).
+    for ko in ([] if war else tb.kos[kos_before:]):
         mine = tb.me_team[ko["by"]]
         pid = mine.mon.get("id")
         if pid:
@@ -232,7 +248,15 @@ def act(bid: int, body: ActIn, ctx=Depends(deps.current)):
             mega.on_ko(uid, pid)                         # 유대 미션 ② (시즌 3)
     if exp:
         extra["exp"] = exp
-    if tb.over and tb.result == "won":
+    if tb.over and war:
+        # 길드전 (시즌 4): 진행(3승)·점령은 guild_war 가 적는다. 지거나 기권해도 공격권은 이미 썼다.
+        extra["reward"] = guild_war.on_end(uid, row, tb, events)
+    elif war:
+        guild_war.spectate_turn(uid, row, tb, events)     # 구경하는 길드원에게 이번 턴을 민다
+    elif tb.over and tb.result == "won" and boss.is_boss(row["region"]):
+        # 악당·전설 (시즌 4). 관장 기록에는 안 남는다 - 진행·상금·알은 boss 가 준다.
+        extra["reward"] = boss.on_win(uid, row["region"], row["trainer"], tb.trainer.get("level") or 1)
+    elif tb.over and tb.result == "won":
         t = gym.trainer(row["trainer"])
         prize, first = gym.record_win(uid, t, tb.turn, auth.now_iso())
         # 유대 미션 ① (시즌 3): 파티에 있던 개체 중 관장 타입이 맞는 것

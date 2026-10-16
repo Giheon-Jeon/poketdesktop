@@ -34,8 +34,8 @@ from common import tint as TINT            # noqa: E402
 from . import (achievements, auth, avatar, battle_routes, board, board_routes, mega, config, db, deps, eggs, expedition, item_routes,  # noqa: E402
                errors, friendly, items, live, live_routes, migrations, mypage, party, pvp, pvp_routes,
                raid, raid_routes,
-               guild, guild_routes, guild_ws,
-               gym_routes, social_routes, tm_routes, tms, visit, walk)
+               guild, guild_routes, guild_war_routes, guild_ws,
+               boss_routes, gym_routes, social_routes, tm_routes, tms, visit, walk)
 
 app = FastAPI(title="poketdesktop", version=config.VERSION)
 app.include_router(battle_routes.router)
@@ -44,6 +44,7 @@ app.include_router(pvp_routes.router)
 app.include_router(social_routes.router)
 app.include_router(tm_routes.router)
 app.include_router(gym_routes.router)
+app.include_router(boss_routes.router)          # 악당 출현 (시즌 4)
 app.include_router(raid_routes.router)
 app.include_router(live_routes.router)
 app.include_router(board_routes.router)
@@ -51,6 +52,7 @@ app.include_router(mypage.router)
 app.include_router(avatar.router)
 app.include_router(party.router)
 app.include_router(friendly.router)
+app.include_router(guild_war_routes.router)     # 길드전 (시즌 4). /api/guild/{gid}/... 보다 먼저 건다
 app.include_router(guild_routes.router)
 app.include_router(guild_ws.router)
 app.include_router(visit.router)               # 친구 집에 놀러 가기 · 친구 채팅 (1.11.0)
@@ -1205,7 +1207,7 @@ def me(ctx=Depends(current)):
         "expedition": expedition.me_card(uid),
         # 새 기술머신 (1.11.0): 받고 가방에서 아직 안 본 수. 화면이 가방 탭에 점을 찍는다
         "tmNew": tms.new_count(uid),
-        "session": {"ip": ctx["session"]["ip"], "expiresAt": ctx["session"]["expires_at"]},
+        "session":{"ip": ctx["session"]["ip"], "expiresAt": ctx["session"]["expires_at"]},
     }
 
 

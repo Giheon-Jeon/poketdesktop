@@ -311,6 +311,70 @@ def main():
     chk("같은 팀이면 어느 쪽도 늘 이기지는 않는다",
         wins["a"] < 6 and wins["b"] < 6, wins)
 
+    print("\n=== Z기술을 내가 고른다 (시즌 4) ===")
+    def gim(a_mon, b_mon, seed=9):
+        lb = L.LiveBattle(DEX, (1, "가", [L.leveled(a_mon, 50)]), (2, "나", [L.leveled(b_mon, 50)]),
+                          rng=random.Random(seed))
+        return lb
+
+    za = mon("CHARIZARD", 50, ("FLAMETHROWER", "AIRSLASH"))
+    za["held"] = "FIRIUMZ"
+    zb = mon("SNORLAX", 50, ("TACKLE",))
+    lb = gim(za, zb)
+    lb.start()
+    g = lb.view("a")["gimmick"]
+    chk("Z링이 없으면 단추가 안 뜬다", g["zMoves"] == [] and not g["zUsed"], g)
+    lb = gim(za, zb)
+    lb.zring["me"] = True                              # a 쪽만 가졌다
+    lb.start()
+    g = lb.view("a")["gimmick"]
+    chk("가졌으면 Z기술 목록이 온다",
+        [(z["key"], z["name"], z["power"]) for z in g["zMoves"]] == [("FLAMETHROWER", "다이내믹풀플레임", 175)],
+        g)
+    gb = lb.view("b")["gimmick"]
+    chk("안 가진 상대 쪽 화면에는 안 뜬다", gb["zMoves"] == [], gb)
+    lb.choose("a", "move", "FLAMETHROWER", z=True)
+    lb.choose("b", "move", "TACKLE")
+    ev = lb.resolve()
+    kinds_ = [e.get("t") for e in ev]
+    chk("고른 대로 Z기술이 나간다", "zpower" in kinds_, kinds_)
+    va = lb.view("a")
+    g = va["gimmick"]
+    chk("쓴 뒤에는 다시 못 누른다", g["zMoves"] == [] and g["zUsed"], g)
+    lb2 = L.LiveBattle.load(DEX, json.loads(json.dumps(lb.dump())))
+    g2 = lb2.view("a")["gimmick"]
+    chk("저장했다 불러와도 그대로다", g2 == g, g2)
+    # 요청을 받아 두는 것은 될 때만
+    lb = gim(za, zb)
+    lb.zring["me"] = True
+    lb.start()
+    lb.choose("a", "move", "AIRSLASH", z=True)
+    chk("타입이 안 맞는 기술에는 Z 요청을 안 받는다", lb.a.z_req is False)
+    lb.choose("a", "move", "FLAMETHROWER", z=True)
+    chk("맞는 기술이면 받는다", lb.a.z_req is True)
+    lb2 = L.LiveBattle.load(DEX, json.loads(json.dumps(lb.dump())))
+    chk("골라 둔 요청도 저장된다", lb2.a.z_req is True)
+
+    # 상대가 먼저 유턴으로 물러나 턴이 멈췄다 이어져도 (서버는 그사이 저장했다 불러온다) Z기술이 나간다
+    ja = mon("JOLTEON", 50, ("UTURN",))
+    ja2 = mon("SNORLAX", 50, ("TACKLE",))
+    zc = mon("CHARIZARD", 50, ("FLAMETHROWER",))
+    zc["held"] = "FIRIUMZ"
+    lb = L.LiveBattle(DEX, (1, "가", [L.leveled(ja, 50), L.leveled(ja2, 50)]), (2, "나", [L.leveled(zc, 50)]),
+                      rng=random.Random(3))
+    lb.zring["foe"] = True                         # 자리 b 가 Z링을 가졌다
+    lb.start()
+    lb.choose("a", "move", "UTURN")
+    lb.choose("b", "move", "FLAMETHROWER", z=True)
+    ev = lb.resolve()
+    chk("(쥬피썬더가 먼저 유턴을 쓰고 턴이 멈춘다)", lb.phase() == "switch" and lb.mid is not None
+        and not any(e.get("t") == "zpower" for e in ev), (lb.phase(), [e.get("t") for e in ev]))
+    lb = L.LiveBattle.load(DEX, json.loads(json.dumps(lb.dump())))
+    lb.choose("a", "switch", 1)
+    ev = lb.resolve()
+    kinds_ = [e.get("t") for e in ev]
+    chk("멈췄다 이어진 턴에도 고른 Z기술이 나간다", "zpower" in kinds_ and "foe" in lb.z_done, kinds_)
+
     print("\n%d개 통과, %d개 실패" % (OK, FAIL))
     return 1 if FAIL else 0
 

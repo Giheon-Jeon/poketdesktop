@@ -51,7 +51,9 @@ PvP 와 야생은 battle.Battle.choose_for 를 쓴다. 관장은 **여기서 따
 남기는 이유 - 시드만 남기고 매번 새로 굴리면 같은 턴을 다시 보내 결과를
 골라 먹을 수 있다.
 """
+import json
 import random
+import time
 
 from . import abilities as A
 from . import attackfx as AF
@@ -114,7 +116,13 @@ def trainer_mon(entry):
     """gyms.json 의 한 줄 -> Fighter 가 먹는 mon.
 
     노력치는 능력마다 따로(evs) 적는다. 예전 자료의 한 숫자(ev)도 읽는다.
+    **이미 mon 인 것**(개체값을 능력마다 가진 것 - 길드전에서 사람이 짠 방어팀)은 그대로 쓴다.
     """
+    if isinstance(entry.get("ivs"), dict):
+        mon = dict(entry)
+        mon.setdefault("happiness", 255)
+        mon.setdefault("statBoost", None)
+        return mon
     iv = int(entry.get("iv", IV_GYM))
     ev = int(entry.get("ev", 0))
     evs = entry.get("evs") or {}
@@ -155,6 +163,13 @@ class TrainerBattle(object):
         self.dex = dex
         self.rng = rng or random.Random()
         self.trainer = {k: trainer.get(k) for k in ("id", "name", "role", "sprite", "level")}
+        # 트레이너가 아니라 **마주친 포켓몬**이다 (시즌 4, 악당을 다 물리치고 만나는 전설).
+        # 문구만 달라진다: 승부를 걸어오지 않고 나타나고, 이기는 것이 아니라 쓰러뜨린다.
+        if trainer.get("wild"):
+            self.trainer["wild"] = True
+        # 길드전 (시즌 4): 사람이 짠 방어팀을 **센 AI** 가 굴린다 (_war_choice). 자기 키스톤·Z링을 쓴다.
+        if trainer.get("ai") == "war":
+            self.trainer["ai"] = "war"
         # 관장 탭 카드와 배틀 화면의 그림이 다른 트레이너가 있다 (이스터에그: 렌트라와 함께 / 혼자)
         self.trainer["battleSprite"] = trainer.get("battleSprite") or trainer.get("sprite")
         self.me_team = [self._fighter(m) for m in my_mons[:TEAM_MAX]]
@@ -163,9 +178,17 @@ class TrainerBattle(object):
         self.fi = 0
         # 메가진화 (시즌 3). 내 키스톤은 서버가 채운다(관장 8곳). 높은 관장은
         # 스톤을 쥐고 알아서 메가진화한다.
-        mega_slot = give_mega_stone(dex, self.foe_team, trainer.get("level"))
+        # 악당 출현(시즌 4)의 간부와 전설은 안 받는다 - 간부의 도구는 자료 그대로여야 하고,
+        # 마주친 전설이 "키스톤이 반응했다" 며 메가진화하면 안 된다.
+        mega_slot = (None if trainer.get("noMega") or trainer.get("wild")
+                     else give_mega_stone(dex, self.foe_team, trainer.get("level")))
         self.keystone = {"me": False, "foe": mega_slot is not None}
         self.mega_done = set()
+        # Z기술 (시즌 4). 내 Z링은 서버가 채운다. 관장은 쓰지 않는다.
+        B.gimmick_init(self)
+        if self.war:
+            self.keystone["foe"] = bool(trainer.get("keystone"))
+            self.zring["foe"] = bool(trainer.get("zring"))
         self._make_duel(FD.Field())
         self.turn = 0
         self.over = False
@@ -194,6 +217,14 @@ class TrainerBattle(object):
         self.bt.keystone = self.keystone
         self.bt.mega_done = self.mega_done
         self.bt.auto_mega = {"me": False, "foe": bool(self.keystone.get("foe"))}
+        B.gimmick_share(self, self.bt)
+        if self.war:                           # 길드전의 방어 AI 는 Z기술을 알아서 쓴다
+            self.bt.auto_z["foe"] = True
+
+    @property
+    def war(self):
+        """길드전 방어 AI 인가 (판의 사본으로 수를 셈하는 중에는 그 사본도 같은 AI 다)."""
+        return self.trainer.get("ai") == "war"
 
     def _fighter(self, mon):
         f = B.Fighter(self.dex, mon)
@@ -214,21 +245,25 @@ class TrainerBattle(object):
         return max(0.0, min(1.0, (lv - 20) / 80.0))
 
     def smartness(self):
-        """상대가 불리할 때 실제로 바꿀 확률. 레벨이 높은 트레이너일수록 크다."""
-        return 0.35 + 0.55 * self.skill()
+        """상대가 불리할 때 실제로 바꿀 확률. 레벨이 높은 트레이너일수록 크다 (길드전은 늘 바꾼다)."""
+        return 1.0 if self.war else 0.35 + 0.55 * self.skill()
 
     def mistake(self):
-        """가장 좋은 수 대신 두 번째 수를 둘 확률."""
-        return 0.10 * (1.0 - self.skill())
+        """가장 좋은 수 대신 두 번째 수를 둘 확률 (길드전은 실수하지 않는다)."""
+        return 0.0 if self.war else 0.10 * (1.0 - self.skill())
 
     # ---------------- 시작 ----------------
     def start(self):
         if self.started:
             return []
         self.started = True
-        ev = [{"t": "intro", "trainer": self.trainer,
-               "text": "%s %s 이(가) 승부를 걸어왔다!" % (self.trainer.get("role") or "",
-                                                  self.trainer.get("name") or "")}]
+        if self.trainer.get("wild"):
+            intro = "%s %s 이(가) 모습을 드러냈다!" % (self.trainer.get("role") or "",
+                                               self.trainer.get("name") or "")
+        else:
+            intro = "%s %s 이(가) 승부를 걸어왔다!" % (self.trainer.get("role") or "",
+                                               self.trainer.get("name") or "")
+        ev = [{"t": "intro", "trainer": self.trainer, "text": intro.strip()}]
         ev.append(self._out_event("foe", self.fi))
         ev.append(self._out_event("me", self.mi))
         self._entry_abilities(ev, fresh=False)
@@ -236,7 +271,11 @@ class TrainerBattle(object):
 
     def _out_event(self, who, slot):
         f = (self.foe_team if who == "foe" else self.me_team)[slot]
-        text = ("상대는 %s 을(를) 내보냈다!" % f.name) if who == "foe" else ("가랏! %s!" % f.name)
+        if who == "foe":
+            text = ("%s 이(가) 앞을 막아섰다!" if self.trainer.get("wild")
+                    else "상대는 %s 을(를) 내보냈다!") % f.name
+        else:
+            text = "가랏! %s!" % f.name
         return {"t": "switch", "who": who, "slot": slot, "mon": self.side(f, who == "me"),
                 "text": text}
 
@@ -599,14 +638,132 @@ class TrainerBattle(object):
             return None
         return best
 
+    # ---------------- 길드전 방어 AI (ai="war") ----------------
+    WAR_REPLY = (0.55, 0.25, 0.20)   # 사람이 할 법한 것의 무게: 가장 아픈 기술 · 둘째 기술 · 가장 나은 교체
+    WAR_DEPTH = 1                    # 몇 턴 앞까지 굴려 보나 (첫 턴 + 그 뒤를 양쪽 다 무난하게 둔 것)
+    WAR_SIM = True                   # 사본으로 셈하나 (끄면 실수 없는 관장 AI 다)
+    WAR_BUDGET = 0.5                 # 한 턴에 셈에 쓰는 시간 상한 (초)
+    WAR_SEEDS = 2                    # 사람의 수 하나마다 굴려 보는 난수 수
+    WAR_PRIOR = 0.3                  # 관장 AI 의 수에 얹어 주는 값 (셈이 이만큼 넘게 나아야 뒤집는다)
+
+    def _rollout(self, turns):
+        """사본에서 몇 턴을 더 둔다. 사람 쪽은 가장 아픈 기술(쓰러지면 형세가 가장 나은 포켓몬),
+        AI 쪽은 보통 관장 AI 로. 한 수의 값을 그 한 턴이 아니라 그 뒤까지 보고 매기려는 것이다."""
+        for _ in range(turns):
+            if self.over:
+                return
+            if self.need_switch:
+                opts = self.valid_switches()
+                if not opts:
+                    return
+                self.act("switch", max(opts, key=lambda i: (self._standing(self.me_team[i], self.foe), -i)))
+                continue
+            lock = SM.locked_move(self.me, self.bt)
+            _d, k = self._best(self.me, self.foe)
+            k = lock or k or self.bt.usable(self.me)[0]
+            try:
+                self.act("move", k)
+            except ValueError:
+                self.act("move", self.bt.usable(self.me)[0])
+
+    def _war_choice(self):
+        """(바꿀 자리, 쓸 기술) - 한 턴을 **판의 사본으로 미리 돌려 보고** 고른다.
+
+        내가 할 수 있는 것(쓸 수 있는 기술 전부, 바꿀 수 있는 자리 전부) x 사람이 할 법한 것(가장 아픈
+        기술 둘, 가장 나은 교체)을 사본에서 한 턴씩 돌려, 끝난 뒤의 형세(_eval)를 잰다. 사람의 수마다
+        같은 난수를 써서 내 수끼리 공평하게 견준다. 평균과 최악을 섞어 고른다 - 한 수만 노리다 크게
+        지는 수를 피한다. 작은 흔들림을 섞어 같은 판에서 늘 같은 수를 두지 않는다 (외워서 이기지 못하게).
+        """
+        foe = self.foe
+        # 먼저 실수 없는 관장 AI 의 수를 정해 둔다. 셈은 이것을 **뒤집을 만큼 뚜렷할 때만** 뒤집는다
+        # (WAR_PRIOR) - 사본 몇 판의 난수에 휘둘려 좋은 수를 버리지 않게.
+        slot = self._foe_wants_switch()
+        plain = ("switch", slot) if slot is not None else ("move", self._foe_move())
+        opts = [("move", k) for k in self._pool(foe)]
+        if not (self.foe_switched_last or SM.trapped(self.bt, foe) or SM.must_stay(foe)):
+            opts += [("switch", i) for i, f in enumerate(self.foe_team) if f.alive() and i != self.fi]
+        replies = self._human_replies() if self.WAR_SIM else []
+        best, best_sc = None, None
+        if len(opts) > 1 and replies:
+            blob = json.dumps(self.dump())
+            seeds = [[self.rng.randrange(1 << 30) for _s in range(self.WAR_SEEDS)] for _ in replies]
+            deadline = time.time() + self.WAR_BUDGET
+            for opt in sorted(opts, key=lambda o: o != plain):    # 관장 AI 의 수부터 (시간이 모자라도 그것은 본다)
+                if time.time() > deadline and best is not None:
+                    break                                      # 셈이 길어졌다 - 지금까지 본 것 가운데 고른다
+                vals = []
+                for (w, kind, value), ss in zip(replies, seeds):
+                    for seed in ss:
+                        sim = TrainerBattle.load(self.dex, json.loads(blob))
+                        sim._sim = True
+                        sim._forced = opt
+                        sim.rng.seed(seed)
+                        try:
+                            sim.act(kind, value)
+                            sim._rollout(self.WAR_DEPTH - 1)
+                        except Exception:                      # noqa: BLE001  (그 수는 셈에서 뺀다)
+                            continue
+                        vals.append((w, sim._eval()))
+                if not vals:
+                    continue
+                mean = sum(w * v for w, v in vals) / sum(w for w, _v in vals)
+                sc = 0.65 * mean + 0.35 * min(v for _w, v in vals) + self.rng.random() * 0.01
+                if opt == plain:
+                    sc += self.WAR_PRIOR
+                if best_sc is None or sc > best_sc:
+                    best, best_sc = opt, sc
+        best = best or plain
+        return (best[1], None) if best[0] == "switch" else (None, best[1])
+
+    def _human_replies(self):
+        """사람이 이번 턴에 할 법한 것: [(무게, 'move'/'switch', 값)]."""
+        me, foe = self.me, self.foe
+        if not me.alive() or not foe.alive():
+            return []
+        lock = SM.locked_move(me, self.bt)
+        if lock:
+            return [(1.0, "move", lock)]
+        moves = []
+        for k in self.bt.usable(me):
+            if k != B.STRUGGLE and SM.restricted(self.bt, me, k):
+                continue
+            moves.append((self._est(me, foe, k) * self._hit_rate(self.bt.move_of(k), me, foe), k))
+        moves.sort(key=lambda x: (-x[0], x[1]))
+        out = [(w, "move", k) for w, (_d, k) in zip(self.WAR_REPLY[:2], moves)]
+        if not (SM.trapped(self.bt, me) or SM.must_stay(me)):
+            sw = [(self._standing(f, foe), i) for i, f in enumerate(self.me_team) if f.alive() and i != self.mi]
+            if sw:
+                out.append((self.WAR_REPLY[2], "switch", max(sw)[1]))
+        return out
+
+    def _eval(self):
+        """이 판을 상대(AI) 쪽에서 본 값. 클수록 AI 에게 좋다.
+
+        살아 있는 포켓몬 한 마리에 0.5 + 남은 체력 비율. 나와 있는 둘의 랭크(±2 까지)와 상태이상을 조금.
+        """
+        if self.over:
+            return 100.0 if self.result in ("lost", "forfeit") else (-100.0 if self.result == "won" else 0.0)
+
+        def side(team):
+            return sum(0.5 + f.hp / float(f.maxhp or 1) for f in team if f.alive())
+        v = side(self.foe_team) - side(self.me_team)
+        for f, sign in ((self.foe, 1.0), (self.me, -1.0)):
+            if not f.alive():
+                continue
+            v += sign * 0.05 * sum(max(-2, min(2, f.stages.get(k, 0))) for k in ("atk", "def", "spa", "spd", "spe"))
+            if f.status:
+                v -= sign * 0.12
+        return v
+
     # ---------------- 한 턴 ----------------
     def valid_switches(self):
         return [i for i, f in enumerate(self.me_team) if f.alive() and i != self.mi]
 
-    def act(self, kind, value=None, mega=False):
+    def act(self, kind, value=None, mega=False, z=False):
         """kind: 'move' (value=기술) / 'switch' (value=자리) / 'forfeit'
 
         mega: 이 턴에 메가진화한다 (기술을 고를 때만. 교체하면서는 못 한다).
+        z: 고른 기술을 Z기술로 쓴다 (시즌 4, 기술을 고를 때만).
         """
         if self.over:
             return [{"t": "over", "result": self.result}]
@@ -665,9 +822,16 @@ class TrainerBattle(object):
         foe_move = None
 
         # 상대가 무엇을 할지 먼저 정한다 (내 선택을 보지 않는다)
-        foe_slot = self._foe_wants_switch()
-        if foe_slot is None:
-            foe_move = self._foe_move()
+        forced, self._forced = getattr(self, "_forced", None), None
+        if forced is not None:                 # 수를 셈하는 사본: 셈하려는 수를 그대로 둔다
+            foe_slot = forced[1] if forced[0] == "switch" else None
+            foe_move = forced[1] if forced[0] == "move" else None
+        elif self.war and not getattr(self, "_sim", False):
+            foe_slot, foe_move = self._war_choice()
+        else:
+            foe_slot = self._foe_wants_switch()
+            if foe_slot is None:
+                foe_move = self._foe_move()
 
         if kind == "switch":
             self._switch("me", value, ev)
@@ -690,6 +854,8 @@ class TrainerBattle(object):
         # 메가진화 (시즌 3): 둘 다 고른 뒤, 순서를 정하기 전에. 교체한 쪽은 못 한다.
         bt.auto_mega["foe"] = bool(self.keystone.get("foe")) and foe_slot is None
         bt.mega_step({"me": bool(mega) and kind == "move"}, ev)
+        bt.z_request("me", me_move, bool(z) and kind == "move")
+        bt._auto_z("foe", foe_move)            # 길드전 방어 AI 만 켜져 있다 (관장은 auto_z 가 꺼져 있다)
 
         me, foe = self.me, self.foe
         me.flinched = False
@@ -823,7 +989,8 @@ class TrainerBattle(object):
     def _finish(self, result, ev):
         self.over = True
         self.result = result
-        text = {"won": "%s 과(와)의 승부에서 이겼다!" % self.trainer.get("name"),
+        text = {"won": ("%s 을(를) 쓰러뜨렸다!" if self.trainer.get("wild")
+                        else "%s 과(와)의 승부에서 이겼다!") % self.trainer.get("name"),
                 "lost": "눈앞이 캄캄해졌다...",
                 "draw": "양쪽 모두 쓰러졌다..."}[result]
         ev.append({"t": "over", "result": result, "text": text})
@@ -894,6 +1061,8 @@ class TrainerBattle(object):
             "megaUsed": "me" in self.mega_done,
             "me": {"slot": self.mi, "team": [self.side(f, True) for f in self.me_team]},
             "foe": {"slot": self.fi, "team": foe_team},
+            # Z기술 단추 (시즌 4): zMoves(무엇이 되는지)·zUsed
+            "gimmick": B.gimmick_view(self.bt, "me", not self.over and not self.need_switch),
         }
 
     # ---------------- 저장 ----------------
@@ -928,6 +1097,7 @@ class TrainerBattle(object):
             "rng": [st[0], list(st[1]), st[2]],
             "field": self.bt.field.dump(), "pendingOut": self.pending_out, "mid": self.mid,
             "keystone": dict(self.keystone), "megaDone": sorted(self.mega_done),
+            "gimmick": B.gimmick_dump(self),
         }
 
     @classmethod
@@ -943,6 +1113,7 @@ class TrainerBattle(object):
         self.mi, self.fi = d["mi"], d["fi"]
         self.keystone = dict(d.get("keystone") or {"me": False, "foe": False})
         self.mega_done = set(d.get("megaDone") or [])
+        B.gimmick_load(self, d.get("gimmick"))
         self._make_duel(FD.Field.load(d.get("field")))
         self.pending_out = d.get("pendingOut")
         self.mid = d.get("mid")

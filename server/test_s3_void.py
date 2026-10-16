@@ -224,10 +224,11 @@ def main():
             pvp._today())
         # 스무 판을 다 쓴 사람: 9시가 지나도 못 걸고, 자정이 지나면 다시 건다
         cap = mkuser("스무판", 1000)
-        db.run("INSERT INTO pokemon (user_id, species, level, exp, nature, gender, shiny,"
-               " happiness, ivs, evs, moves, on_desktop, slot, met_level, caught_at)"
-               " VALUES (?,'PIKACHU',20,0,'HARDY','M',0,70,'{}','{}',?,1,0,5,'')",
-               (cap, '["TACKLE"]'))
+        for slot in range(6):                    # 랭크전 조건 (시즌 4): Lv.50 이상 여섯 마리
+            db.run("INSERT INTO pokemon (user_id, species, level, exp, nature, gender, shiny,"
+                   " happiness, ivs, evs, moves, on_desktop, slot, met_level, caught_at)"
+                   " VALUES (?,'PIKACHU',50,0,'HARDY','M',0,70,'{}','{}',?,1,?,5,'')",
+                   (cap, '["TACKLE"]', slot))
         db.run("UPDATE rank_stat SET fought_day='2026-10-03', fought=? WHERE user_id=?",
                (pvp.DAILY_BATTLES, cap))
         why = pvp.can_start(cap, "random")

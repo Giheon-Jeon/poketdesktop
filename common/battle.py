@@ -23,6 +23,7 @@ from . import movecalc as MC
 from . import pokelogic as P
 from . import statusmoves as SM
 from . import attackfx as AF      # 기술에 붙은 고유 효과 (statusmoves 다음에 불러온다)
+from . import zmoves as ZM        # Z기술 (시즌 4)
 
 # ---------------------------------------------------------------- 상수
 STAGE_KEYS = ("atk", "def", "spa", "spd", "spe", "acc", "eva")
@@ -272,8 +273,11 @@ class Fighter(object):
         if not forms:
             return None
         held = self._held
+        # Z크리스탈을 지닌 레쿠쟈는 화룡점정을 알아도 메가진화하지 못한다 (본가와 같다) -
+        # 스톤 없이 되는 유일한 메가라, 안 막으면 한 마리가 메가진화와 Z기술을 다 쓴다.
+        no_move = ZM.is_crystal(held)
         cand = [m for m in forms
-                if (m.get("megaMove") and m["megaMove"] in self.moves)
+                if (m.get("megaMove") and m["megaMove"] in self.moves and not no_move)
                 or (held and m.get("megaStone") == held)]
         if not cand:
             return None
@@ -521,6 +525,8 @@ def _damage(dex, move, user, target, rng, crit=None):
         eff = type_eff(dex, move, mtype, user, target, abil)
         if eff == 0:
             return 0, False, 0.0
+        if move.get("_z") and (getattr(user, "cond", None) or {}).get("pierce"):
+            fixed = max(1, int(fixed) // 4)      # 알로라의수호자도 방어를 뚫을 때는 1/4 이다
         return max(0, int(fixed)), False, eff
     mk = MC.key(move)
     power = move.get("power") or 0
@@ -660,6 +666,42 @@ def exp_gain(dex, foe, winner_level, participants=1, shared=False):
     return max(1, int(raw))
 
 
+# ---------------------------------------------------------------- Z기술을 들고 있는 쪽
+# 관장·실시간·레이드·파티전은 판을 여러 번 새로 만든다 (라운드마다, 저장했다 불러올 때마다).
+# '한 판에 한 번' 이 지켜지려면 그 바깥의 객체가 들고 있다가 **같은 객체를** Battle 에 물려야 한다 -
+# 메가진화의 keystone·mega_done 과 같은 틀이다. 네 군데가 같은 줄을 되풀이하지 않게 여기 모았다.
+def gimmick_init(holder):
+    """새 판. holder 는 TrainerBattle·LiveBattle·레이드의 한 사람 ... (속성 넷을 단다)"""
+    holder.zring = {"me": False, "foe": False}
+    holder.z_done = set()
+
+
+def gimmick_share(holder, bt):
+    bt.zring, bt.z_done = holder.zring, holder.z_done
+
+
+def gimmick_dump(holder):
+    return {"zring": dict(holder.zring), "zDone": sorted(holder.z_done)}
+
+
+def gimmick_load(holder, d):
+    """저장한 것을 되살린다. 시즌 4 전에 저장한 판(칸이 없다)은 전부 꺼진 것으로 읽는다."""
+    d = d or {}
+    holder.zring = dict(d.get("zring") or {"me": False, "foe": False})
+    holder.z_done = set(d.get("zDone") or [])
+
+
+def gimmick_view(bt, who, active=True):
+    """화면에 줄 것: Z기술 단추를 띄울지와 무엇이 되는지.
+
+    active 가 False 면 (판이 끝났다, 교체를 골라야 한다 ...) 지금은 못 누른다.
+    """
+    return {
+        "zMoves": bt.z_preview(who) if active else [],
+        "zUsed": who in bt.z_done,
+    }
+
+
 # ---------------------------------------------------------------- 배틀
 class Battle(object):
     """야생 1:1 전투 한 판."""
@@ -690,6 +732,13 @@ class Battle(object):
         self.keystone = {"me": False, "foe": False}
         self.auto_mega = {"me": False, "foe": False}
         self.mega_done = set()
+        # Z기술 (시즌 4). 키스톤과 같은 틀이다: Z링은 부르는 쪽이 채우고,
+        # auto_z 는 AI 가 알아서 쓰는 쪽, z_done 은 이 판에서 이미 쓴 쪽 (한 판에 한 번).
+        self.zring = {"me": False, "foe": False}
+        self.auto_z = {"me": False, "foe": False}
+        self.z_done = set()
+        self.z_want = {}                    # 이 턴에 Z기술로 쓰겠다고 한 기술 {who: 기술 열쇠}
+        self._zcur = None                   # 지금 나가고 있는 Z기술 (열쇠, 기술) - move_of 가 본다
         # 이 턴에 누가 무엇을 하려 하고(pending) 누가 이미 움직였나(acted).
         # 기습·질풍신뢰·힘껏펀치·부리캐논이 본다. 턴을 돌리는 쪽이 채운다 -
         # 안 채운 판(레이드)에서는 '모른다' 로 치고 실패시키지 않는다.
@@ -751,6 +800,9 @@ class Battle(object):
     def move_of(self, key):
         if key == STRUGGLE:
             return STRUGGLE_MOVE
+        z = self._zcur
+        if z is not None and key == z[0]:
+            return z[1]                     # 지금 나가고 있는 Z기술 (위력을 채운 것)
         return self.dex.move(key) or {}
 
     def move_name(self, key):
@@ -1108,8 +1160,91 @@ class Battle(object):
                 # 메가는 새로 나온 것이 아니다 - 가속(메가블레이범)은 그 턴 끝에도 붙는다.
                 f.ab.pop("fresh", None)
 
+    # ---------------- Z기술 (시즌 4) ----------------
+    def z_moves(self, who):
+        """이 쪽이 지금 Z기술로 쓸 수 있는 기술 열쇠들. 없으면 빈 목록.
+
+        Z링이 있어야 하고 **한 판에 한 번**이다. 역린·2턴 기술·참기로 묶여 있는 동안은 못 쓴다.
+        """
+        if not self.zring.get(who) or who in self.z_done:
+            return []
+        f = self.me if who == "me" else self.foe
+        if f is None or not f.alive() or f.item_gone or not ZM.is_crystal(f._held):
+            return []
+        if f.bide or f.cond.get("encore") or SM.locked_move(f):
+            return []
+        keys = [m for m in self.usable(f) if m != STRUGGLE]
+        return ZM.options(self.dex, f.mon, f._held, keys)
+
+    def z_preview(self, who):
+        """Z기술로 쓸 수 있는 기술마다 무엇이 되는지 (화면의 단추가 쓴다)."""
+        f = self.me if who == "me" else self.foe
+        out = []
+        for k in self.z_moves(who):
+            md = self.dex.move(k) or {}
+            zc = ZM.convert(self.dex, f.mon, f._held, k, md, phys=md.get("cat") == "physical")
+            if not zc:
+                continue
+            if zc["status"]:
+                note = "모든 능력치 +2" if zc.get("own") else ZM.effect_text(zc.get("effect"))
+                out.append({"key": k, "name": zc["name"], "status": True, "effect": note})
+            else:
+                zm = zc["move"]
+                out.append({"key": k, "name": zc["name"], "status": False, "type": zm.get("type"),
+                            "typeKr": self.dex.type_name(zm.get("type")), "cat": zm.get("cat"),
+                            "power": None if zm.get("_fixed") is not None else zm.get("power")})
+        return out
+
+    def z_request(self, who, key, want=True):
+        """이 턴에 이 기술을 Z기술로 쓰겠다. 되는 것만 받는다. 받았으면 True."""
+        self.z_want.pop(who, None)
+        if want and key and key in self.z_moves(who):
+            self.z_want[who] = key
+            return True
+        return False
+
+    def _auto_z(self, who, key):
+        """AI: 고른 기술이 Z로 쓸 수 있는 **공격기**이고 상대에게 통하면 그 턴에 쓴다."""
+        if not self.auto_z.get(who) or who in self.z_want or not key or key == STRUGGLE:
+            return
+        md = self.move_of(key)
+        if not MC.attacks(md) or key not in self.z_moves(who):
+            return
+        f, o = (self.me, self.foe) if who == "me" else (self.foe, self.me)
+        if self.estimate(f, o, key) > 0:
+            self.z_want[who] = key
+
+    def _z_effect(self, user, who, zc, ev):
+        """변화기의 Z효과. 원래 효과보다 먼저 나온다."""
+        own = zc.get("own")
+        tag = zc.get("effect")
+        if own:                                  # 나인이볼부스트: 모든 능력치 +2
+            for st, n in own.get("stat") or []:
+                self._change_stat(user, st, n, ev, who)
+            return
+        for st, n in ZM.boosts(tag):
+            self._change_stat(user, st, n, ev, who)
+        if tag == "clearnegativeboost":
+            low = [k for k in STAGE_KEYS if user.stages.get(k, 0) < 0]
+            for k in low:
+                user.stages[k] = 0
+            if low:
+                ev.append({"t": "msg", "who": who,
+                           "text": "%s 의 내려간 능력치가 원래대로 돌아왔다!" % user.name})
+        elif tag == "heal" or (tag == "curse" and "GHOST" in user.types()):
+            if user.hp < user.maxhp and not user.cond.get("healblock"):
+                amount = user.maxhp - user.hp
+                user.hp = user.maxhp
+                ev.append({"t": "heal", "who": who, "amount": amount, "hp": user.hp,
+                           "maxhp": user.maxhp, "text": "%s 은(는) Z파워로 체력을 회복했다!" % user.name})
+        elif tag == "curse":
+            self._change_stat(user, "atk", 1, ev, who)
+        elif tag == "crit2":
+            user.cond["focus"] = True
+            ev.append({"t": "msg", "who": who, "text": "%s 은(는) Z파워로 급소를 노리기 쉬워졌다!" % user.name})
+
     # ---------------- 한 턴 ----------------
-    def take_turn(self, my_move, mega=False):
+    def take_turn(self, my_move, mega=False, z=False):
         """내 기술을 정해서 한 턴을 진행한다. 일어난 일 목록을 돌려준다."""
         if self.over:
             return [{"t": "over", "result": self.result}]
@@ -1126,6 +1261,10 @@ class Battle(object):
         if self.me.held:
             # 사람이 고른 기술도 구애 잠금을 받는다 (야생 배틀은 사람이 고른다).
             my_move = H.force_move(self.me, my_move, ev, "me")
+        # Z기술 (시즌 4): 내가 눌렀거나, AI 가 고른 기술이 Z로 쓸 수 있는 공격기면 이 턴에 쓴다.
+        self.z_request("me", my_move, z)
+        self._auto_z("me", my_move)
+        self._auto_z("foe", foe_move)
 
         order = self._order(my_move, foe_move, ev)
         self.me.flinched = False
@@ -1216,6 +1355,11 @@ class Battle(object):
         if guard and "protect" in fl and k not in ("FEINT", "HYPERSPACEFURY", "HYPERSPACEHOLE"):
             if guard in ("KINGSSHIELD", "OBSTRUCT", "SILKTRAP") and not MC.attacks(move):
                 pass                                      # 킹실드·블로킹·스레드트랩은 변화기를 못 막는다
+            elif move.get("_z") and MC.attacks(move):
+                # Z기술: 방어를 뚫는다. 대신 데미지가 1/4 이다 (attackfx.damage_mult 의 pierce).
+                user.cond["pierce"] = True
+                ev.append({"t": "msg", "who": tw,
+                           "text": "%s 은(는) 공격을 완전히 막아내지 못했다!" % target.name})
             elif MC.attacks(move) and A.is_contact(move, user) \
                     and A.has(user, "UNSEENFIST", "PIERCINGDRILL"):
                 # 보이지않는주먹: 닿는 기술은 방어를 뚫는다. 관통드릴은 뚫되 데미지가 1/4 이다.
@@ -1354,7 +1498,7 @@ class Battle(object):
             out = self._do_use(who, user, target, key, ev, called, instructed, bounced)
         finally:
             user.cond.pop("breaker", None)        # 섀도레이·메테오드라이브·포톤가이저를 쓰는 동안만
-            user.cond.pop("pierce", None)         # 관통드릴로 방어를 뚫은 한 번만
+            user.cond.pop("pierce", None)         # 관통드릴·Z기술로 방어를 뚫은 한 번만
         if top:
             self.acted.add(who)
             used = getattr(self, "_now_key", None) if n0 < len(ev) else None
@@ -1371,6 +1515,13 @@ class Battle(object):
                     self._check_faint(ev)
             if (user.ability_on or target.ability_on) and not self.over:
                 A.settle_status(self, ev)     # 특성이 바뀌어 걸릴 수 없게 된 상태이상은 낫는다
+            if self._zcur is not None:
+                # Z기술로 썼어도 **그 기술을 쓴 것**이다 (비장의무기가 센다). 쓰고 난 뒤의 처리는
+                # Z기술의 열쇠로 돌았으니, 원래 기술은 여기서 따로 적는다.
+                used_moves = list(user.cond.get("usedMoves") or [])
+                if key not in used_moves:
+                    user.cond["usedMoves"] = used_moves + [key]
+            self._zcur = None                 # Z기술은 이 한 수로 끝난다
         return out
 
     def _do_use(self, who, user, target, key, ev, called=False, instructed=False, bounced=False):
@@ -1403,6 +1554,36 @@ class Battle(object):
                 ev.append({"t": "msg", "who": who, "text": why})
                 return
 
+        # ---- Z기술 (시즌 4). **움직일 수 있을 때만 Z파워를 쓴다** - 잠들었거나 풀죽어서 못 움직인
+        # 턴에는 한 판 한 번이 안 닳는다 (본가와 같다). 공격기는 여기서 통째로 다른 기술이 되고
+        # (위력·필중·추가 효과 없음), 변화기는 Z효과가 먼저 나온 뒤 원래 기술이 그대로 나간다.
+        shown = None                          # 화면에 띄울 기술 이름 (Z기술이면 그 이름)
+        if not called and not bounced and not instructed and key != STRUGGLE \
+                and self.z_want.get(who) == key:
+            self.z_want.pop(who, None)
+            zc = ZM.convert(self.dex, user.mon, user._held, key, move,
+                            phys=AF.physical(move, user, target), target_hp=target.hp)
+            if zc:
+                self.z_done.add(who)
+                shown = zc["name"]
+                ev.append({"t": "zpower", "who": who, "name": user.name, "move": shown,
+                           "base": self.move_name(key), "item": user._held,
+                           "text": "%s 은(는) Z파워를 몸에 둘렀다! 전력을 다한 Z기술이 풀려난다!"
+                                   % user.name})
+                if zc["status"]:
+                    self._z_effect(user, who, zc, ev)
+                    if zc.get("own"):         # 전용 변화 Z기술(나인이볼부스트)은 그것으로 끝이다
+                        user.pp[key] = max(0, user.pp.get(key, 0) - 1)
+                        user.cond["lastMove"] = key
+                        ev.append({"t": "move", "who": who, "name": user.name, "move": shown,
+                                   "moveType": zc["own"].get("type"), "cat": "status",
+                                   "text": "%s 의 %s!" % (user.name, shown)})
+                        return
+                else:
+                    move = zc["move"]
+                    self._zcur = (zc["key"], move)
+                    self._now_key = zc["key"]     # 쓰고 난 뒤의 처리(반동 턴 ...)는 원래 기술 것이 아니다
+
         abil = user.ability_on or target.ability_on
         tw = "foe" if who == "me" else "me"
         k = MC.key(move) if key != STRUGGLE else STRUGGLE
@@ -1433,9 +1614,9 @@ class Battle(object):
         # 속이기·만나자마자: 나온 턴이 아니면 실패한다
         if not called and SM.first_turn_only(user, k):
             ev.append({"t": "move", "who": who, "name": user.name,
-                       "move": self.move_name(key), "moveType": MC.move_type(move, user),
+                       "move": shown or self.move_name(key), "moveType": MC.move_type(move, user),
                        "cat": move.get("cat"),
-                       "text": "%s 의 %s!" % (user.name, self.move_name(key))})
+                       "text": "%s 의 %s!" % (user.name, shown or self.move_name(key))})
             return self._fail(who, ev)
         # 두 턴에 걸쳐 쓰는 기술의 **첫 턴**
         if not called and not bounced:
@@ -1449,10 +1630,13 @@ class Battle(object):
             if k == "SKYDROP":
                 target.cond.pop("skydrop", None)             # 둘째 턴: 놓아준다
         if not charging and not bounced:
-            ev.append({"t": "move", "who": who, "name": user.name,
-                       "move": self.move_name(key), "moveType": MC.move_type(move, user),
-                       "cat": move.get("cat"),
-                       "text": "%s 의 %s!" % (user.name, self.move_name(key))})
+            mev = {"t": "move", "who": who, "name": user.name,
+                   "move": shown or self.move_name(key), "moveType": MC.move_type(move, user),
+                   "cat": move.get("cat"),
+                   "text": "%s 의 %s!" % (user.name, shown or self.move_name(key))}
+            if shown:
+                mev["z"] = True               # 화면이 Z기술 연출을 붙인다
+            ev.append(mev)
         if key != STRUGGLE and not bounced:
             user.cond["lastMove"] = key
             self.last_before = self.field.last_move      # 흉내쟁이는 자기 직전의 기술을 본다
@@ -1568,7 +1752,7 @@ class Battle(object):
                     times = self.rng.choice(MULTI_HIT) if (lo, hi) == (2, 5) \
                         else self.rng.randint(lo, hi)
             elif abil and A.has(user, "PARENTALBOND") and key != STRUGGLE \
-                    and AF.parental_ok(k, move, fixed_move):
+                    and not move.get("_z") and AF.parental_ok(k, move, fixed_move):   # Z기술은 한 번만 친다
                 times, parental = 2, True     # 부자유친: 한 번 치는 기술을 두 번 (둘째는 1/4)
             eff = 1.0
             for i in range(times):
@@ -1985,6 +2169,7 @@ class Battle(object):
                       "roost"):
                 f.cond.pop(c, None)
         self.field.clear_turn_guards()
+        self.z_want = {}                   # Z기술은 턴마다 다시 고른다 (z_request 는 이 뒤에 부른다)
         self.field.clock = int(getattr(self.field, "clock", 0)) + 1    # 원수갚기가 '앞 턴' 을 센다
         self.turn_open = True              # 이번 턴을 열었다 (고르는 쪽이 본다 - SM.first_turn_spent)
         AF.sky_drop_tick(self)             # 프리폴: 붙잡은 쪽이 없어졌으면 풀려난다

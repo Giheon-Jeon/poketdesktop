@@ -394,6 +394,26 @@ def main():
     chk("'닫기' 를 누르지 않아도 창이 닫힌다", gone and not w3.alive, w3.alive)
     chk("결과 칸을 따로 그리지 않았다", w3._result_shown and not errors, errors[:1])
 
+    print("=== 관전 N명 (친선전) ===")
+    api4 = FakeApi(dex)
+    app4 = FakeApp(root, api4, dex)
+    w4 = LUI.LiveBattleWindow(app4, dict(api4.match(), watchers=1))
+    pump(root, lambda: not w4.busy, timeout=25)
+    rest(root, 0.3)
+
+    def badge(w_):
+        return [w_.cv.itemcget(i, "text") for i in w_.cv.find_withtag("watchers") if w_.cv.type(i) == "text"]
+    chk("길드원끼리의 판이면 장면 오른쪽 위에 '관전 1명'", badge(w4) == ["관전 1명"], badge(w4))
+    w4.set_watchers(w4.room["id"], 4)
+    chk("  길드에서 밀려오면 고친다", badge(w4) == ["관전 4명"], badge(w4))
+    w4.set_watchers("w%d" % w4.room["id"], 7)
+    chk("  다른 판(길드전 번호)의 것은 안 바꾼다", badge(w4) == ["관전 4명"], badge(w4))
+    w4.sync(dict(api4.match(), watchers=2))
+    chk("  서버에 물어 받은 판에 실린 수로도 고친다", badge(w4) == ["관전 2명"], badge(w4))
+    chk("  장면 안에 있다", inside(w4.cv, [i for i in w4.cv.find_withtag("watchers") if w4.cv.type(i) == "text"][0])[0])
+    w4.close()
+    chk("길드원끼리가 아닌 판에는 안 적는다", not w.cv.find_withtag("watchers") if w.alive else True)
+
     print("=== 좁은 화면 ===")
     real_area = PLAT.work_area
     try:

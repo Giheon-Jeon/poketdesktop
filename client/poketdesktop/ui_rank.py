@@ -42,6 +42,16 @@ def _date_kr(s):
         return s or ""
 
 
+def rank_short_text(me, rules):
+    """랭크전 조건(시즌 4)을 못 채웠으면 알릴 한 줄, 채웠거나 옛 서버면 None."""
+    if me.get("rankReady") is not False:
+        return None
+    rm = (rules or {}).get("rankMin") or {}
+    need, lv = int(rm.get("count") or 6), int(rm.get("level") or 50)
+    return ("랭크전은 Lv.%d 이상 %d마리가 있어야 걸 수 있습니다 - 지금 %d마리. '랭크 팀' 에서 채우세요."
+            % (lv, need, int(me.get("rankReadyCount") or 0)))
+
+
 def today_text(fight):
     """머리줄에 적을 '오늘 몇 판 가능'. 하루 상한(랜덤 배틀 20판) 기준이다."""
     left = max(0, int(fight.get("left") or 0))
@@ -256,6 +266,11 @@ class RankWindow(object):
         tk.Label(inner, text="  ·  ".join(lines), bg=U.BG2, fg=U.FG_DIM,
                  font=U.FONT_XS, anchor="w", justify="left",
                  wraplength=W - 90).pack(fill="x", pady=(6, 0))
+        short = rank_short_text(me, self.rules)
+        if short:
+            # 랭크전 조건 (시즌 4): 못 채우면 랜덤 배틀을 못 건다 - 누르기 전에 보이게
+            tk.Label(inner, text=short, bg=U.BG2, fg=U.DANGER, font=U.FONT_XS, anchor="w",
+                     justify="left", wraplength=W - 90).pack(fill="x", pady=(4, 0))
 
     def _rules_card(self):
         """규칙과 이번 시즌 보상. 서버가 보낸 숫자 그대로 적는다."""
@@ -298,8 +313,12 @@ class RankWindow(object):
         if r.get("safeRp"):
             text.append("슈퍼볼(%d RP)에 한 번 오르면 그 아래로 안 떨어짐" % r["safeRp"])
         if r.get("levelCap"):
-            text.append("랜덤 배틀은 Lv.%d 상한 · 랭크 팀으로 싸움 · 전력이 비슷한 상대와 붙음"
+            text.append("랜덤 배틀은 Lv.%d 상한 · 랭크 팀으로 싸움 · 점수가 비슷한 상대와 붙음"
                         % r["levelCap"])
+        rm = r.get("rankMin") or {}
+        if rm.get("count"):
+            text.append("랭크전 참가 조건: Lv.%d 이상 포켓몬 %d마리 (못 채우면 걸 수도, 상대로 뽑히지도 않음)"
+                        % (rm.get("level", 50), rm["count"]))
         if r.get("restrictedMax"):
             # 시즌 3 부터 랭크만이 아니라 모든 팀 배틀이다 (server/app/pvp.RESTRICTED_MAX)
             text.append("전설·환상 포켓몬은 한 팀에 %d마리까지 (랭크·친구·관장·레이드)"

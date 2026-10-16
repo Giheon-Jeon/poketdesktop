@@ -33,6 +33,8 @@ from . import battle_zoom as Z
 from . import platform_os as PLAT
 from .ui_common import run_async
 from .ui_gym import level_color, shade, trainer_photo
+from . import ui_gimmick
+from . import ui_spectate as SP
 from . import ui_mega
 from .ui_mega import MegaToggle
 
@@ -168,6 +170,8 @@ class GymBattleWindow(Z.Resizable):
         self.alive = True
         self.bid = data["id"]
         self.view = data["battle"]
+        # 관전 N명 (길드전 공격 - 길드원이 구경한다). 관장·악당 판이면 None 이고 아무것도 안 적는다.
+        self.watchers = data.get("watchers")
         self.queue = []
         self.busy = False
         self.exp = []
@@ -258,6 +262,7 @@ class GymBattleWindow(Z.Resizable):
         self.box = {"foe": self._namebox(s(18), s(14), False),
                     "me": self._namebox(sw - s(338), sh - s(104) - s(12), True)}
         self.banner = []
+        self._paint_watchers()
         self._ball_photos()
 
     def _namebox(self, x, y, mine):
@@ -301,6 +306,17 @@ class GymBattleWindow(Z.Resizable):
         self.photos["ball_out"] = ImageTk.PhotoImage(grey)
         self.photos["ball_none"] = ImageTk.PhotoImage(Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
 
+    # ---- 관전 N명 (길드전 공격)
+    def _paint_watchers(self):
+        SP.draw_watchers(self.cv, self.sw, getattr(self, "watchers", None))
+
+    def set_watchers(self, mid, n):
+        """길드에 '관전 N명' 이 밀려왔다 - 이 판(w + 번호)의 것이면 고친다 (ui_spectate.Friendly.counted)."""
+        if str(mid) != "w%d" % self.bid or getattr(self, "watchers", None) is None:
+            return
+        self.watchers = n
+        self._paint_watchers()
+
     def _message(self):
         f = tk.Frame(self.win, bg="#0f141d", height=U.h(MSG_H), highlightthickness=0)
         f.pack(fill="x")
@@ -312,6 +328,10 @@ class GymBattleWindow(Z.Resizable):
         self.msg.pack(side="left", fill="both", expand=True, padx=14)
         U.wrap_to_width(self.msg)
         self.mega = MegaToggle(f, before=self.msg, make=U.ghost_button)   # 시즌 3, 고를 때만 보인다
+        # Z기술 단추 (시즌 4). Z기술을 켜고 끄면 기술 칸을 다시 그린다 (이름·위력이 바뀐다)
+        self.gim = ui_gimmick.GimmickBar(f, before=self.msg, make=U.ghost_button,
+                                         on_change=self._gim_changed,
+                                         prev=getattr(self, "gim", None))
 
     def _commands(self):
         self.cmd = tk.Frame(self.win, bg=U.BG)
@@ -702,6 +722,9 @@ class GymBattleWindow(Z.Resizable):
         if t == "mega":
             self._mega(ev)
             return None
+        if t == "zpower":                    # Z파워를 두른다 - 기술은 뒤따르는 move 가 그린다
+            ui_gimmick.z_event(self, ev, size=Z.px(MON_H.get(who, 100)) * 0.55)
+            return None
         if t == "move":
             self.say(text)
             other = "foe" if who == "me" else "me"
@@ -774,6 +797,9 @@ class GymBattleWindow(Z.Resizable):
         data = self._pending_data or {}
         self._pending_data = None
         self.view = data.get("battle") or self.view
+        if "watchers" in data:
+            self.watchers = data["watchers"]
+            self._paint_watchers()
         self.exp.extend(data.get("exp") or [])
         if data.get("reward"):
             self.reward = data["reward"]
@@ -826,6 +852,12 @@ class GymBattleWindow(Z.Resizable):
         for b in (self.switch_btn, self.forfeit_btn):
             b.configure(state="disabled")
         self.mega.show(False)
+        self.gim.hide()
+
+    def _gim_changed(self):
+        """Z기술 단추를 켜고 껐다 - 기술을 고르는 중이면 칸을 다시 그린다."""
+        if self.alive and not self.busy and getattr(self, "mode", None) == "moves":
+            self.show_commands()
 
     def show_commands(self):
         self.zoom_use()
@@ -837,8 +869,10 @@ class GymBattleWindow(Z.Resizable):
         grid = tk.Frame(self.left, bg=U.BG)
         grid.pack(fill="both", expand=True)
         moves = mon.get("moves") or []
+        self.mega.show(self.view.get("canMega"))
+        self.gim.show(self.view.get("gimmick"))
         for i, m in enumerate(moves[:4] if len(moves) <= 4 else moves[-1:]):
-            self._move_cell(grid, i, m)
+            self._move_cell(grid, i, self.gim.decorate(m))
         for c in (0, 1):
             grid.grid_columnconfigure(c, weight=1, uniform="mv")
         for r in (0, 1):
@@ -847,7 +881,6 @@ class GymBattleWindow(Z.Resizable):
         self.switch_btn.configure(state="normal" if can_switch else "disabled")
         self.forfeit_btn.configure(state="normal")
         self.hint.configure(text="기술에 마우스를 올리면 설명이 나옵니다.")
-        self.mega.show(self.view.get("canMega"))
         self.say("%s 은(는) 무엇을 할까?" % mon.get("name", ""))
 
     def _move_cell(self, grid, i, m):
@@ -915,6 +948,7 @@ class GymBattleWindow(Z.Resizable):
         self.switch_btn.configure(state="disabled")
         self.forfeit_btn.configure(state="normal")
         self.mega.show(False)
+        self.gim.hide()
         self.hint.configure(text="쓰러진 포켓몬과 지금 나와 있는 포켓몬은 고를 수 없습니다.")
         if forced:
             self.say(ask + ".")
@@ -989,6 +1023,7 @@ class GymBattleWindow(Z.Resizable):
         if self.busy:
             return
         mega = self.mega.take() if kind == "move" else False
+        z = self.gim.take(move) if kind == "move" else False
         self.busy = True
         self.hide_commands()
         self.say("...")
@@ -1006,7 +1041,8 @@ class GymBattleWindow(Z.Resizable):
                 return self._reload()
             self.play(r.get("events") or [], r)
 
-        run_async(self.root, lambda: self.app.api.gym_act(self.bid, kind, move, slot, mega=mega),
+        run_async(self.root, lambda: self.app.api.gym_act(self.bid, kind, move, slot,
+                                                         **ui_gimmick.act_kwargs(mega, z)),
                   done)
 
     def _reload(self):
@@ -1016,6 +1052,9 @@ class GymBattleWindow(Z.Resizable):
             if err:
                 return self.later(1500, self.close)
             self.view = r["battle"]
+            if "watchers" in r:
+                self.watchers = r["watchers"]
+                self._paint_watchers()
             self.sync_view(self.view)
             if self.view.get("needSwitch"):
                 self.open_switch(forced=True)
@@ -1062,7 +1101,12 @@ class GymBattleWindow(Z.Resizable):
         tk.Label(body, text=title, bg=U.BG2, fg=color, font=(U.FAMILY_BLACK, U.pt(20))).pack(anchor="w")
         t = self.view["trainer"]
         lines = []
-        if res == "won":
+        if res == "won" and (self.reward or {}).get("lines") is not None:
+            # 악당·전설 (시즌 4): 무엇을 받았는지는 서버가 줄로 적어 준다
+            lines.append(("%s 을(를) 쓰러뜨렸다!" if t.get("wild") else "%s %s 을(를) 이겼다!")
+                         % ((t.get("name", ""),) if t.get("wild") else (t.get("role", ""), t.get("name", ""))))
+            lines.extend(self.reward["lines"])
+        elif res == "won":
             lines.append("%s %s 을(를) 이겼다!" % (t.get("role", ""), t.get("name", "")))
             rw = self.reward or {}
             if rw.get("first"):

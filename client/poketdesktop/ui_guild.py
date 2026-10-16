@@ -55,6 +55,10 @@ CHAT_CARD_GAP = 14          # 글과 단추 사이
 FRIENDLY_EVERY = 5          # 폴링으로 돌 때 친선전의 지금 모습을 묻는 간격 (채팅 틱 몇 번에 한 번)
 TABS = (("chat", "채팅"), ("members", "길드원"), ("mission", "미션"),
         ("shop", "코인 상점"), ("guilds", "다른 길드"), ("manage", "관리"))
+# 길드전 (시즌 4). **길드전이 열려 있을 때만** 미션 다음에 끼운다 (tabs) - 서버가 길드 상태에
+# "war" 를 실어 보낼 때다. 시즌 전이거나 옛 서버면 칸 줄은 예전 그대로다.
+WAR_TAB = ("war", "길드전")
+WAR_PHASES = ("apply", "war", "done")
 SHOP_ICON = 40              # 코인 상점 카드의 도구 그림
 SHOP_CARD_W = 232           # 카드 한 칸이 바라는 폭. 칸이 이보다 좁아지면 한 줄에 놓는 수를 줄인다
 MODE_KR = {"open": "자유 가입", "approve": "승인 필요"}
@@ -621,7 +625,7 @@ class GuildWindow(object):
         self._paint_info()
         bar = tk.Frame(self.body, bg=U.BG)
         bar.pack(fill="x", padx=16, pady=(10, 0))
-        self.seg = U.Segmented(bar, TABS, self.tab, self.show_tab)
+        self.seg = U.Segmented(bar, self.tabs(), self.tab, self.show_tab)
         self.seg.frame.pack(side="left")
         self.content = tk.Frame(self.body, bg=U.BG)
         self.content.pack(fill="both", expand=True)
@@ -709,6 +713,19 @@ class GuildWindow(object):
             self.unread = 0
         self._paint_unread()
         getattr(self, "_tab_" + self.tab)()
+
+    # ---------------- 길드전 (시즌 4) ----------------
+    def tabs(self):
+        """지금 보일 칸들. 길드전이 열려 있으면 미션 다음에 '길드전' 이 낀다."""
+        war = (self.data or {}).get("war") or {}
+        if war.get("phase") in WAR_PHASES:
+            return TABS[:3] + (WAR_TAB,) + TABS[3:]
+        return TABS
+
+    def _tab_war(self):
+        """신청·팀 짜기·공격·순위. 그리는 것은 ui_guild_war 가 한다 (이 칸을 통째로 맡긴다)."""
+        from .ui_guild_war import WarTab
+        self.war = WarTab(self, self.content)
 
     # ---------------- 다른 길드 (1.10.1) ----------------
     def _tab_guilds(self):
@@ -872,7 +889,7 @@ class GuildWindow(object):
         if c is None:
             return
         v, (lo, hi) = self._card_view(c["m"]), self._card_span()
-        sig = (v["tag"], v["text"], v["button"], v["act"], v["arg"], lo, hi)
+        sig = (v.get("title"), v["tag"], v["text"], v["button"], v["act"], v["arg"], lo, hi)
         if sig == c["sig"]:
             return
         inner = c["inner"]
@@ -883,7 +900,7 @@ class GuildWindow(object):
             tk.Frame(inner, bg=CARD, width=lo, height=1).pack(anchor="w")    # 바닥 폭을 잡아 주는 살
             head = tk.Frame(inner, bg=CARD)
             head.pack(fill="x", padx=12, pady=(6, 0))
-            tk.Label(head, text="길드 친선전", bg=CARD, fg=U.ACCENT if live else U.FG_DIM, font=U.FONT_B,
+            tk.Label(head, text=v.get("title") or "길드 친선전", bg=CARD, fg=U.ACCENT if live else U.FG_DIM, font=U.FONT_B,
                      anchor="w").pack(side="left")
             if v["tag"]:                         # 진행 중 · 관전 중 · 끝 · 마감 (상대를 구하는 카드에는 없다)
                 tk.Label(head, text=v["tag"], bg=CARD, font=U.FONT_XS, anchor="e",
@@ -1303,8 +1320,8 @@ class GuildWindow(object):
         if not self.alive:
             return
         t = ev.get("t")
-        if t in ("live", "friendly", "friendly_fight"):
-            return self.friendly().on_event(ev)      # 길드 친선전 (ui_spectate)
+        if t in ("live", "friendly", "friendly_fight", "watchers"):
+            return self.friendly().on_event(ev)      # 길드 친선전·길드전 공격 구경, 관전 N명 (ui_spectate)
         if t == "open":
             self.live = True
             self._paint_state()

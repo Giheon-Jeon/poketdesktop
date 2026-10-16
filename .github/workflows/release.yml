@@ -97,6 +97,9 @@ jobs:
           python client/test_learn_dialog.py
           python client/test_gym_map.py
           python client/test_gym_ui.py
+          python client/test_gimmick_ui.py
+          python client/test_boss_ui.py
+          python client/test_guild_war_ui.py
           python client/test_autostart.py
           python client/test_update_cleanup.py
 
@@ -156,6 +159,9 @@ jobs:
           python client/test_learn_dialog.py
           python client/test_gym_map.py
           python client/test_gym_ui.py
+          python client/test_gimmick_ui.py
+          python client/test_boss_ui.py
+          python client/test_guild_war_ui.py
           python client/test_battle_ui.py
           python client/test_boot_retry.py
           python client/test_autostart_mac.py

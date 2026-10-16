@@ -968,7 +968,29 @@ def main():
     root.update()
     chk("이어 하면 교체 화면부터", rb.mode == "switch" and not any("돌아가기" in t for t in texts(rb.left)),
         (rb.mode, texts(rb.left)[:3]))
+    chk("관장 판에는 '관전 N명' 을 안 적는다", not rb.cv.find_withtag("watchers"))
     rb.close()
+
+    print("\n=== 관전 N명 (길드전 공격) ===")
+    wb = GB.GymBattleWindow(app, dict(api._out([]), watchers=0))
+    root.update()
+
+    def badge(w_):
+        return [w_.cv.itemcget(i, "text") for i in w_.cv.find_withtag("watchers") if w_.cv.type(i) == "text"]
+    chk("길드전 판이면 장면 오른쪽 위에 '관전 0명'", badge(wb) == ["관전 0명"], badge(wb))
+    wb.set_watchers("w%d" % wb.bid, 3)
+    chk("  길드에서 '관전 3명' 이 밀려오면 고친다", badge(wb) == ["관전 3명"], badge(wb))
+    wb.set_watchers("w%d" % (wb.bid + 1), 9)
+    wb.set_watchers(wb.bid, 9)
+    chk("  다른 판(친선전 번호 포함)의 것은 안 바꾼다", badge(wb) == ["관전 3명"], badge(wb))
+    t_ = [i for i in wb.cv.find_withtag("watchers") if wb.cv.type(i) == "text"][0]
+    inside_, bb_ = canvas_inside(wb.cv, t_)
+    chk("  장면 안에 있다", inside_, bb_)
+    wb._finish_play_data = None
+    wb._pending_data = {"battle": wb.view, "watchers": 5}
+    wb._finish_play()
+    chk("  한 턴의 응답에 실린 수로도 고친다", badge(wb) == ["관전 5명"], badge(wb))
+    wb.close()
     api.tb = None
 
     print("\n=== 기권 (이스터에그) ===")

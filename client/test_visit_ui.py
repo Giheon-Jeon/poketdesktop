@@ -41,6 +41,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, ROOT)
 
 import tkinter as tk                                        # noqa: E402
+import tkinter.font as tkfont                               # noqa: E402
 
 from PIL import Image                                       # noqa: E402
 
@@ -179,6 +180,7 @@ class MiniApp(object):
     _box_look = App._box_look
     look_num = App.look_num
     pet_menu = App.pet_menu
+    _pvp = App._pvp
     _hit = staticmethod(App._hit)
     set_size = App.set_size
 
@@ -231,6 +233,44 @@ def menu_of(app, pet):
     finally:
         U.PopupMenu, PLAT.NATIVE_MENU = real_menu, real_native
     return [r.get("text") if r else None for r in (got[-1] if got else [])], (got[-1] if got else [])
+
+
+class FakeMenu(object):
+    """윈도우 우클릭 메뉴(tk.Menu) 대신: 넣은 줄만 적어 둔다 (맥에서 진짜 tk.Menu 를 띄우면 앱이 죽는다)."""
+    made = []
+
+    def __init__(self, *_a, **_k):
+        self.rows, self.shown = [], False
+        FakeMenu.made.append(self)
+
+    def add_command(self, label="", command=None, state="normal"):
+        self.rows.append({"text": label, "command": command, "state": state})
+
+    def add_separator(self):
+        self.rows.append(None)
+
+    def tk_popup(self, *_a):
+        self.shown = True
+
+    def grab_release(self):
+        pass
+
+
+def native_menu_of(app, pet):
+    """윈도우 길(PLAT.NATIVE_MENU)로 우클릭 메뉴를 열어 본다. (줄 글, 줄, 떴는지, 오류)"""
+    real_menu, real_native = tk.Menu, PLAT.NATIVE_MENU
+    tk.Menu, PLAT.NATIVE_MENU = FakeMenu, True
+    FakeMenu.made = []
+    err = None
+    try:
+        app.pet_menu(pet, type("E", (), {"x_root": 10, "y_root": 10})())
+    except Exception as e:                                  # noqa: BLE001
+        err = e
+    finally:
+        tk.Menu, PLAT.NATIVE_MENU = real_menu, real_native
+    m = FakeMenu.made[-1] if FakeMenu.made else None
+    rows = m.rows if m else []
+    return [r["text"] if r else None for r in rows], rows, bool(m and m.shown), err
 
 
 def guest_view(**kw):
@@ -397,8 +437,8 @@ def guest_part(root, ov, app):
     chk("내 말은 내 포켓몬 위에 말풍선, 상대에게 보낸다 (손님은 포켓몬을 고르지 않는다)",
         b is not None and b.label.cget("text") == "안녕!" and vis.sock.sent[-1] == {"t": "say", "text": "안녕!"},
         vis.sock.sent[-1:])
-    by = b.win.winfo_y() + b.win.winfo_height()
-    chk("  말풍선은 도트 머리 위에", by <= lead.y + 2, (by, lead.y))
+    ok, got = over(b, lead)
+    chk("  말풍선은 도트 머리 위에 (가로도 그 도트 위)", ok, got)
     vis.on_event({"t": "say", "from": "host", "text": "어서 와"})
     vis.on_event({"t": "say", "from": "host", "text": "나야", "pet": 51})
     settle(root, 0.15)
@@ -469,6 +509,76 @@ def guest_part(root, ov, app):
     vis.open_input(lead)
     chk("  Esc 는 닫기", vis.pet_escape(lead) is True and vis.input is None)
 
+    print("\n=== 한글: 맥은 Enter 눌림을 입력기가 먹는다 (Enter 를 두 번 쳐야 보내지던 것) ===")
+    inp = vis.open_input(lead)
+    chk("칸에 Enter 뗌도 묶여 있다", "<KeyRelease-Return>" in inp.entry.bind()
+        and "<KeyRelease-KP_Enter>" in inp.entry.bind(), inp.entry.bind())
+    inp.var.set("안녕")
+    inp.release_enter()
+    chk("  막 뜬 말풍선의 뗌은 말풍선을 연 Enter 의 것이라 안 보낸다", not inp.dead and inp.var.get() == "안녕")
+    inp._born -= 1.0
+    settle(root, 0.7)
+    n0 = len(vis.sock.sent)
+    inp.release_enter()
+    settle(root, 0.15)
+    chk("  눌림 없이 뗌만 오면(입력기가 눌림을 먹었다) 친 글을 보낸다", inp.dead and vis.input is None
+        and btext(vis, lead) == "안녕" and sent_now(vis, root, {"t": "say", "text": "안녕"}), vis.sock.sent[n0:])
+    inp = vis.open_input(lead)
+    inp._born -= 1.0
+    inp.var.set("/날기")
+    inp.press_enter()
+    inp.release_enter()
+    chk("  눌림을 받았으면 뗌으로 또 보내지 않는다 (없는 명령: 열린 채 빨갛게)", not inp.dead
+        and str(inp.tip.cget("fg")) == U.DANGER)
+    inp.var.set("")
+    inp.release_enter()
+    chk("  빈 칸의 뗌은 아무 일도 없다", not inp.dead)
+    if root.focus_get() is not None:
+        inp.var.set("또 봐")
+        settle(root, 0.7)
+        inp.entry.event_generate("<KeyRelease-Return>")
+        settle(root, 0.15)
+        chk("  진짜 키 뗌으로도 보낸다", inp.dead and sent_now(vis, root, {"t": "say", "text": "또 봐"}),
+            vis.sock.sent[-1:])
+    else:
+        inp.close()
+
+    print("\n=== 한글: 윈도우는 짜는 중인 글자를 칸에 안 그린다 (한 글자 늦게 보이던 것) ===")
+    real_ime = PLAT.ime_composition
+    inp = vis.open_input(lead)
+    chk("입력기에 물을 수 없는 곳(맥)은 따로 그리지 않는다", (inp.comp is None) == (real_ime is None))
+    inp.close()
+    if sys.platform == "win32":
+        from poketdesktop import platform_win
+        u32, imm = platform_win._imm()               # 여기서 터지면 ime_composition 은 늘 빈 글만 준다 - 직접 부른다
+        chk("  윈도우: 입력기에 묻는 함수가 준비된다 (짜는 중이 아니면 빈 글)", u32 is not None and imm is not None
+            and platform_win.ime_composition() == "")
+    comp = [""]
+    PLAT.ime_composition = lambda: comp[0]
+    try:
+        inp = vis.open_input(lead)
+        inp.var.set("안")
+        inp.entry.icursor("end")
+        comp[0] = "녀"
+        settle(root, 0.15)
+        font = tkfont.Font(root=root, font=inp.entry.cget("font"))
+        want_x = 1 + font.measure("안")
+        info = inp.comp.place_info() if inp.comp.winfo_manager() == "place" else {}
+        chk("짜는 중인 글자를 칸의 커서 자리에 밑줄 글씨로 그린다", inp.comp.cget("text") == "녀"
+            and abs(int(info.get("x", -99)) - want_x) <= 1 and "underline" in str(inp.comp.cget("font")),
+            (inp.comp.cget("text"), info.get("x"), want_x, inp.comp.cget("font")))
+        comp[0] = "녕"
+        settle(root, 0.15)
+        chk("  바뀌면 따라 바뀐다", inp.comp.cget("text") == "녕")
+        comp[0] = ""
+        inp.var.set("안녕")
+        settle(root, 0.15)
+        chk("  다 짜서 칸에 들어가면 치운다", inp.comp.winfo_manager() == "")
+        inp.close()
+        chk("  닫으면 그만 묻는다", inp._ime_job is None)
+    finally:
+        PLAT.ime_composition = real_ime
+
     print("\n=== 우클릭 ===")
     texts_, rows = menu_of(app, lead)
     chk("보낸 포켓몬: '말하기', '여기에 두기', '집으로 돌아오기', 박스로는 못 거둔다",
@@ -534,6 +644,15 @@ def guest_part(root, ov, app):
     root.update()
     texts_, _r = menu_of(app, lead)
     chk("  들고 온 것을 다 두면 '여기에 두기' 는 못 누른다", "여기에 두기 (들고 온 도구 없음)" in texts_, texts_)
+    ntexts, nrows, popped, err = native_menu_of(app, lead)
+    chk("윈도우 메뉴도 내 포켓몬 우클릭에 '말하기'·'집으로 돌아오기' 가 나온다 (못 누르는 줄에서 멈추지 않는다)",
+        err is None and popped and "말하기 (Enter)" in ntexts and "집으로 돌아오기" in ntexts, (err, ntexts))
+    drop_row = next((r for r in nrows if r and r["text"] == "여기에 두기 (들고 온 도구 없음)"), None)
+    chk("  못 누르는 줄은 윈도우 메뉴에서도 죽어 있다", drop_row is not None and drop_row["state"] == "disabled"
+        and drop_row["command"] is None, drop_row)
+    back = next((r for r in nrows if r and r["text"] == "집으로 돌아오기"), None)
+    chk("  '집으로 돌아오기' 는 누를 수 있다", back is not None and back["state"] == "normal"
+        and back["command"] == vis.end_visit, back)
 
     print("\n=== 놀러 간 채로 포켓몬 크기를 바꾸면 (10/15 제보) ===")
     old_lead, old_m = lead, dict(vis.mirrors)
@@ -599,8 +718,17 @@ def host_part(root, ov, app):
     vp = vis.visitor
     chk("놀러 온 포켓몬이 화면 오른쪽 밖에서 걸어 들어온다", vp is not None and vp in ov.extra and vp.x >= x1 + W,
         vp and (vp.x, x1 + W))
+    chk("  걷는 동안에는 아직 '놀러 왔어요' 가 없다", vis.bubbles.get(id(vp)) is None)
     wait(root, lambda: getattr(vp, "_stroll", None) is None, 8)
     chk("  오른쪽 아래에 서서 안 움직인다", at_corner(ov, vp) and vp.state == "idle", (vp.x, vp.y))
+    root.update()
+    ab = vis.bubbles.get(id(vp))
+    chk("서면 그 머리 위에 'OO 님이 놀러 왔어요!' (눈에 띄게, 조금 더 오래)", ab is not None
+        and ab.label.cget("text") == "손님 님이 놀러 왔어요!" and ab.until - time.time() > V.BUBBLE_MS / 1000.0,
+        ab and ab.label.cget("text"))
+    ok, got = over(ab, vp)
+    chk("  그 포켓몬 위에 있다", ok, got)
+    chk("  다른 놀러 가기면 안 띄운다 (늦게 끝난 걸음)", vis._arrived(vp, -1) is None)
     chk("  알린다 (들고 온 도구)", any("들고 온 도구: 슈퍼볼 2개, 검은띠 1개" in n for n in app.notes), app.notes[-1:])
     chk("  내 도트는 그대로 돌아다닌다, 채팅 창은 없다", not ov.locked and all(shown(p) for p in ov.pets.values())
         and not floaters(root))
@@ -651,8 +779,42 @@ def host_part(root, ov, app):
     settle(root, 0.15)
     chk("손님 말은 놀러 온 포켓몬 위, 내 말은 말한 내 포켓몬 위", vis.bubbles.get(id(vp)) is not None
         and vis.bubbles.get(id(second)) is not None)
+    ok, got = over(vis.bubbles[id(vp)], vp)
+    chk("  놀러 온 포켓몬(오른쪽 아래 구석)의 말풍선이 가로로도 그 위에 있다", ok, got)
+    # 10/16 윈도우 제보: 말풍선이 늘 화면 왼쪽 같은 자리에 떴다 (내 말도). 도트 자리는 운영체제가 알려 준
+    # 화면으로 잡는데 말풍선만 Tk 가 켜질 때 재 둔 화면 폭(winfo_screenwidth)으로 화면 안에 맞췄다 - 그 값이
+    # 실제보다 작은 PC 에서는 그보다 오른쪽 도트의 말풍선이 전부 그 폭 끝으로 끌려왔다.
+    real_sw = root.winfo_screenwidth
+    root.winfo_screenwidth = lambda: 300
+    V._SCREENS.update(got=None, told=False)          # 모니터를 다시 묻게 (기억해 둔 것으로 통과하지 않게)
+    try:
+        vis.on_event({"t": "say", "from": "guest", "text": "여기 어때"})
+        vis.say("나도", second)
+        settle(root, 0.2)
+        ok, got = over(vis.bubbles[id(vp)], vp)
+        chk("  Tk 가 아는 화면 폭이 틀려도 말풍선은 그 도트 위에 (놀러 온 포켓몬)", ok, got)
+        ok, got = over(vis.bubbles[id(second)], second)
+        chk("    내 포켓몬도", ok, got)
+        chk("    Tk 의 화면 폭이 모니터와 다르다고 기록에 한 번 남긴다", V._SCREENS["told"] is True)
+    finally:
+        root.winfo_screenwidth = real_sw
+        V._SCREENS.update(got=None, told=False)
+        settle(root, 0.2)
+    real_screens = PLAT.screens
+    PLAT.screens = lambda w, h: [(0, 0, 1000, 800), (1000, 0, 2600, 900)]
+    V._SCREENS.update(got=None)
+    try:
+        chk("  모니터가 둘이면 그 도트가 있는 모니터 안으로만 당긴다", V.screen_of(root, 1500, 500) == (1000, 0, 2600, 900)
+            and V.screen_of(root, 300, 500) == (0, 0, 1000, 800))
+        chk("    걸어 들어오는 중(모니터 밖)이면 가장 가까운 모니터", V.screen_of(root, 2700, 500) == (1000, 0, 2600, 900)
+            and V.screen_of(root, -50, 500) == (0, 0, 1000, 800))
+    finally:
+        PLAT.screens = real_screens
+        V._SCREENS.update(got=None)
     chk("  상대에게 어느 포켓몬이 말했는지 알린다", sent_now(vis, root, {"t": "say", "text": "반가워", "pet": 2}),
         vis.sock.sent[-2:])
+    stack_part(root, vis, vp, second)
+    keys_part(root, vis, second)
     vis.say("/앉기", own)
     chk("내가 동작하면 그 포켓몬이 그동안 멈춘다", own.battling is True and own._visit_act is not None)
     vis.say("/일어나", own)
@@ -683,12 +845,16 @@ def host_part(root, ov, app):
     chk("우클릭: 내 포켓몬 누구나 '말하기', '돌려보내기', 박스로도 거둔다 ('여기에 두기' 는 놀러 간 쪽만)",
         "말하기 (Enter)" in texts_ and "손님 님의 포켓몬 돌려보내기" in texts_ and "박스로 거두기" in texts_
         and not any("여기에 두기" in (t or "") for t in texts_), texts_)
+    ntexts, _r, popped, err = native_menu_of(app, second)
+    chk("  윈도우 메뉴도 같다", err is None and popped and "말하기 (Enter)" in ntexts
+        and "손님 님의 포켓몬 돌려보내기" in ntexts and "박스로 거두기" in ntexts, (err, ntexts))
     texts_, _r = menu_of(app, vp)
     chk("  놀러 온 포켓몬: 누구 것인지와 돌려보내기", texts_[0] == "손님 님의 거북왕"
         and "손님 님의 포켓몬 돌려보내기" in texts_, texts_)
     vis.on_event({"t": "end", "id": 7, "by": "host", "text": "돌려보냈다"})
     root.update()
     chk("끝나면 그만 보낸다", vis.visitor is None and vis._job is None and not vis.active)
+    chk("  쥐고 있던 키보드도 놓는다", vis._kb is None)
     settle(root, 0.4)
     chk("  놀러 온 포켓몬은 오른쪽 밖으로 걸어 나간다", vp in ov.extra and vp.state == "walk", (vp.x, vp.state))
     wait(root, lambda: not ov.extra, 8)
@@ -747,6 +913,236 @@ def send_part(root, ov, app):
     settle(root, 0.2)
 
 
+def over(b, p):
+    """말풍선이 그 도트 위에 걸쳐 있나 (가로: 몸 가운데가 말풍선 폭 안, 세로: 머리 위). (참/거짓, 잰 값)"""
+    b.win.update_idletasks()
+    bx, bw = b.win.winfo_x(), b.win.winfo_width()
+    by = b.win.winfo_y() + b.win.winfo_height()
+    cx = p.x + getattr(p, "ax", p.fw / 2.0)
+    return bx <= cx <= bx + bw and by <= p.y + 2, (bx, bw, by, round(cx), round(p.y))
+
+
+def bottom(b):
+    b.win.update_idletasks()
+    return b.win.winfo_y() + b.win.winfo_height()
+
+
+def stack_part(root, vis, vp, mine):
+    """10/16 요청: 말풍선이 위로 쌓인다 - 5초쯤 떠 있고, 그 사이에 또 말하면 새 말이 도트 바로 위, 먼저 한 말은
+    위로 밀려 올라간다. 사라질 때는 스르륵."""
+    print("\n=== 말풍선 쌓기 ===")
+    vis._close_bubbles()
+    chk("한 말풍선은 5초쯤 떠 있다", 4.5 <= V.BUBBLE_MS / 1000.0 <= 6.0, V.BUBBLE_MS)
+    vis.on_event({"t": "say", "from": "guest", "text": "하나"})
+    settle(root, 0.3)
+    first = vis.bubbles.get(id(vp))
+    y_first = first.win.winfo_y()
+    vis.on_event({"t": "say", "from": "guest", "text": "둘"})
+    root.update()
+    second = vis.bubbles.get(id(vp))
+    st = vis._stacks.get(id(vp)) or []
+    chk("또 말하면 앞 말풍선을 지우지 않고 둘 다 떠 있다", st == [first, second] and not first.dead and not second.dead,
+        [b.label.cget("text") for b in st])
+    chk("  새 말이 도트 바로 위, 먼저 한 말은 그 위로 (자리)", second.offset == 0
+        and first.offset >= second.height() + V.STACK_GAP, (first.offset, second.offset, second.height()))
+    chk("  먼저 한 말은 단번에 뛰지 않고 미끄러져 올라간다", 0 < first._shown < first.offset, (first._shown, first.offset))
+    settle(root, 0.5)
+    chk("  다 올라가면 새 말 바로 위에 선다 (겹치지 않는다)", first._shown == first.offset
+        and bottom(first) <= second.win.winfo_y() and first.win.winfo_y() < y_first
+        and bottom(second) <= vp.y + 2, (bottom(first), second.win.winfo_y(), y_first))
+    vis.on_event({"t": "say", "from": "guest", "text": "셋"})
+    settle(root, 0.5)
+    third = vis.bubbles.get(id(vp))
+    chk("  셋째는 맨 아래, 첫째가 맨 위", bottom(first) <= second.win.winfo_y() and bottom(second) <= third.win.winfo_y(),
+        (first.win.winfo_y(), second.win.winfo_y(), third.win.winfo_y()))
+
+    print("\n=== 말풍선: 스르륵 사라지기 ===")
+    first.until = time.time()                     # 첫째의 시간이 다 됐다 (5초 기다리지 않는다)
+    settle(root, V.FADE_MS / 2000.0)
+    try:
+        a = float(first.win.attributes("-alpha"))
+    except Exception:                             # noqa: BLE001
+        a = None
+    chk("시간이 다 되면 바로 없어지지 않고 흐려진다", not first.dead and a is not None and 0.0 < a < 1.0, a)
+    wait(root, lambda: first.dead, 3)
+    chk("  다 흐려지면 닫힌다, 남은 것은 그대로", first.dead and not second.dead and not third.dead
+        and vis._stacks.get(id(vp)) == [second, third])
+    second.until = third.until = time.time()
+    wait(root, lambda: second.dead and third.dead, 3)
+    chk("  다 사라지면 그 도트의 말풍선이 비워진다", vis.bubbles.get(id(vp)) is None and id(vp) not in vis._stacks)
+
+    print("\n=== 말풍선: 너무 많이 쌓이면 ===")
+    for i in range(V.STACK_MAX + 2):
+        vis.on_event({"t": "say", "from": "guest", "text": "말 %d" % i})
+        root.update()
+    st = vis._stacks.get(id(vp)) or []
+    live = [b for b in st if b._fade_at is None]
+    chk("%d개까지만 남기고 가장 오래된 것부터 스르륵 사라진다" % V.STACK_MAX, len(live) == V.STACK_MAX
+        and [b.label.cget("text") for b in live] == ["말 %d" % i for i in range(2, V.STACK_MAX + 2)]
+        and all(b._fade_at is not None for b in st[:2]), [(b.label.cget("text"), b._fade_at is not None) for b in st])
+    wait(root, lambda: len(vis._stacks.get(id(vp)) or []) == V.STACK_MAX, 3)
+    chk("  사라진 뒤에는 %d개" % V.STACK_MAX, len(vis._stacks.get(id(vp)) or []) == V.STACK_MAX)
+    vis._close_bubbles(vp)
+    chk("  치우면 그 도트 것이 다 없어진다", id(vp) not in vis._stacks and vis.bubbles.get(id(vp)) is None
+        and all(b.dead for b in st))
+
+    print("\n=== 말풍선: 치는 중이면 입력 말풍선 위로 ===")
+    vis.say("먼저 한 말", mine)
+    settle(root, 0.3)
+    said = vis.bubbles.get(id(mine))
+    inp = vis.open_input(mine)
+    settle(root, 0.5)
+    chk("입력 말풍선을 열어도 떠 있던 말풍선은 안 지운다, 그 위로 올라간다", inp is not None and not said.dead
+        and said.offset >= inp.height() and bottom(said) <= inp.win.winfo_y(),
+        (said.dead, said.offset, inp.height(), bottom(said), inp.win.winfo_y()))
+    inp.close()
+    settle(root, 0.5)
+    chk("  입력 말풍선을 닫으면 내려온다", said.offset == 0 and said._shown == 0 and bottom(said) <= mine.y + 2,
+        (said.offset, said._shown))
+    vis._close_bubbles()
+
+
+def keys_part(root, vis, mine):
+    """10/16 제보: 말하고 나서 Enter 만으로 다시 안 열리고 매번 포켓몬을 눌러야 했다. 맥 Tk 는 창이 하나 없어질
+    때마다(입력 말풍선·말풍선·툴팁) 키보드를 맨 앞의 제목 있는 창에 넘긴다 - 그 창이 가져가면 되찾는다.
+    (실제 포커스는 PC 마다 달라서 여기서는 판단만 본다. 실제로 되찾는 것은 맥에서 따로 재 봤다.)"""
+    print("\n=== 키보드를 쥔 포켓몬 ===")
+    E = lambda w: type("E", (), {"widget": w})()      # noqa: E731
+    panel = tk.Toplevel(root)
+    panel.title("친구 창")
+    settle(root, 0.1)
+    vis.focus_pet(mine)
+    chk("포켓몬을 누르면 그 포켓몬이 키보드를 쥔다", vis._kb is mine and str(panel) in vis._kb_known)
+    vis.on_focus_in(E(mine.win))
+    chk("  제 창에 포커스가 오는 것은 그대로", vis._kb is mine and vis._kb_job is None)
+    vis.on_focus_in(E(panel))
+    chk("  원래 있던 창이 포커스를 가져가면(창이 닫혀 Tk 가 넘긴 것) 되찾으려 한다", vis._kb is mine
+        and vis._kb_job is not None)
+    took, real_take, real_fg = [], PLAT.take_keys, root.focus_get
+    PLAT.take_keys = lambda w: took.append(str(w)) or True
+    root.focus_get = lambda: panel
+    try:
+        root.after_cancel(vis._kb_job)
+        vis._kb_job = None
+        vis._reclaim_keys()
+        chk("    되찾는다 (그 포켓몬 창에 키보드를 준다)", took == [str(mine.win)], took)
+        inp = vis.open_input(mine)
+        took[:] = []
+        focused = []
+        real_focus, inp.focus = inp.focus, lambda: focused.append(1)
+        vis._reclaim_keys()
+        chk("    입력 말풍선이 열려 있으면 그리로 되돌린다", focused == [1] and not took, (focused, took))
+        inp.focus = real_focus
+        inp.close()
+        root.focus_get = lambda: None
+        took[:] = []
+        vis._reclaim_keys()
+        chk("    다른 프로그램으로 갔으면 끌어오지 않는다", not took, took)
+    finally:
+        PLAT.take_keys, root.focus_get = real_take, real_fg
+    vis.focus_pet(mine)
+    vis.on_any_press(E(panel))
+    chk("  제목 있는 창을 누르면 그 창에 쓰려는 것이다 - 놓는다", vis._kb is None and vis._kb_job is None)
+    vis.focus_pet(mine)
+    vis.on_any_press(E(mine.win))
+    chk("  제 포켓몬을 누른 것은 그대로 쥔다", vis._kb is mine)
+    fresh = tk.Toplevel(root)
+    settle(root, 0.1)
+    vis.on_focus_in(E(fresh))
+    chk("  새로 뜬 창이 포커스를 받으면(가방·설정을 열었다) 놓는다", vis._kb is None)
+    fresh.destroy()
+    panel.destroy()
+    vis.focus_pet(mine)
+    vis._close_bubbles()
+
+
+def busy_part(root, ov, app):
+    print("\n=== 바탕화면에서 싸우는 동안에는 못 간다 (야생 배틀·랜덤 배틀) ===")
+    from poketdesktop import ui_spectate, wild_ui
+    vis = V.Visit(app)
+    vis.sock = Sock()
+    app.visit = vis
+    chk("아무 일도 없으면 갈 수 있다", vis.can_go() is None, vis.can_go())
+    app.battle = object()
+    chk("야생 배틀 중에는 못 간다", vis.can_go() == "배틀 중에는 놀러 갈 수 없습니다.", vis.can_go())
+    app.battle = None
+    app.arena = object()
+    chk("  랜덤 배틀을 재생하는 중에도", vis.can_go() == "배틀 중에는 놀러 갈 수 없습니다.", vis.can_go())
+    app.arena = None
+    app.wild.throwing = True
+    chk("  야생을 눌러 배틀을 여는 중(답을 기다리는 중)에도", vis.can_go() == "배틀 중에는 놀러 갈 수 없습니다.")
+    app.wild.throwing = False
+    app._pvp_busy = True
+    chk("  랜덤 배틀 상대를 찾는 중에도 (찾으면 바로 바탕화면에서 재생한다)",
+        vis.can_go() == "대전 상대를 찾는 중에는 놀러 갈 수 없습니다.", vis.can_go())
+    app._pvp_busy = False
+    app.friendly = type("Fr", (), {"watching": lambda _self: True})()
+    chk("  친선전을 바탕화면에서 구경하는 중에도", vis.can_go() == "친선전을 구경하는 동안에는 놀러 갈 수 없습니다.")
+    app.friendly = None
+
+    print("\n=== 놀러 가기를 누르고 답을 기다리는 사이에 배틀이 시작되면 ===")
+    app.api.start_reply = guest_view(id=31)
+    n_calls, stops, got = len(app.api.calls), app.wild.stops, []
+    vis.go(2, [], lambda r, e: got.append((r, e)))
+    app.battle = object()                     # 답이 오기 전에 야생을 눌렀다
+    wait(root, lambda: got, 4)
+    settle(root, 0.2)
+    chk("들어가지 않는다 (내 도트·풀숲 그대로)", not vis.active and app.wild.stops == stops
+        and all(shown(p) for p in ov.pets.values()), (vis.active, app.wild.stops))
+    chk("  서버에서도 끝내고 알린다", ("end",) in app.api.calls[n_calls:]
+        and app.notes[-1] == "배틀이 시작돼서 놀러 가지 않았습니다.", (app.api.calls[n_calls:], app.notes[-1:]))
+    n_end = app.api.calls.count(("end",))
+    vis.on_event({"t": "visit", "visit": guest_view(id=31)})
+    settle(root, 0.2)
+    chk("  같은 것이 소켓으로 또 와도 한 번만", not vis.active and app.api.calls.count(("end",)) == n_end)
+    vis.on_event({"t": "visit", "visit": host_view(id=32)})
+    chk("친구가 놀러 오는 것은 배틀 중에도 받는다 (내 화면은 그대로 내 집)", vis.active and not vis.guest)
+    vis.leave(None, tell=False, walk=False)
+    app.battle = None
+    settle(root, 0.3)
+
+    print("\n=== 놀러 가 있는 동안 ===")
+    vis.enter(guest_view(id=33))
+    settle(root, 0.3)
+    asked, told = [], []
+    app._pvp(lambda: asked.append(1), lambda r, why: told.append(why))
+    settle(root, 0.2)
+    chk("랜덤 배틀·친구 배틀을 걸지 않는다 (끝나면 재생할 바탕화면이 친구 집이다)", not asked
+        and told == ["친구 집에 놀러 가 있는 동안에는 대전을 걸 수 없습니다. 돌아온 뒤에 해 주세요."]
+        and app.notes[-1] == told[0] and not getattr(app, "_pvp_busy", False), (asked, told))
+    wc = wild_ui.WildController(app)
+    app.api.wild = lambda force=False: asked.append("wild")
+    wc.check(force=True)
+    settle(root, 0.2)
+    chk("풀숲을 묻지 않는다 (설정에서 다시 켜도)", "wild" not in asked and wc._job is None, asked)
+    app.balls = 0
+    wc.apply({"balls": 4, "wild": {"id": 9, "state": "grass"}, "nextInSeconds": 30})
+    chk("  늦게 온 답은 볼 수만 챙기고 친구 집에 풀숲을 안 돋운다", app.balls == 4 and wc.grass is None
+        and wc.pet is None and wc._job is None, (app.balls, wc.grass, wc._job))
+    app.user_id = 1
+    fr = ui_spectate.Friendly(app)
+    fight = {"id": 5, "a": {"id": 8, "name": "가"}, "b": {"id": 9, "name": "나"}}
+    fr.view["fights"] = [fight]
+    n_note = len(app.notes)
+    fr.watch(5)
+    chk("친선전을 바탕화면에서 구경하지 않는다, 까닭을 알린다", fr.duel is None and len(app.notes) == n_note + 1
+        and "놀러 가 있는 동안에는 친선전을 구경할 수 없습니다" in app.notes[-1], app.notes[-1:])
+    heard = []
+    fr.listeners.append(lambda: heard.append(fr.error) or setattr(fr, "error", None))
+    fr.watch(5)
+    chk("  길드 탭이 열려 있으면 거기에만 (두 번 알리지 않는다)", fr.duel is None and len(app.notes) == n_note + 1
+        and heard and "친선전을 구경할 수 없습니다" in (heard[-1] or ""), heard)
+    app.settings["friendlyAuto"], app.settings["friendlyNotify"] = True, False
+    fr.fight(dict(fight, id=6))
+    chk("  자동 구경을 켜 두었어도 새 판을 구경하지 않는다", fr.duel is None and 6 in fr.known)
+    app.settings.pop("friendlyAuto", None)
+    app.settings.pop("friendlyNotify", None)
+    fr.close()
+    vis.leave(None, tell=False, walk=False)
+    settle(root, 0.3)
+    app.visit = None
+
+
 FILES, SHEETS = {}, {}
 
 
@@ -786,6 +1182,7 @@ def main():
         guest_part(root, ov, app)
         host_part(root, ov, app)
         send_part(root, ov, app)
+        busy_part(root, ov, app)
     finally:
         ov.stop()
         ov.clear()

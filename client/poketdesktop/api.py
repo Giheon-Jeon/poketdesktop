@@ -464,6 +464,10 @@ class Api(object):
     def guild_friendly_seek(self, on=True):
         return self._call("POST", "/api/guild/friendly/seek", {"on": bool(on)})
 
+    def guild_friendly_watch(self, fid, on=True):
+        """그 판을 구경한다 / 아직 본다 / 그만 본다 (싸우는 사람에게 '관전 N명' 이 간다). {id, n}"""
+        return self._call("POST", "/api/guild/friendly/watch", {"id": str(fid), "on": bool(on)})
+
     def guild_friendly_accept(self, uid):
         """상대를 구하는 길드원의 것을 받는다 - 바로 시작한다."""
         return self._call("POST", "/api/guild/friendly/accept/%d" % int(uid), {})
@@ -518,6 +522,44 @@ class Api(object):
         return self._call("POST", "/api/pvp/challenge/%d" % uid, {})
 
     # 랭크 팀 (시즌 2). 등록하지 않았으면 바탕화면 파티로 싸운다.
+    # ---------------- 길드전 (시즌 4) ----------------
+    def guild_war(self):
+        return self._call("GET", "/api/guild/war")
+
+    def guild_war_apply(self, on=True):
+        return self._call("POST" if on else "DELETE", "/api/guild/war/apply", {} if on else None)
+
+    def guild_war_team(self, kind, ids):
+        return self._call("POST", "/api/guild/war/team", {"kind": kind, "ids": [int(i) for i in ids]})
+
+    def guild_war_map(self, have=None):
+        """지도에 칠할 것 (칸마다 주인, 길드마다 색·칸 수). 원형 지도 그림(geo)은 have(가진 그림의 요약값)가
+        다를 때만 실려 온다."""
+        if have:
+            import urllib.parse
+            return self._call("GET", "/api/guild/war/map?have=%s" % urllib.parse.quote(str(have)))
+        return self._call("GET", "/api/guild/war/map")
+
+    def guild_war_tile(self, region):
+        """칸 하나: 지키는 쪽과 방어팀 미리보기(남의 칸은 앞 몇 마리만), 우리 승수, 칠 수 있는지."""
+        return self._call("GET", "/api/guild/war/tile/%s" % region)
+
+    def guild_war_attack(self, region):
+        """칸 하나에 승부를 건다. 관장 배틀 판이 열린다 (gym_start 와 같은 꼴 - 관장 배틀 창이 그대로 한다)."""
+        return self._call("POST", "/api/guild/war/attack", {"region": str(region)}, timeout=RAID_TIMEOUT)
+
+    def guild_war_attacks(self, plan):
+        """길드장: 공격 횟수 나누기 {사람: 횟수}."""
+        return self._call("POST", "/api/guild/war/attacks",
+                          {"plan": dict((str(k), int(v)) for k, v in (plan or {}).items())})
+
+    def guild_war_guard(self, region, uid):
+        """길드장: 길드원을 우리 칸에 배치한다."""
+        return self._call("POST", "/api/guild/war/guard", {"region": str(region), "userId": int(uid)})
+
+    def guild_war_log(self):
+        return self._call("GET", "/api/guild/war/log")["log"]
+
     def pvp_team(self):
         return self._call("GET", "/api/pvp/team")
 
@@ -592,11 +634,20 @@ class Api(object):
     def gym_battle(self):
         return self._call("GET", "/api/gym/battle")
 
-    def gym_act(self, bid, kind, move="", slot=-1, mega=False):
+    # ---------------- 악당 출현 (시즌 4) ----------------
+    # 판 자체는 관장 배틀이다 - 열기만 여기서 하고, 진행은 gym_act 로 한다.
+    def boss(self):
+        return self._call("GET", "/api/boss")
+
+    def boss_start(self):
+        return self._call("POST", "/api/boss/start", {})
+
+    def gym_act(self, bid, kind, move="", slot=-1, mega=False, z=False):
         # mega: 이 기술과 함께 메가진화 (시즌 3). 되는지는 서버가 다시 본다.
+        # z: 이 기술을 Z기술로 (시즌 4). 같은 약속이다.
         return self._call("POST", "/api/gym/battle/%d/act" % int(bid),
                           {"kind": kind, "move": move, "slot": int(slot), "hour": _hour(),
-                           "mega": bool(mega)})
+                           "mega": bool(mega), "z": bool(z)})
 
     # ---------------- 레이드 ----------------
     # 판정은 전부 서버가 한다. 라운드를 넘기는 것도 서버다 - 여기서는
@@ -620,9 +671,10 @@ class Api(object):
         """방장이 정각을 안 기다리고 시작한다."""
         return self._call("POST", "/api/raid/start", {})
 
-    def raid_act(self, kind, move="", slot=-1, mega=False):
+    def raid_act(self, kind, move="", slot=-1, mega=False, z=False):
         return self._call("POST", "/api/raid/act",
-                          {"kind": kind, "move": move, "slot": int(slot), "mega": bool(mega)},
+                          {"kind": kind, "move": move, "slot": int(slot), "mega": bool(mega),
+                           "z": bool(z)},
                           timeout=RAID_TIMEOUT)
 
     def raid_leave(self, lobby=False):
@@ -657,9 +709,10 @@ class Api(object):
         return self._call("POST", "/api/live/%d/answer" % int(mid),
                           {"accept": bool(accept)})
 
-    def live_act(self, kind, move="", slot=-1, mega=False):
+    def live_act(self, kind, move="", slot=-1, mega=False, z=False):
         return self._call("POST", "/api/live/act",
-                          {"kind": kind, "move": move, "slot": int(slot), "mega": bool(mega)},
+                          {"kind": kind, "move": move, "slot": int(slot), "mega": bool(mega),
+                           "z": bool(z)},
                           timeout=RAID_TIMEOUT)
 
     def live_seen(self):

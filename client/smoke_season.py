@@ -75,6 +75,8 @@ class FakeApi(object):
         self.sent_team = []
         self.sent_equip = []
         self.old_server = False
+        self.rank_min = None            # 시즌 4 서버: {"count", "level"} 와 내 팀이 조건을 채웠나
+        self.rank_ready = (False, 2)
 
     def pvp_ranking(self, limit=50):
         rows = [
@@ -100,15 +102,22 @@ class FakeApi(object):
                 r["rating"] = 1200
             return {"ranking": rows, "me": {"rating": 1200, "ranked": True},
                     "season": 1, "placement": 5}
+        rules = RULES
+        if self.rank_min:
+            rules = dict(RULES, rankMin=self.rank_min)
+            me["rankReady"], me["rankReadyCount"] = self.rank_ready
         return {"ranking": rows, "me": me, "season": 2, "placement": 5,
-                "rules": RULES,
+                "rules": rules,
                 "hall": {"season": 1, "rows": [
                     {"rank": 1, "name": "bro2000", "rating": 1786, "wins": 90,
                      "losses": 12, "title": "시즌 1 챔피언"}]}}
 
     def pvp_team(self):
-        return {"registered": False, "ids": [1, 2], "levelCap": 50, "maxParty": 6,
-                "restrictedMax": 1, "restrictedNums": [150, 151]}
+        out = {"registered": False, "ids": [1, 2], "levelCap": 50, "maxParty": 6,
+               "restrictedMax": 1, "restrictedNums": [150, 151]}
+        if self.rank_min:
+            out["rankMin"] = self.rank_min
+        return out
 
     def pokemon(self):
         out = [mon(1, "피카츄", 80, desk=True, slot=0),
@@ -175,6 +184,13 @@ def pump(root, cond, timeout=5.0):
             return True
         time.sleep(0.01)
     return cond()
+
+
+def walk_all(w):
+    out = [w]
+    for c in w.winfo_children():
+        out.extend(walk_all(c))
+    return out
 
 
 def texts(w):
@@ -301,6 +317,47 @@ def main():
     ys = [tw.row_box[pid].winfo_y() for pid in order]
     chk("  화면에서도 레벨 높은 순", ys == sorted(ys), ys)
     tw.close()
+
+    print("랭크전 조건: Lv.50 이상 여섯 마리 (시즌 4)")
+    app.api.rank_min = {"count": 6, "level": 50}
+    rw = ui_rank.RankWindow(app)
+    pump(root, lambda: not rw.busy and "명예의 전당" in texts(rw.win))
+    t = texts(rw.win)
+    chk("규칙 칸에 참가 조건", "랭크전 참가 조건: Lv.50 이상 포켓몬 6마리" in t, t[-400:])
+    chk("못 채웠으면 내 카드에 빨갛게 (지금 몇 마리, 어디서 채우나)",
+        "랭크전은 Lv.50 이상 6마리가 있어야 걸 수 있습니다 - 지금 2마리" in t and "'랭크 팀' 에서 채우세요" in t, t)
+    warn = [w for w in walk_all(rw.win) if isinstance(w, tk.Label)
+            and "있어야 걸 수 있습니다" in str(w.cget("text"))]
+    chk("  경고 줄이 눌리지 않고 다 보인다", warn and warn[0].winfo_height() >= warn[0].winfo_reqheight(),
+        warn and (warn[0].winfo_height(), warn[0].winfo_reqheight()))
+    rw.close()
+    app.api.rank_ready = (True, 6)
+    rw = ui_rank.RankWindow(app)
+    pump(root, lambda: not rw.busy and "명예의 전당" in texts(rw.win))
+    chk("채웠으면 경고는 없다", "있어야 걸 수 있습니다" not in texts(rw.win))
+    rw.close()
+    chk("옛 서버(조건 정보 없음)면 경고를 안 띄운다", ui_rank.rank_short_text({}, {}) is None)
+    tw = ui_season.TeamWindow(app)
+    pump(root, lambda: len(tw.rows) == 6)
+    chk("팀 창 설명에 조건", "Lv.50 이상 포켓몬 6마리로 채워야" in tw.note.cget("text"), tw.note.cget("text"))
+    chk("  고른 팀이 몇 마리 채웠는지 (피카츄 80 · 이브이 30 -> 1마리)",
+        "지금 1마리" in tw.status._label.cget("text"), tw.status._label.cget("text"))
+    tw.toggle(3)
+    tw.toggle(5)
+    chk("  더 넣으면 다시 센다 (리자몽 55 · 뮤츠 50 -> 3마리)", "지금 3마리" in tw.status._label.cget("text"),
+        tw.status._label.cget("text"))
+    tw.picked = [1, 3, 5, 6]
+    chk("  전설·환상은 한 마리만 센다 (서버처럼)", tw.rank_ready_count() == 3, tw.rank_ready_count())
+    tw.close()
+    gw = ui_season.TeamWindow(app, spec={"title": "길드전 방어팀", "note": "길드전 설명",
+                                          "load": lambda: (app.api.pvp_team(), app.api.pokemon()),
+                                          "save": lambda ids: {"registered": True, "ids": ids},
+                                          "saved": "짰습니다"})
+    pump(root, lambda: len(gw.rows) == 6)
+    chk("길드전 팀 창에는 랭크전 조건을 안 붙인다", gw.rank_min is None
+        and "랭크전은" not in gw.status._label.cget("text"), gw.status._label.cget("text"))
+    gw.close()
+    app.api.rank_min = None
 
     print("칭호·명패")
     ew = ui_season.RewardsWindow(app)

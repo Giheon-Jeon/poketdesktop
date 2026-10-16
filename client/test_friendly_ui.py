@@ -349,6 +349,72 @@ def main():
     chk("채팅 칸을 다시 열어도 카드는 그대로다 (지난 카드는 결과·마감으로)", sorted(v[0] for v in cards().values()) == ["끝", "끝", "마감", "마감", "마감"],
         sorted(cards().items()))
 
+    print("\n=== 길드전 공격도 같은 카드로 구경한다 (시즌 4) ===")
+    war = {"region": "c07", "name": "서울 종로구 외 3곳", "guild": "로켓단", "wins": 1, "need": 3}
+    foe = {"id": 0, "name": "[로켓단] AI 수비대"}
+    line6 = srv.say("길드전: %s 님이 [로켓단] 의 칸을 칩니다 - 서울 종로구 외 3곳" % n2,
+                    card={"k": "friendly", "s": "fight", "a": srv.who(2), "b": foe, "mid": "w77", "war": war})["id"]
+    push_chat(line6)
+    wf = fight("w77", 0, (2, n2), (0, foe["name"]), mon(25, "피카츄"), mon(4, "파이리"), [], card=line6,
+               kind="guildwar", war=war)
+    srv.fights[:] = [wf]
+    w._on_ws({"t": "friendly_fight", "fight": wf})
+    w._on_ws({"t": "friendly", "seeking": [], "fights": [wf], "limit": 3})
+    settle(root, 0.3)
+    c6 = w.chat_cards.get(line6) or {}
+    tx6 = texts(c6["frame"]) if c6 else []
+    chk("카드 머리글은 '길드전 공격', 누가 누구의 어느 칸을 치는지, [관전]", "길드전 공격" in tx6
+        and cards().get(line6) == ("진행 중", "%s  →  [로켓단] AI 수비대  ·  서울 종로구 외 3곳" % n2, "관전"), (tx6, cards().get(line6)))
+    calls = []
+    G.Api.guild_friendly_watch = lambda self, fid, on=True: (calls.append((str(fid), bool(on))), {"id": fid, "n": 2})[1]
+    old_ping, SP.PING_MS = SP.PING_MS, 150
+    c6["btn"].command()
+    G.wait(root, lambda: fr.watching() and ("w77", True) in calls, 5)
+    chk("[관전] 을 누르면 바탕화면에서 보고, 서버에 '본다' 를 알린다", fr.watching() and fr.duel.mid == "w77"
+        and calls[:1] == [("w77", True)] and cards().get(line6, ("",))[0] == "관전 중", (calls, cards().get(line6)))
+    G.wait(root, lambda: calls.count(("w77", True)) >= 3, 4)
+    chk("  보는 동안 '아직 본다' 를 되풀이한다 (서버가 빠진 것으로 치지 않게)", calls.count(("w77", True)) >= 3, calls)
+    chk("  서버가 준 관전 수를 들고 있다", fr.counts.get("w77") == 2, fr.counts)
+
+    class Win(object):
+        alive = True
+
+        def __init__(self):
+            self.got = []
+
+        def set_watchers(self, mid, n):
+            self.got.append((mid, n))
+    app.live_battle, app.gym_battle = Win(), Win()
+    w._on_ws({"t": "watchers", "id": "w77", "n": 3})
+    chk("'관전 N명' 이 밀려오면 싸우는 사람의 배틀 창에 넘긴다 (창이 제 판인지 가린다)",
+        app.gym_battle.got == [("w77", 3)] and app.live_battle.got == [("w77", 3)] and fr.counts["w77"] == 3)
+    app.live_battle = app.gym_battle = None
+    fr.stop_watch()
+    settle(root, 0.2)
+    n_on = calls.count(("w77", True))
+    settle(root, 0.5)
+    chk("그만 보면 '그만 봤다' 를 알리고 되풀이도 멈춘다", calls[-1] == ("w77", False) and calls.count(("w77", True)) == n_on,
+        calls[-3:])
+    SP.PING_MS = old_ping
+    over6 = {"k": "friendly", "s": "over", "a": srv.who(2), "b": foe, "mid": "w77", "result": "a",
+             "war": dict(war, took=True, wins=3)}
+    srv.card(line6, over6)
+    srv.fights[:] = []
+    w._on_ws({"t": "card", "id": line6, "card": over6})
+    w._on_ws({"t": "friendly_fight", "fight": dict(wf, over=True, result="a", turn=5)})
+    settle(root, 0.2)
+    chk("끝나면 결과로 - 칸을 가져왔으면 '점령!'", cards().get(line6) == (
+        "끝", "%s  →  [로켓단] AI 수비대  ·  서울 종로구 외 3곳   ·   점령!" % n2, None), cards().get(line6))
+    chk("문구: 길드전 공격의 꼬리글", SP.war_tail({"wins": 2, "need": 3}, "a") == "승리 (3승 중 2승)"
+        and SP.war_tail({}, "b") == "막혔다" and SP.war_tail({"took": True}, "a") == "점령!"
+        and SP.war_tail({}, "draw") == "무승부")
+    cv = tk.Canvas(root, width=300, height=100)
+    SP.draw_watchers(cv, 300, 2)
+    got_t = [cv.itemcget(i, "text") for i in cv.find_withtag("watchers") if cv.type(i) == "text"]
+    SP.draw_watchers(cv, 300, None)
+    chk("배틀 창 장면의 '관전 N명' (None 이면 지운다)", got_t == ["관전 2명"] and not cv.find_withtag("watchers"), got_t)
+    cv.destroy()
+
     print("\n=== 채팅이 꽉 차 있을 때: 맨 아래의 카드 ===")
     for i in range(40):
         srv.say("채우는 말 %d" % i, 2)

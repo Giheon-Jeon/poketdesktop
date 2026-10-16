@@ -81,6 +81,15 @@ DAILY_BATTLES = 20
 # 자른 값이다. 가까운 띠부터 보고, 그 안에서 가장 가까운 몇 명 중에 고른다.
 POWER_BANDS = (0.10, 0.25)
 PICK_CLOSEST = 3
+# **시즌 4 부터는 점수(RP)가 가까운 사람을 먼저 본다** (사용자 결정). 시즌 3 기록을 재어 보니
+# 전력이 비슷한 판(0.95~1.05)에서도 거는 쪽이 62.8% 를 이겼고, 상대가 한 판도 안 건 사람이면
+# 81%, 백 판 넘게 뛰는 사람이면 54.5% 였다 - 전력(종족값 x 레벨)은 얼마나 키웠는지를 못 본다.
+# RP 는 그 사람이 이번 시즌에 실제로 이겨 온 만큼이라, 가까운 사람끼리 붙이면 그 차이가 걸러진다.
+#
+# RP 차이가 이 안인 사람부터 찾고, 없으면 다음 띠로 넓힌다. 맨 끝의 None 은 '전체' 다 -
+# 전력 띠(POWER_BANDS)는 이제 사람을 떨어뜨리지 않고, 띠 안에서 누구를 먼저 고를지만 정한다
+# (전력 차가 작은 몇 명 중 하나). 전력 차는 여전히 RP 가 움직이는 폭에 들어간다 (season.expected).
+RP_BANDS = (50, 100, 200, None)
 # 전력이 같으면 숨은 점수도 가까운 사람을. 400점 차이를 전력 30% 차이로 친다.
 #
 # **0.10 이었을 때 숨은 점수가 사실상 무시됐다.** 전력은 종족값 x 레벨만 보는데
@@ -356,10 +365,12 @@ def run_match(a_uid, b_uid, kind="random", seed=None):
 
     seed = random.randrange(1 << 30) if seed is None else int(seed)
     # 메가진화 (시즌 3): 각자 관장 8곳이면 키스톤. 스톤을 든 애가 나오면 AI 가 쓴다.
-    from . import mega
+    from . import gimmick, mega
+    # Z기술 (시즌 4): 조건은 키스톤과 같다. 이것도 AI 가 알아서 쓴다.
     out = PB.simulate(dex, a_mons, b_mons, seed=seed,
                       keystone={"me": mega.has_keystone(a_uid),
-                                "foe": mega.has_keystone(b_uid)})
+                                "foe": mega.has_keystone(b_uid)},
+                      zring=gimmick.flags(a_uid, b_uid))
 
     # 엔진은 a 시점으로 me/foe 를 말한다. 여기서 사람 쪽으로 옮긴다.
     win = out["winner"]
@@ -599,22 +610,25 @@ def find_opponent(uid, rng=None):
     rng = rng or random
     teams = _all_teams()
     mine = teams.get(uid)
-    if not mine:
+    if not mine or not rank_ready(mine)[0]:
         return None
     skip = _recent_foes(uid, RANDOM_REPEAT_MIN) | _blocked_ids(uid)
     skip.add(uid)
 
     my_power = team_power(mine) or 1.0
-    ratings, played = {}, {}
-    for r in db.q("SELECT user_id, rating, games FROM rank_stat"):
+    ratings, played, points = {}, {}, {}
+    for r in db.q("SELECT user_id, rating, games, rp FROM rank_stat"):
         ratings[r["user_id"]] = r["rating"]
         played[r["user_id"]] = r["games"]
+        points[r["user_id"]] = r["rp"] or 0
     my_mmr = ratings.get(uid, BASE_RATING)
     my_placed = played.get(uid, 0) >= PLACEMENT
+    my_rp = points.get(uid, 0)
 
     pool = []
     for other, mons in teams.items():
-        if other in skip or not can_defend(len(mine), len(mons)):
+        # 랭크전 조건(Lv.50 이상 6마리)을 못 채운 사람은 상대로도 안 뽑는다 (rank_ready)
+        if other in skip or not rank_ready(mons)[0] or not can_defend(len(mine), len(mons)):
             continue
         gap = abs(team_power(mons) / my_power - 1.0)
         pool.append((gap, other))
@@ -627,14 +641,16 @@ def find_opponent(uid, rng=None):
     # 성사되는 것보다는 낫다.
     same = [(g, u) for g, u in pool
             if (played.get(u, 0) >= PLACEMENT) == my_placed]
-    # 가까운 띠부터. 넓혀도 없으면 안 붙인다 - 기울어진 판을 억지로
-    # 만드는 것보다 '지금은 상대가 없다' 가 낫다.
+    # **점수(RP)가 가까운 띠부터** (시즌 4, RP_BANDS). 띠 안에서는 지금까지처럼 오래 안 만난
+    # 사람 가운데 전력이 가까운 몇 명 중 하나다 (_pick_fresh). 마지막 띠가 '전체' 라서 받을 수
+    # 있는 사람이 한 명이라도 있으면 붙는다 - 기울어진 판은 RP 가 조금만 움직인다.
     for stage, cands in (("same", same), ("all", pool)):
-        for band in POWER_BANDS:
-            near = [(g, u) for g, u in cands if g <= band]
+        for band in RP_BANDS:
+            near = [(g, u) for g, u in cands
+                    if band is None or abs(points.get(u, 0) - my_rp) <= band]
             if near:
                 got = _pick_fresh(uid, near, rng, ratings, my_mmr)
-                _log_pick(uid, stage, band, near, got, played,
+                _log_pick(uid, stage, -1 if band is None else band, near, got, played,
                           my_placed, len(pool), len(same))
                 return got
     _log_pick(uid, "none", None, [], None, played, my_placed,
@@ -713,6 +729,29 @@ def random_cooldown_left(uid):
     return max(0, int(left + 0.999))
 
 
+def rank_ready(mons):
+    """랭크전(랜덤 배틀)에 나갈 수 있는 팀인가 (시즌 4). (됐나, Lv.RANK_MIN_LEVEL 이상 마릿수).
+
+    mons 는 실제로 나가는 팀이다 (전설·환상 제한 뒤 - ranked_team / _all_teams). 레벨은 상한으로 자르기
+    전의 원래 레벨로 센다.
+    """
+    n = sum(1 for m in mons or [] if int(m.get("level") or 1) >= season.RANK_MIN_LEVEL)
+    return n >= season.RANK_MIN_COUNT, n
+
+
+def rank_short(uid):
+    """랭크전 조건을 못 채웠으면 그 까닭 한 줄, 채웠으면 None."""
+    team, dropped = restrict(_ranked_source(uid))
+    ok, n = rank_ready(team)
+    if ok:
+        return None
+    why = ("랭크전(랜덤 배틀)은 Lv.%d 이상 포켓몬 %d마리로 팀을 채워야 걸 수 있습니다 (지금 %d마리)."
+           % (season.RANK_MIN_LEVEL, season.RANK_MIN_COUNT, n))
+    if dropped:
+        why += " 전설·환상 포켓몬은 한 팀에 %d마리만 나갑니다." % RESTRICTED_MAX
+    return why
+
+
 def can_start(uid, kind="random"):
     """내 쪽 조건만. 상대를 고르기 전에 먼저 본다.
 
@@ -722,6 +761,9 @@ def can_start(uid, kind="random"):
     if not team:
         return "데리고 다니는 포켓몬이 없습니다."
     if kind == "random":
+        why = rank_short(uid)
+        if why:
+            return why
         # 하루 상한과 쿨타임은 **랜덤 배틀에만** 건다 (DAILY_BATTLES 의 설명).
         row = _rating_row(uid)
         used = row["fought"] if row["fought_day"] == _today() else 0
@@ -746,6 +788,9 @@ def can_fight(uid, other, kind="friend"):
         return "이 트레이너와는 싸울 수 없습니다."
     if not (ranked_team(other) if kind == "random" else _party(other)):
         return "상대가 데리고 다니는 포켓몬이 없습니다."
+    if kind == "random" and not rank_ready(ranked_team(other))[0]:
+        return "상대 팀이 랭크전 조건(Lv.%d 이상 %d마리)을 못 채웠습니다." % (
+            season.RANK_MIN_LEVEL, season.RANK_MIN_COUNT)
     if other in _recent_foes(uid):
         return ("같은 상대에게는 %d분에 한 번만 걸 수 있습니다."
                 % PAIR_COOLDOWN_MIN)
@@ -965,7 +1010,9 @@ def summary(uid):
            "teamSize": len(fighting),
            "restrictedMax": RESTRICTED_MAX,
            "restrictedDropped": dropped,
-           "levelCap": season.LEVEL_CAP}
+           "levelCap": season.LEVEL_CAP,
+           # 랭크전 조건 (시즌 4): 실제로 나가는 팀에 Lv.50 이상이 몇 마리인가
+           "rankReady": rank_ready(fighting)[0], "rankReadyCount": rank_ready(fighting)[1]}
     out.update(season.tier_public(tier))
     return out
 
