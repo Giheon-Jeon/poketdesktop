@@ -644,8 +644,12 @@ def find_opponent(uid, rng=None):
     # **점수(RP)가 가까운 띠부터** (시즌 4, RP_BANDS). 띠 안에서는 지금까지처럼 오래 안 만난
     # 사람 가운데 전력이 가까운 몇 명 중 하나다 (_pick_fresh). 마지막 띠가 '전체' 라서 받을 수
     # 있는 사람이 한 명이라도 있으면 붙는다 - 기울어진 판은 RP 가 조금만 움직인다.
-    for stage, cands in (("same", same), ("all", pool)):
-        for band in RP_BANDS:
+    #
+    # **띠가 바깥, 배치는 그 띠 안에서** (10/17). 처음에는 '배치가 같은 쪽' 을 띠보다 먼저 봐서,
+    # 배치가 같은 사람을 찾느라 ±50 안에 있던 사람을 두고 RP 200 차이 상대를 골랐다 (시즌 4 첫
+    # 1시간 반에 3번). 이제 띠마다 배치가 같은 쪽을 먼저 보고, 없으면 그 띠 안의 누구나 고른다.
+    for band in RP_BANDS:
+        for stage, cands in (("same", same), ("all", pool)):
             near = [(g, u) for g, u in cands
                     if band is None or abs(points.get(u, 0) - my_rp) <= band]
             if near:

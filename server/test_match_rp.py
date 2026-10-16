@@ -10,7 +10,9 @@
   2. 띠는 ±50 -> ±100 -> ±200 -> 전체로 넓어진다. 전체까지 가므로 받을 수 있는 사람이
      하나라도 있으면 붙는다 (전력 띠는 이제 사람을 떨어뜨리지 않는다).
   3. 띠 안에서는 전력이 가까운 몇 명 중에서 고른다.
-  4. 그대로인 것: 받는 쪽 마릿수, 배치를 마친 사람끼리 먼저, 방금 붙은 사람·차단한 사람 제외.
+  4. 그대로인 것: 받는 쪽 마릿수, 방금 붙은 사람·차단한 사람 제외.
+  5. **RP 띠가 배치보다 먼저다** (10/17). 같은 띠 안에서만 배치를 마친 사람끼리 먼저 붙인다 -
+     배치가 같은 사람을 찾느라 RP 가 먼 상대를 고르지 않는다.
 """
 import os
 import random
@@ -136,9 +138,14 @@ def main():
     me = mkuser("mm_me", rp=200, games=10)
     rookie = mkuser("mm_rookie", rp=200, games=0)              # 배치 전, RP 는 같다
     vet = mkuser("mm_vet", rp=420, games=30)                   # 배치를 마쳤고 RP 는 ±200 밖
-    chk("배치를 마친 사람끼리 먼저 (RP 가 멀어도)", set(picks(me, 8)) == {vet}, set(picks(me, 8)))
-    db.run("DELETE FROM pokemon WHERE user_id=?", (vet,))
-    chk("없으면 배치 전인 사람과도", set(picks(me, 8)) == {rookie}, set(picks(me, 8)))
+    chk("**RP 띠가 배치보다 먼저** - 배치가 달라도 RP 가 가까운 사람 (10/17)",
+        set(picks(me, 8)) == {rookie}, set(picks(me, 8)))
+    row = db.q1("SELECT stage, band FROM match_log WHERE user_id=? ORDER BY id DESC LIMIT 1", (me,))
+    chk("  ±50 띠의 '전체' 에서 골랐다고 남는다", row["stage"] == "all" and row["band"] == 50, dict(row))
+    vet2 = mkuser("mm_vet2", rp=230, games=30)                 # 배치를 마쳤고 같은 ±50 띠
+    chk("같은 띠 안에서는 배치를 마친 사람끼리 먼저", set(picks(me, 8)) == {vet2}, set(picks(me, 8)))
+    db.run("DELETE FROM pokemon WHERE user_id IN (?,?)", (rookie, vet2))
+    chk("가까운 띠에 아무도 없으면 넓혀서 (배치를 마친 RP 420)", set(picks(me, 8)) == {vet}, set(picks(me, 8)))
 
     wipe()
     me = mkuser("mm_me", rp=200)
