@@ -823,6 +823,22 @@
  ],
  "dropTotal": 9788,
  "items": {
+  "ABILITYSHIELD": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 12000,
+   "desc": "특성이 바뀌거나 지워지지 않는다 (스킬스왑·위액 …)",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ability Shield",
+   "id": "ABILITYSHIELD",
+   "ident": "ability-shield",
+   "kr": "특성가드",
+   "rarity": "rare",
+   "sell": 6000,
+   "weight": 0
+  },
   "ABOMASITE": {
    "cat": "megastone",
    "chance": 0,
@@ -874,6 +890,70 @@
    "sell": 0,
    "weight": 0
   },
+  "ABSORBBULB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "단 한 번 쓰면 없어지는 구근. 지니게 하고 물 기술을 받으면 특수공격이 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Absorb Bulb",
+   "id": "ABSORBBULB",
+   "ident": "absorb-bulb",
+   "kr": "구근",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "ADAMANTCRYSTAL": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 80000,
+   "desc": "디아루가가 지니면 드래곤·강철 타입 기술의 위력이 20% 올라간다 (1.2배). 오리진폼이 된다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Adamant Crystal",
+   "id": "ADAMANTCRYSTAL",
+   "ident": "adamant-crystal",
+   "kr": "큰금강옥",
+   "rarity": "legendary",
+   "sell": 40000,
+   "weight": 0
+  },
+  "ADAMANTORB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "디아루가에게 지니게 하면 드래곤과 강철타입 기술의 위력이 올라가는 반짝반짝 빛나는 구슬.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Adamant Orb",
+   "id": "ADAMANTORB",
+   "ident": "adamant-orb",
+   "kr": "금강옥",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
+  },
+  "ADRENALINEORB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬에게 지니게 하면 위협을 받았을 때 스피드가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Adrenaline Orb",
+   "id": "ADRENALINEORB",
+   "ident": "adrenaline-orb",
+   "kr": "주눅구슬",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "AERODACTYLITE": {
    "cat": "megastone",
    "chance": 0,
@@ -923,6 +1003,22 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "AIRBALLOON": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬에게 지니게 하면 포켓몬이 허공에 뜬다. 공격을 받으면 터져버린다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Air Balloon",
+   "id": "AIRBALLOON",
+   "ident": "air-balloon",
+   "kr": "풍선",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "ALAKAZITE": {
    "cat": "megastone",
@@ -1006,6 +1102,22 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "ASSAULTVEST": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "공격적으로 변하는 조끼. 지니게 하면 특수방어가 올라가지만 변화 기술을 쓸 수 없게 된다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Assault Vest",
+   "id": "ASSAULTVEST",
+   "ident": "assault-vest",
+   "kr": "돌격조끼",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
   },
   "AUDINITE": {
    "cat": "megastone",
@@ -1190,6 +1302,22 @@
    "sell": 4000,
    "weight": 14
   },
+  "BINDINGBAND": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "조이기 기술을 보조하는 밴드. 지니게 하면 조이기 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Binding Band",
+   "id": "BINDINGBAND",
+   "ident": "binding-band",
+   "kr": "조임밴드",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "BLACKAUGURITE": {
    "cat": "stone",
    "chance": 0.00143,
@@ -1290,6 +1418,54 @@
    "sell": 0,
    "weight": 0
   },
+  "BLUEORB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 100000,
+   "desc": "호연지방의 전설과 깊은 연관이 있다고 전해지는 파랗게 빛나는 구슬.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Blue Orb",
+   "id": "BLUEORB",
+   "ident": "blue-orb",
+   "kr": "쪽빛구슬",
+   "rarity": "legendary",
+   "sell": 50000,
+   "weight": 0
+  },
+  "BLUNDERPOLICY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "명중률에 의해 기술이 빗나갔을 때 스피드가 크게 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Blunder Policy",
+   "id": "BLUNDERPOLICY",
+   "ident": "blunder-policy",
+   "kr": "허탕보험",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "BOOSTERENERGY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "고대활성·쿼크차지가 날씨·필드 없이도 한 번 발동한다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Booster Energy",
+   "id": "BOOSTERENERGY",
+   "ident": "booster-energy",
+   "kr": "부스트에너지",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
+  },
   "BOTTLECAP": {
    "cat": "iv",
    "chance": 0.003474,
@@ -1323,6 +1499,22 @@
    "sell": 4000,
    "weight": 14
   },
+  "BUGGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "벌레타입의 주얼. 지니게 하면 한 번만 벌레 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Bug Gem",
+   "id": "BUGGEM",
+   "ident": "bug-gem",
+   "kr": "벌레주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "BUGINIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -1339,6 +1531,38 @@
    "sell": 10000,
    "weight": 0,
    "zType": "BUG"
+  },
+  "BUGMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "벌레타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Bug Memory",
+   "id": "BUGMEMORY",
+   "ident": "bug-memory",
+   "kr": "버그메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "BURNDRIVE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "게노세크트에게 지니게 하면 테크노버스터라는 기술이 불꽃타입으로 바뀌는 카세트.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Burn Drive",
+   "id": "BURNDRIVE",
+   "ident": "burn-drive",
+   "kr": "블레이즈카세트",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "CALCIUM": {
    "cat": "ev",
@@ -1386,6 +1610,22 @@
    "ident": "carbos",
    "kr": "알칼로이드",
    "sell": 5000
+  },
+  "CELLBATTERY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "단 한 번 쓰면 없어지는 충전지. 지니게 하고 전기 기술을 받으면 공격이 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Cell Battery",
+   "id": "CELLBATTERY",
+   "ident": "cell-battery",
+   "kr": "충전지",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "CHANDELURITE": {
    "cat": "megastone",
@@ -1535,6 +1775,22 @@
    "sell": 500,
    "weight": 100
   },
+  "CHILLDRIVE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "게노세크트에게 지니게 하면 테크노버스터라는 기술이 얼음타입으로 바뀌는 카세트.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Chill Drive",
+   "id": "CHILLDRIVE",
+   "ident": "chill-drive",
+   "kr": "프리즈카세트",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
   "CHIMECHITE": {
    "cat": "megastone",
    "chance": 0,
@@ -1635,6 +1891,22 @@
    "sell": 500,
    "weight": 100
   },
+  "CLEARAMULET": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "상대가 떨어뜨리는 능력 하락을 막는다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Clear Amulet",
+   "id": "CLEARAMULET",
+   "ident": "clear-amulet",
+   "kr": "클리어참",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
+  },
   "CLEFABLITE": {
    "cat": "megastone",
    "chance": 0,
@@ -1718,6 +1990,38 @@
    "sell": 12500,
    "weight": 6
   },
+  "CORNERSTONEMASK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 80000,
+   "desc": "오거폰이 지니면 그 가면을 쓴 모습(바위 타입)이 되고, 기술의 위력이 20% 올라간다. 덩굴방망이도 바위 타입이 된다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Cornerstone Mask",
+   "id": "CORNERSTONEMASK",
+   "ident": "cornerstone-mask",
+   "kr": "주춧돌의가면",
+   "rarity": "legendary",
+   "sell": 40000,
+   "weight": 0
+  },
+  "COVERTCLOAK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "상대 기술의 추가 효과(풀죽음·능력 하락·상태이상 확률)를 안 받는다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Covert Cloak",
+   "id": "COVERTCLOAK",
+   "ident": "covert-cloak",
+   "kr": "은밀망토",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
+  },
   "CRABOMINITE": {
    "cat": "megastone",
    "chance": 0,
@@ -1770,6 +2074,38 @@
    "sell": 500,
    "weight": 100
   },
+  "DAMPROCK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬이 비바라기를 쓰면 여느 때보다 비 내리는 시간이 길어진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Damp Rock",
+   "id": "DAMPROCK",
+   "ident": "damp-rock",
+   "kr": "축축한바위",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "DARKGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "악타입의 주얼. 지니게 하면 한 번만 악 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Dark Gem",
+   "id": "DARKGEM",
+   "ident": "dark-gem",
+   "kr": "악주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "DARKINIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -1786,6 +2122,22 @@
    "sell": 10000,
    "weight": 0,
    "zType": "DARK"
+  },
+  "DARKMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "악타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Dark Memory",
+   "id": "DARKMEMORY",
+   "ident": "dark-memory",
+   "kr": "다크메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "DARKRANITE": {
    "cat": "megastone",
@@ -1900,6 +2252,22 @@
    "sell": 0,
    "weight": 0
   },
+  "DESTINYKNOT": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "가늘고 긴 새빨간 실. 지니게 하면 자신이 헤롱헤롱해졌을 때 상대도 헤롱헤롱해지게 된다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Destiny Knot",
+   "id": "DESTINYKNOT",
+   "ident": "destiny-knot",
+   "kr": "빨간실",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "DIANCITE": {
    "cat": "megastone",
    "chance": 0,
@@ -1915,6 +2283,22 @@
    "megaFor": "DIANCIE",
    "rarity": "legendary",
    "sell": 0,
+   "weight": 0
+  },
+  "DOUSEDRIVE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "게노세크트에게 지니게 하면 테크노버스터라는 기술이 물타입으로 바뀌는 카세트.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Douse Drive",
+   "id": "DOUSEDRIVE",
+   "ident": "douse-drive",
+   "kr": "아쿠아카세트",
+   "rarity": "uncommon",
+   "sell": 1500,
    "weight": 0
   },
   "DRACOPLATE": {
@@ -1966,6 +2350,22 @@
    "sell": 1500,
    "weight": 45
   },
+  "DRAGONGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "드래곤타입의 주얼. 지니게 하면 한 번만 드래곤 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Dragon Gem",
+   "id": "DRAGONGEM",
+   "ident": "dragon-gem",
+   "kr": "드래곤주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "DRAGONINITE": {
    "cat": "megastone",
    "chance": 0,
@@ -1999,6 +2399,22 @@
    "sell": 10000,
    "weight": 0,
    "zType": "DRAGON"
+  },
+  "DRAGONMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "드래곤타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Dragon Memory",
+   "id": "DRAGONMEMORY",
+   "ident": "dragon-memory",
+   "kr": "드래곤메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "DRAGONSCALE": {
    "cat": "stone",
@@ -2183,6 +2599,38 @@
    ],
    "zMove": "EXTREMEEVOBOOST"
   },
+  "EJECTBUTTON": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 하고 기술을 받으면 배틀에서 탈출하여 지닌 포켓몬과 교체할 수 있다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Eject Button",
+   "id": "EJECTBUTTON",
+   "ident": "eject-button",
+   "kr": "탈출버튼",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "EJECTPACK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬의 능력이 떨어지면 지닌 포켓몬과 교체한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Eject Pack",
+   "id": "EJECTPACK",
+   "ident": "eject-pack",
+   "kr": "탈출팩",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "ELECTIRIZER": {
    "cat": "stone",
    "chance": 0.00143,
@@ -2201,6 +2649,54 @@
    "rarity": "rare",
    "sell": 1000,
    "weight": 14
+  },
+  "ELECTRICGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "전기타입의 주얼. 지니게 하면 한 번만 전기 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Electric Gem",
+   "id": "ELECTRICGEM",
+   "ident": "electric-gem",
+   "kr": "전기주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
+  "ELECTRICMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "전기타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Electric Memory",
+   "id": "ELECTRICMEMORY",
+   "ident": "electric-memory",
+   "kr": "일렉트릭메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "ELECTRICSEED": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬에게 지니게 하면 일렉트릭필드일 때 사용하여 방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Electric Seed",
+   "id": "ELECTRICSEED",
+   "ident": "electric-seed",
+   "kr": "일렉트릭시드",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "ELECTRIUMZ": {
    "cat": "zcrystal",
@@ -2268,6 +2764,22 @@
    "sell": 1500,
    "weight": 45
   },
+  "EVIOLITE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "진화의 이상한 덩어리. 지니게 하면 진화 전 포켓몬의 방어와 특수방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Eviolite",
+   "id": "EVIOLITE",
+   "ident": "eviolite",
+   "kr": "진화의휘석",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
+  },
   "EXCADRITE": {
    "cat": "megastone",
    "chance": 0,
@@ -2317,6 +2829,54 @@
    "sell": 10000,
    "weight": 0,
    "zType": "FAIRY"
+  },
+  "FAIRYFEATHER": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "페어리 타입 기술의 위력이 20% 올라간다 (1.2배)",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fairy Feather",
+   "id": "FAIRYFEATHER",
+   "ident": "fairy-feather",
+   "kr": "요정의깃털",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "FAIRYGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "페어리타입의 주얼. 지니게 하면 한 번만 페어리 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fairy Gem",
+   "id": "FAIRYGEM",
+   "ident": "fairy-gem",
+   "kr": "페어리주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
+  "FAIRYMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "페어리타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fairy Memory",
+   "id": "FAIRYMEMORY",
+   "ident": "fairy-memory",
+   "kr": "페어리메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "FALINKSITE": {
    "cat": "megastone",
@@ -2370,6 +2930,38 @@
    "sell": 0,
    "weight": 0
   },
+  "FIGHTINGGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "격투타입의 주얼. 지니게 하면 한 번만 격투 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fighting Gem",
+   "id": "FIGHTINGGEM",
+   "ident": "fighting-gem",
+   "kr": "격투주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
+  "FIGHTINGMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "격투타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fighting Memory",
+   "id": "FIGHTINGMEMORY",
+   "ident": "fighting-memory",
+   "kr": "파이팅메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
   "FIGHTINIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -2402,6 +2994,38 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "FIREGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "불꽃타입의 주얼. 지니게 하면 한 번만 불꽃 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fire Gem",
+   "id": "FIREGEM",
+   "ident": "fire-gem",
+   "kr": "불꽃주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
+  "FIREMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "불꽃타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Fire Memory",
+   "id": "FIREMEMORY",
+   "ident": "fire-memory",
+   "kr": "파이어메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "FIRESTONE": {
    "cat": "stone",
@@ -2491,6 +3115,22 @@
    "sell": 1500,
    "weight": 45
   },
+  "FLOATSTONE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "매우 가벼운 돌. 지니게 하면 포켓몬의 체중이 가벼워진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Float Stone",
+   "id": "FLOATSTONE",
+   "ident": "float-stone",
+   "kr": "가벼운돌",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "FLOETTITE": {
    "cat": "megastone",
    "chance": 0,
@@ -2523,6 +3163,38 @@
    "ident": "flower-ball",
    "kr": "플라워볼",
    "sell": 0
+  },
+  "FLYINGGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "비행타입의 주얼. 지니게 하면 한 번만 비행 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Flying Gem",
+   "id": "FLYINGGEM",
+   "ident": "flying-gem",
+   "kr": "비행주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
+  "FLYINGMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "비행타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Flying Memory",
+   "id": "FLYINGMEMORY",
+   "ident": "flying-memory",
+   "kr": "플라잉메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "FLYINIUMZ": {
    "cat": "zcrystal",
@@ -2743,6 +3415,22 @@
    "sell": 500,
    "weight": 100
   },
+  "GHOSTGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "고스트타입의 주얼. 지니게 하면 한 번만 고스트 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ghost Gem",
+   "id": "GHOSTGEM",
+   "ident": "ghost-gem",
+   "kr": "고스트주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "GHOSTIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -2759,6 +3447,22 @@
    "sell": 10000,
    "weight": 0,
    "zType": "GHOST"
+  },
+  "GHOSTMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "고스트타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ghost Memory",
+   "id": "GHOSTMEMORY",
+   "ident": "ghost-memory",
+   "kr": "고스트메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "GLALITITE": {
    "cat": "megastone",
@@ -2846,6 +3550,41 @@
    "sell": 0,
    "weight": 0
   },
+  "GRACIDEA": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "생일이나 기념일 등에 감사의 마음을 전하기 위해 부케로 만들어 보내는 일이 있다.",
+   "effect": {
+    "forms": [
+     "SHAYMIN_SKY"
+    ],
+    "kind": "form"
+   },
+   "en": "Gracidea",
+   "id": "GRACIDEA",
+   "ident": "gracidea",
+   "kr": "그라시데아꽃",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
+  },
+  "GRASSGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "풀타입의 주얼. 지니게 하면 한 번만 풀 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Grass Gem",
+   "id": "GRASSGEM",
+   "ident": "grass-gem",
+   "kr": "풀주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "GRASSIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -2862,6 +3601,38 @@
    "sell": 10000,
    "weight": 0,
    "zType": "GRASS"
+  },
+  "GRASSMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "풀타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Grass Memory",
+   "id": "GRASSMEMORY",
+   "ident": "grass-memory",
+   "kr": "그래스메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "GRASSYSEED": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬에게 지니게 하면 그래스필드일 때 사용하여 방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Grassy Seed",
+   "id": "GRASSYSEED",
+   "ident": "grassy-seed",
+   "kr": "그래스시드",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "GREATBALL": {
    "cat": "ball",
@@ -2915,6 +3686,70 @@
    "sell": 40,
    "weight": 100
   },
+  "GRIPCLAW": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 하면 조이기나 김밥말이 등 데미지를 계속 주는 기술의 턴 수가 늘어난다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Grip Claw",
+   "id": "GRIPCLAW",
+   "ident": "grip-claw",
+   "kr": "끈기갈고리손톱",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "GRISEOUSCORE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 80000,
+   "desc": "기라티나가 지니면 드래곤·고스트 타입 기술의 위력이 20% 올라간다 (1.2배). 오리진폼이 된다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Griseous Core",
+   "id": "GRISEOUSCORE",
+   "ident": "griseous-core",
+   "kr": "큰백금옥",
+   "rarity": "legendary",
+   "sell": 40000,
+   "weight": 0
+  },
+  "GRISEOUSORB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "기라티나에게 지니게 하면 드래곤과 고스트타입 기술의 위력이 올라가는 반짝반짝 빛나는 구슬.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Griseous Orb",
+   "id": "GRISEOUSORB",
+   "ident": "griseous-orb",
+   "kr": "백금옥",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
+  },
+  "GROUNDGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "땅타입의 주얼. 지니게 하면 한 번만 땅 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ground Gem",
+   "id": "GROUNDGEM",
+   "ident": "ground-gem",
+   "kr": "땅주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "GROUNDIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -2931,6 +3766,22 @@
    "sell": 10000,
    "weight": 0,
    "zType": "GROUND"
+  },
+  "GROUNDMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "땅타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ground Memory",
+   "id": "GROUNDMEMORY",
+   "ident": "ground-memory",
+   "kr": "그라운드메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "GYARADOSITE": {
    "cat": "megastone",
@@ -3034,6 +3885,22 @@
    "sell": 500,
    "weight": 100
   },
+  "HEARTHFLAMEMASK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 80000,
+   "desc": "오거폰이 지니면 그 가면을 쓴 모습(불꽃 타입)이 되고, 기술의 위력이 20% 올라간다. 덩굴방망이도 불꽃 타입이 된다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Hearthflame Mask",
+   "id": "HEARTHFLAMEMASK",
+   "ident": "hearthflame-mask",
+   "kr": "화덕의가면",
+   "rarity": "legendary",
+   "sell": 40000,
+   "weight": 0
+  },
   "HEATRANITE": {
    "cat": "megastone",
    "chance": 0,
@@ -3049,6 +3916,22 @@
    "megaFor": "HEATRAN",
    "rarity": "legendary",
    "sell": 0,
+   "weight": 0
+  },
+  "HEATROCK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬이 쾌청을 쓰면 여느 때보다 쾌청의 시간이 길어진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Heat Rock",
+   "id": "HEATROCK",
+   "ident": "heat-rock",
+   "kr": "뜨거운바위",
+   "rarity": "rare",
+   "sell": 4000,
    "weight": 0
   },
   "HEAVYBALL": {
@@ -3068,6 +3951,22 @@
    "rarity": "uncommon",
    "sell": 500,
    "weight": 45
+  },
+  "HEAVYDUTYBOOTS": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "발밑에 설치된 함정 등의 영향을 받지 않게 된다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Heavy-Duty Boots",
+   "id": "HEAVYDUTYBOOTS",
+   "ident": "heavy-duty-boots",
+   "kr": "통굽부츠",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
   },
   "HERACRONITE": {
    "cat": "megastone",
@@ -3152,6 +4051,38 @@
    "sell": 500,
    "weight": 100
   },
+  "ICEGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "얼음타입의 주얼. 지니게 하면 한 번만 얼음 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ice Gem",
+   "id": "ICEGEM",
+   "ident": "ice-gem",
+   "kr": "얼음주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
+  "ICEMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "얼음타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ice Memory",
+   "id": "ICEMEMORY",
+   "ident": "ice-memory",
+   "kr": "아이스메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
   "ICESTONE": {
    "cat": "stone",
    "chance": 0.00143,
@@ -3205,6 +4136,22 @@
    "sell": 10000,
    "weight": 0,
    "zType": "ICE"
+  },
+  "ICYROCK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬이 싸라기눈을 쓰면 여느 때보다 싸라기눈의 시간이 길어진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Icy Rock",
+   "id": "ICYROCK",
+   "ident": "icy-rock",
+   "kr": "차가운바위",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "INCINIUMZ": {
    "cat": "zcrystal",
@@ -3354,6 +4301,22 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "KEEBERRY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1000,
+   "desc": "포켓몬에게 지니게 하면 물리 기술을 당했을 때 자신의 방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Kee Berry",
+   "id": "KEEBERRY",
+   "ident": "kee-berry",
+   "kr": "악키열매",
+   "rarity": "common",
+   "sell": 500,
+   "weight": 0
   },
   "KELPSYBERRY": {
    "cat": "ev",
@@ -3602,6 +4565,38 @@
    "sell": 7500,
    "weight": 5
   },
+  "LIGHTBALL": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 10000,
+   "desc": "피카츄에게 지니게 하면 공격과 특수공격의 위력이 올라가는 이상한 구슬.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Light Ball",
+   "id": "LIGHTBALL",
+   "ident": "light-ball",
+   "kr": "전기구슬",
+   "rarity": "rare",
+   "sell": 5000,
+   "weight": 0
+  },
+  "LIGHTCLAY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬이 빛의장막이나 리플렉터를 사용했을 때 여느 때보다 긴 시간 동안 지속된다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Light Clay",
+   "id": "LIGHTCLAY",
+   "ident": "light-clay",
+   "kr": "빛의점토",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "LINKINGCORD": {
    "cat": "stone",
    "chance": 0.000511,
@@ -3638,6 +4633,22 @@
    "rarity": "epic",
    "sell": 4000,
    "weight": 5
+  },
+  "LOADEDDICE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "2~5번 치는 기술이 늘 4번이나 5번 친다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Loaded Dice",
+   "id": "LOADEDDICE",
+   "ident": "loaded-dice",
+   "kr": "속임수주사위",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
   },
   "LOPUNNITE": {
    "cat": "megastone",
@@ -3724,6 +4735,22 @@
    "sell": 10000,
    "weight": 14
   },
+  "LUCKYPUNCH": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 10000,
+   "desc": "행운을 부르는 글러브다. 럭키에게 지니게 하면 기술이 급소에 맞기 쉬워진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Lucky Punch",
+   "id": "LUCKYPUNCH",
+   "ident": "lucky-punch",
+   "kr": "럭키펀치",
+   "rarity": "rare",
+   "sell": 5000,
+   "weight": 0
+  },
   "LUMBERRY": {
    "cat": "held",
    "chance": 0.010217,
@@ -3739,6 +4766,22 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "LUMINOUSMOSS": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "단 한 번 쓰면 없어지는 빛이끼. 지니게 하고 물 기술을 받으면 특수방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Luminous Moss",
+   "id": "LUMINOUSMOSS",
+   "ident": "luminous-moss",
+   "kr": "빛이끼",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "LUNALIUMZ": {
    "cat": "zcrystal",
@@ -3760,6 +4803,38 @@
     "LUNALA"
    ],
    "zMove": "MENACINGMOONRAZEMAELSTROM"
+  },
+  "LUSTROUSGLOBE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 80000,
+   "desc": "펄기아가 지니면 드래곤·물 타입 기술의 위력이 20% 올라간다 (1.2배). 오리진폼이 된다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Lustrous Globe",
+   "id": "LUSTROUSGLOBE",
+   "ident": "lustrous-globe",
+   "kr": "큰백옥",
+   "rarity": "legendary",
+   "sell": 40000,
+   "weight": 0
+  },
+  "LUSTROUSORB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "펄기아에게 지니게 하면 드래곤과 물타입 기술의 위력이 올라가는 아름답게 반짝이는 구슬.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Lustrous Orb",
+   "id": "LUSTROUSORB",
+   "ident": "lustrous-orb",
+   "kr": "백옥",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
   },
   "LUXURYBALL": {
    "cat": "ball",
@@ -3936,6 +5011,22 @@
    "sell": 0,
    "weight": 0
   },
+  "MARANGABERRY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1000,
+   "desc": "포켓몬에게 지니게 하면 특수 기술을 당했을 때 자신의 특수방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Maranga Berry",
+   "id": "MARANGABERRY",
+   "ident": "maranga-berry",
+   "kr": "타라프열매",
+   "rarity": "common",
+   "sell": 500,
+   "weight": 0
+  },
   "MARSHADIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -4061,6 +5152,22 @@
    "sell": 0,
    "weight": 0
   },
+  "MENTALHERB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬은 헤롱헤롱 상태가 되었을 때 한 번만 회복한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Mental Herb",
+   "id": "MENTALHERB",
+   "ident": "mental-herb",
+   "kr": "멘탈허브",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "MEOWSTICITE": {
    "cat": "megastone",
    "chance": 0,
@@ -4132,6 +5239,43 @@
    "rarity": "rare",
    "sell": 1000,
    "weight": 14
+  },
+  "METALPOWDER": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 10000,
+   "desc": "메타몽에게 지니게 하면 방어가 올라가는 이상한 가루. 매우 잘고 단단하다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Metal Powder",
+   "id": "METALPOWDER",
+   "ident": "metal-powder",
+   "kr": "금속파우더",
+   "rarity": "rare",
+   "sell": 5000,
+   "weight": 0
+  },
+  "METEORITE": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "원래는 유성의 폭포에 떨어져 있던 운석이다. 굴뚝산에서 손에 넣었다.",
+   "effect": {
+    "forms": [
+     "DEOXYS_ATTACK",
+     "DEOXYS_DEFENSE",
+     "DEOXYS_SPEED"
+    ],
+    "kind": "form"
+   },
+   "en": "Meteorite",
+   "id": "METEORITE",
+   "ident": "meteorite",
+   "kr": "운석",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
   },
   "METRONOME": {
    "cat": "held",
@@ -4272,6 +5416,38 @@
    "rarity": "uncommon",
    "sell": 1500,
    "weight": 45
+  },
+  "MIRRORHERB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 12000,
+   "desc": "상대가 능력을 올리면 그만큼 따라 올린다 (한 번)",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Mirror Herb",
+   "id": "MIRRORHERB",
+   "ident": "mirror-herb",
+   "kr": "흉내허브",
+   "rarity": "rare",
+   "sell": 6000,
+   "weight": 0
+  },
+  "MISTYSEED": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬에게 지니게 하면 미스트필드일 때 사용하여 특수방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Misty Seed",
+   "id": "MISTYSEED",
+   "ident": "misty-seed",
+   "kr": "미스트시드",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "MOONBALL": {
    "cat": "ball",
@@ -4416,6 +5592,22 @@
    "rarity": "uncommon",
    "sell": 1500,
    "weight": 45
+  },
+  "NORMALGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "노말타입의 주얼. 지니게 하면 한 번만 노말 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Normal Gem",
+   "id": "NORMALGEM",
+   "ident": "normal-gem",
+   "kr": "노말주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
   },
   "NORMALIUMZ": {
    "cat": "zcrystal",
@@ -4599,6 +5791,22 @@
    "sell": 500,
    "weight": 100
   },
+  "PERSIMBERRY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1000,
+   "desc": "포켓몬에게 지니게 하면 혼란을 회복한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Persim Berry",
+   "id": "PERSIMBERRY",
+   "ident": "persim-berry",
+   "kr": "시몬열매",
+   "rarity": "common",
+   "sell": 500,
+   "weight": 0
+  },
   "PETAYABERRY": {
    "cat": "held",
    "chance": 0.010217,
@@ -4653,6 +5861,26 @@
    ],
    "zMove": "CATASTROPIKA"
   },
+  "PINKNECTAR": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "로열 애버뉴 화단에서 손에 넣은 꽃의 꿀. 특정 포켓몬의 모습을 바꾼다.",
+   "effect": {
+    "consume": true,
+    "forms": [
+     "ORICORIO_PAU"
+    ],
+    "kind": "form"
+   },
+   "en": "Pink Nectar",
+   "id": "PINKNECTAR",
+   "ident": "pink-nectar",
+   "kr": "연분홍꿀",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
   "PINSIRITE": {
    "cat": "megastone",
    "chance": 0,
@@ -4668,6 +5896,22 @@
    "megaFor": "PINSIR",
    "rarity": "legendary",
    "sell": 0,
+   "weight": 0
+  },
+  "PIXIEPLATE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "페어리타입의 석판. 지니게 하면 페어리타입 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Pixie Plate",
+   "id": "PIXIEPLATE",
+   "ident": "pixie-plate",
+   "kr": "정령플레이트",
+   "rarity": "uncommon",
+   "sell": 1500,
    "weight": 0
   },
   "POISONBARB": {
@@ -4686,6 +5930,22 @@
    "sell": 1500,
    "weight": 45
   },
+  "POISONGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "독타입의 주얼. 지니게 하면 한 번만 독 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Poison Gem",
+   "id": "POISONGEM",
+   "ident": "poison-gem",
+   "kr": "독주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "POISONIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -4702,6 +5962,22 @@
    "sell": 10000,
    "weight": 0,
    "zType": "POISON"
+  },
+  "POISONMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "독타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Poison Memory",
+   "id": "POISONMEMORY",
+   "ident": "poison-memory",
+   "kr": "포이즌메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "POKEBALL": {
    "cat": "ball",
@@ -4801,6 +6077,22 @@
    "rarity": "rare",
    "sell": 3000,
    "weight": 14
+  },
+  "POWERHERB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬은 한 번만 1턴째에 힘을 모으는 기술을 바로 사용할 수가 있다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Power Herb",
+   "id": "POWERHERB",
+   "ident": "power-herb",
+   "kr": "파워풀허브",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "POWERLENS": {
    "cat": "held",
@@ -4908,6 +6200,41 @@
    "sell": 1000,
    "weight": 14
   },
+  "PRISONBOTTLE": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "먼 옛날 어떤 포켓몬의 힘을 봉인했다고 여겨지는 항아리.",
+   "effect": {
+    "forms": [
+     "HOOPA_UNBOUND"
+    ],
+    "kind": "form"
+   },
+   "en": "Prison Bottle",
+   "id": "PRISONBOTTLE",
+   "ident": "prison-bottle",
+   "kr": "굴레의항아리",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
+  },
+  "PROTECTIVEPADS": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "공격하는 상대와 접촉해서 받게 되는 효과를 받지 않게 한다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Protective Pads",
+   "id": "PROTECTIVEPADS",
+   "ident": "protective-pads",
+   "kr": "방호패드",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "PROTECTOR": {
    "cat": "stone",
    "chance": 0.00143,
@@ -4942,6 +6269,54 @@
    "kr": "타우린",
    "sell": 5000
   },
+  "PSYCHICGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "에스퍼타입의 주얼. 지니게 하면 한 번만 에스퍼 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Psychic Gem",
+   "id": "PSYCHICGEM",
+   "ident": "psychic-gem",
+   "kr": "에스퍼주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
+  "PSYCHICMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "에스퍼타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Psychic Memory",
+   "id": "PSYCHICMEMORY",
+   "ident": "psychic-memory",
+   "kr": "사이킥메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "PSYCHICSEED": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬에게 지니게 하면 사이코필드일 때 사용하여 특수방어가 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Psychic Seed",
+   "id": "PSYCHICSEED",
+   "ident": "psychic-seed",
+   "kr": "사이코시드",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "PSYCHIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -4958,6 +6333,42 @@
    "sell": 10000,
    "weight": 0,
    "zType": "PSYCHIC"
+  },
+  "PUNCHINGGLOVE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 12000,
+   "desc": "펀치 기술의 위력이 10% 올라가고 상대에게 닿지 않는다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Punching Glove",
+   "id": "PUNCHINGGLOVE",
+   "ident": "punching-glove",
+   "kr": "펀치글러브",
+   "rarity": "rare",
+   "sell": 6000,
+   "weight": 0
+  },
+  "PURPLENECTAR": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "포니 화원에서 손에 넣은 꽃의 꿀. 특정 포켓몬의 모습을 바꾼다.",
+   "effect": {
+    "consume": true,
+    "forms": [
+     "ORICORIO_SENSU"
+    ],
+    "kind": "form"
+   },
+   "en": "Purple Nectar",
+   "id": "PURPLENECTAR",
+   "ident": "purple-nectar",
+   "kr": "보라꿀",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "PYROARITE": {
    "cat": "megastone",
@@ -5027,6 +6438,22 @@
    "rarity": "rare",
    "sell": 4000,
    "weight": 14
+  },
+  "QUICKPOWDER": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 10000,
+   "desc": "메타몽에게 지니게 하면 스피드가 올라가는 이상한 가루. 매우 잘고 단단하다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Quick Powder",
+   "id": "QUICKPOWDER",
+   "ident": "quick-powder",
+   "kr": "스피드파우더",
+   "rarity": "rare",
+   "sell": 5000,
+   "weight": 0
   },
   "RAICHUNITEX": {
    "cat": "megastone",
@@ -5185,6 +6612,58 @@
    "sell": 1000,
    "weight": 14
   },
+  "REDCARD": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "이상한 힘이 있는 카드. 지니게 하면 기술을 사용한 상대를 퇴장시킬 수 있다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Red Card",
+   "id": "REDCARD",
+   "ident": "red-card",
+   "kr": "레드카드",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "REDNECTAR": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "울라울라 화원에서 손에 넣은 꽃의 꿀. 특정 포켓몬의 모습을 바꾼다.",
+   "effect": {
+    "consume": true,
+    "forms": [
+     "ORICORIO"
+    ],
+    "kind": "form"
+   },
+   "en": "Red Nectar",
+   "id": "REDNECTAR",
+   "ident": "red-nectar",
+   "kr": "다홍꿀",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "REDORB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 100000,
+   "desc": "호연지방의 전설과 깊은 연관이 있다고 전해지는 빨갛게 빛나는 구슬.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Red Orb",
+   "id": "REDORB",
+   "ident": "red-orb",
+   "kr": "주홍구슬",
+   "rarity": "legendary",
+   "sell": 50000,
+   "weight": 0
+  },
   "REPEATBALL": {
    "cat": "ball",
    "chance": 0.004597,
@@ -5221,6 +6700,28 @@
    "sell": 500,
    "weight": 100
   },
+  "REVEALGLASS": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "진실을 비춰줌으로 포켓몬을 본래의 모습으로 바꿔버리는 이상한 거울.",
+   "effect": {
+    "forms": [
+     "TORNADUS_THERIAN",
+     "THUNDURUS_THERIAN",
+     "LANDORUS_THERIAN",
+     "ENAMORUS_THERIAN"
+    ],
+    "kind": "form"
+   },
+   "en": "Reveal Glass",
+   "id": "REVEALGLASS",
+   "ident": "reveal-glass",
+   "kr": "비추는거울",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
+  },
   "RINDOBERRY": {
    "cat": "held",
    "chance": 0.010217,
@@ -5236,6 +6737,38 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "RINGTARGET": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬 타입의 상성 때문에 무효였던 기술이 맞게 되어 버린다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Ring Target",
+   "id": "RINGTARGET",
+   "ident": "ring-target",
+   "kr": "겨냥표적",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "ROCKGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "바위타입의 주얼. 지니게 하면 한 번만 바위 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Rock Gem",
+   "id": "ROCKGEM",
+   "ident": "rock-gem",
+   "kr": "바위주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
   },
   "ROCKINCENSE": {
    "cat": "held",
@@ -5270,6 +6803,54 @@
    "weight": 0,
    "zType": "ROCK"
   },
+  "ROCKMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "바위타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Rock Memory",
+   "id": "ROCKMEMORY",
+   "ident": "rock-memory",
+   "kr": "록메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "ROCKYHELMET": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "포켓몬에게 지니게 하면 타격 기술을 당했을 때 상대에게도 데미지를 준다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Rocky Helmet",
+   "id": "ROCKYHELMET",
+   "ident": "rocky-helmet",
+   "kr": "울퉁불퉁멧",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
+  },
+  "ROOMSERVICE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "포켓몬에게 지니게 하면 트릭룸일 때 사용하여 스피드가 떨어진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Room Service",
+   "id": "ROOMSERVICE",
+   "ident": "room-service",
+   "kr": "룸서비스",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "ROSEINCENSE": {
    "cat": "held",
    "chance": 0.004597,
@@ -5286,6 +6867,45 @@
    "sell": 3000,
    "weight": 45
   },
+  "ROSELIBERRY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1000,
+   "desc": "포켓몬에게 지니게 하면 효과가 뛰어난 페어리 기술을 당했을 때 위력이 약해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Roseli Berry",
+   "id": "ROSELIBERRY",
+   "ident": "roseli-berry",
+   "kr": "로셀열매",
+   "rarity": "common",
+   "sell": 500,
+   "weight": 0
+  },
+  "ROTOMCATALOG": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 30000,
+   "desc": "로토무가 좋아하는 가전제품이 실려 있다. 카탈로그를 사용하면 로토무를 가전제품에 넣거나 꺼낼 수 있다.",
+   "effect": {
+    "forms": [
+     "ROTOM_HEAT",
+     "ROTOM_WASH",
+     "ROTOM_FROST",
+     "ROTOM_FAN",
+     "ROTOM_MOW"
+    ],
+    "kind": "form"
+   },
+   "en": "Rotom Catalog",
+   "id": "ROTOMCATALOG",
+   "ident": "rotom-catalog",
+   "kr": "로토무카탈로그",
+   "rarity": "epic",
+   "sell": 15000,
+   "weight": 0
+  },
   "ROWAPBERRY": {
    "cat": "held",
    "chance": 0.010217,
@@ -5301,6 +6921,38 @@
    "rarity": "common",
    "sell": 500,
    "weight": 100
+  },
+  "RUSTEDSHIELD": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 100000,
+   "desc": "먼 옛날의 영웅이 재앙을 막는 데 사용했다고 전해지는 방패지만 지금은 녹이 슬고 닳아버렸다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Rusted Shield",
+   "id": "RUSTEDSHIELD",
+   "ident": "rusted-shield",
+   "kr": "녹슨방패",
+   "rarity": "legendary",
+   "sell": 50000,
+   "weight": 0
+  },
+  "RUSTEDSWORD": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 100000,
+   "desc": "먼 옛날의 영웅이 재앙을 막는 데 사용했다고 전해지는 검이지만 지금은 녹이 슬고 닳아버렸다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Rusted Sword",
+   "id": "RUSTEDSWORD",
+   "ident": "rusted-sword",
+   "kr": "녹슨검",
+   "rarity": "legendary",
+   "sell": 50000,
+   "weight": 0
   },
   "SABLENITE": {
    "cat": "megastone",
@@ -5337,6 +6989,22 @@
    "rarity": "rare",
    "sell": 1000,
    "weight": 14
+  },
+  "SAFETYGOGGLES": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "날씨로 인한 데미지뿐만 아니라 가루를 내보내는 기술의 효과도 막을 수 있는 고글.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Safety Goggles",
+   "id": "SAFETYGOGGLES",
+   "ident": "safety-goggles",
+   "kr": "방진고글",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "SALACBERRY": {
    "cat": "held",
@@ -5539,6 +7207,22 @@
    "sell": 0,
    "weight": 0
   },
+  "SHEDSHELL": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "튼튼하고 단단한 허물. 지니게 한 포켓몬은 교대 포켓몬과 반드시 교체할 수 있다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Shed Shell",
+   "id": "SHEDSHELL",
+   "ident": "shed-shell",
+   "kr": "아름다운허물",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "SHELLBELL": {
    "cat": "held",
    "chance": 0.00143,
@@ -5590,6 +7274,22 @@
    "rarity": "rare",
    "sell": 1500,
    "weight": 14
+  },
+  "SHOCKDRIVE": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "게노세크트에게 지니게 하면 테크노버스터라는 기술이 전기타입으로 바뀌는 카세트.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Shock Drive",
+   "id": "SHOCKDRIVE",
+   "ident": "shock-drive",
+   "kr": "번개카세트",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "SHUCABERRY": {
    "cat": "held",
@@ -5721,6 +7421,22 @@
    "sell": 4000,
    "weight": 14
   },
+  "SMOOTHROCK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬이 모래바람을 쓰면 여느 때보다 모래바람의 시간이 길어진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Smooth Rock",
+   "id": "SMOOTHROCK",
+   "ident": "smooth-rock",
+   "kr": "보송보송바위",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "SNORLIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -5741,6 +7457,22 @@
     "SNORLAX"
    ],
    "zMove": "PULVERIZINGPANCAKE"
+  },
+  "SNOWBALL": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "단 한 번 쓰면 없어지는 눈덩이. 지니게 하고 얼음 기술을 받으면 공격이 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Snowball",
+   "id": "SNOWBALL",
+   "ident": "snowball",
+   "kr": "눈덩이",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
   },
   "SOFTSAND": {
    "cat": "held",
@@ -5794,6 +7526,22 @@
    "rarity": "rare",
    "sell": 4000,
    "weight": 14
+  },
+  "SOULDEW": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "라티오스나 라티아스에게 지니게 하면 에스퍼와 드래곤타입 기술의 위력이 올라가는 이상한 구슬.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Soul Dew",
+   "id": "SOULDEW",
+   "ident": "soul-dew",
+   "kr": "마음의물방울",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
   },
   "SPELLTAG": {
    "cat": "held",
@@ -5925,6 +7673,22 @@
    "sell": 6000,
    "weight": 14
   },
+  "STEELGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "강철타입의 주얼. 지니게 하면 한 번만 강철 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Steel Gem",
+   "id": "STEELGEM",
+   "ident": "steel-gem",
+   "kr": "강철주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "STEELIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -5957,6 +7721,38 @@
    "megaFor": "STEELIX",
    "rarity": "legendary",
    "sell": 0,
+   "weight": 0
+  },
+  "STEELMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "강철타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Steel Memory",
+   "id": "STEELMEMORY",
+   "ident": "steel-memory",
+   "kr": "스틸메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
+  "STICK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 10000,
+   "desc": "매우 길고 단단한 줄기. 파오리에게 지니게 하면 기술이 급소에 맞기 쉬워진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Leek",
+   "id": "STICK",
+   "ident": "stick",
+   "kr": "대파",
+   "rarity": "rare",
+   "sell": 5000,
    "weight": 0
   },
   "STICKYBARB": {
@@ -6180,6 +7976,54 @@
    "sell": 0,
    "weight": 0
   },
+  "TERRAINEXTENDER": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬이 기술이나 특성으로 필드를 사용했을 때 여느 때보다 긴 시간 동안 지속된다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Terrain Extender",
+   "id": "TERRAINEXTENDER",
+   "ident": "terrain-extender",
+   "kr": "그라운드코트",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
+  "THICKCLUB": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 10000,
+   "desc": "무언가의 단단한 뼈. 탕구리 혹은 텅구리에게 지니게 하면 공격이 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Thick Club",
+   "id": "THICKCLUB",
+   "ident": "thick-club",
+   "kr": "굵은뼈",
+   "rarity": "rare",
+   "sell": 5000,
+   "weight": 0
+  },
+  "THROATSPRAY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "소리 기술을 사용하면 특수공격이 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Throat Spray",
+   "id": "THROATSPRAY",
+   "ident": "throat-spray",
+   "kr": "목스프레이",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "THUNDERSTONE": {
    "cat": "stone",
    "chance": 0.00143,
@@ -6358,6 +8202,22 @@
    "sell": 1000,
    "weight": 14
   },
+  "UTILITYUMBRELLA": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 8000,
+   "desc": "지니게 한 포켓몬은 비와 햇살이 강할 때의 영향을 받지 않게 된다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Utility Umbrella",
+   "id": "UTILITYUMBRELLA",
+   "ident": "utility-umbrella",
+   "kr": "만능우산",
+   "rarity": "rare",
+   "sell": 4000,
+   "weight": 0
+  },
   "VENUSAURITE": {
    "cat": "megastone",
    "chance": 0,
@@ -6408,6 +8268,22 @@
    "sell": 500,
    "weight": 100
   },
+  "WATERGEM": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 1500,
+   "desc": "물타입의 주얼. 지니게 하면 한 번만 물 기술의 위력이 강해진다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Water Gem",
+   "id": "WATERGEM",
+   "ident": "water-gem",
+   "kr": "물주얼",
+   "rarity": "uncommon",
+   "sell": 750,
+   "weight": 0
+  },
   "WATERIUMZ": {
    "cat": "zcrystal",
    "chance": 0,
@@ -6424,6 +8300,22 @@
    "sell": 10000,
    "weight": 0,
    "zType": "WATER"
+  },
+  "WATERMEMORY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "물타입의 데이터가 들어 있는 메모리. 특정 포켓몬이 지니면 타입이 바뀐다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Water Memory",
+   "id": "WATERMEMORY",
+   "ident": "water-memory",
+   "kr": "워터메모리",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
   },
   "WATERSTONE": {
    "cat": "stone",
@@ -6464,6 +8356,38 @@
    "rarity": "uncommon",
    "sell": 3000,
    "weight": 45
+  },
+  "WEAKNESSPOLICY": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 15000,
+   "desc": "약점을 공격당했을 때 공격과 특수공격이 각각 크게 올라간다.",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Weakness Policy",
+   "id": "WEAKNESSPOLICY",
+   "ident": "weakness-policy",
+   "kr": "약점보험",
+   "rarity": "epic",
+   "sell": 7500,
+   "weight": 0
+  },
+  "WELLSPRINGMASK": {
+   "cat": "held",
+   "chance": 0,
+   "cost": 80000,
+   "desc": "오거폰이 지니면 그 가면을 쓴 모습(물 타입)이 되고, 기술의 위력이 20% 올라간다. 덩굴방망이도 물 타입이 된다",
+   "effect": {
+    "kind": "held"
+   },
+   "en": "Wellspring Mask",
+   "id": "WELLSPRINGMASK",
+   "ident": "wellspring-mask",
+   "kr": "우물의가면",
+   "rarity": "legendary",
+   "sell": 40000,
+   "weight": 0
   },
   "WHIPPEDDREAM": {
    "cat": "stone",
@@ -6564,6 +8488,26 @@
    "sell": 500,
    "weight": 100
   },
+  "YELLOWNECTAR": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 3000,
+   "desc": "멜레멜레 화원에서 손에 넣은 꽃의 꿀. 특정 포켓몬의 모습을 바꾼다.",
+   "effect": {
+    "consume": true,
+    "forms": [
+     "ORICORIO_POMPOM"
+    ],
+    "kind": "form"
+   },
+   "en": "Yellow Nectar",
+   "id": "YELLOWNECTAR",
+   "ident": "yellow-nectar",
+   "kr": "진노랑꿀",
+   "rarity": "uncommon",
+   "sell": 1500,
+   "weight": 0
+  },
   "ZAPPLATE": {
    "cat": "held",
    "chance": 0.004597,
@@ -6627,6 +8571,25 @@
    "rarity": "rare",
    "sell": 4000,
    "weight": 14
+  },
+  "ZYGARDECUBE": {
+   "cat": "form",
+   "chance": 0,
+   "cost": 50000,
+   "desc": "포켓몬 지가르데의 코어와 셀이 모여있는 도구. 지가르데의 모습을 바꿀 수도 있다.",
+   "effect": {
+    "forms": [
+     "ZYGARDE_TEN"
+    ],
+    "kind": "form"
+   },
+   "en": "Zygarde Cube",
+   "id": "ZYGARDECUBE",
+   "ident": "zygarde-cube",
+   "kr": "지가르데큐브",
+   "rarity": "legendary",
+   "sell": 25000,
+   "weight": 0
   },
   "ZYGARDITE": {
    "cat": "megastone",

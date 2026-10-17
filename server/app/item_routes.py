@@ -50,6 +50,7 @@ class UseIn(BaseModel):
     pokemon: int = 0
     stat: str = ""       # 은색병뚜껑처럼 능력을 골라야 하는 것
     hour: int = -1       # 클라이언트의 시각 (낮/밤 조건용)
+    form: str = ""       # 폼 도구로 고르는 모습 (로토무카탈로그·운석, 1.13). 빈 글자 = 원래 모습
 
 
 def _now():
@@ -254,6 +255,8 @@ def use(body: UseIn, me=Depends(deps.current)):
         out = _use_everstone(uid, it, mon)
     elif kind == "shiny":
         out = _use_shiny(uid, it, mon)
+    elif kind == "form":
+        out = _use_form(uid, it, mon, dex, body.form)
     else:
         raise HTTPException(400, "%s은(는) 아직 쓸 수 없습니다." % it["kr"])
 
@@ -267,6 +270,70 @@ def use(body: UseIn, me=Depends(deps.current)):
     out["pokemon"] = deps.decorate(fresh)
     out["message"] = korean.natural(out.get("message", ""))
     return out
+
+
+# ---------------------------------------------------------------- 폼 도구 (1.13)
+# 도구 -> (원래 모습으로 되돌리는 종). 다홍꿀은 춤추새를 원래 모습(이글이글스타일)으로 돌린다.
+BASE_ITEM = {"REDNECTAR": "ORICORIO"}
+NECTARS = {"REDNECTAR", "YELLOWNECTAR", "PINKNECTAR", "PURPLENECTAR"}
+# 로토무: 폼마다 그 폼의 기술 (도감 forms 의 formMoves.sig). 원래 모습으로 돌아오면 다 잊는다.
+ROTOM_SIGS = ("OVERHEAT", "HYDROPUMP", "BLIZZARD", "AIRSLASH", "LEAFSTORM")
+
+
+def _name(mon, dex):
+    return mon.get("nickname") or dex.name(mon["species"])
+
+
+def _use_form(uid, it, mon, dex, choice):
+    """폼 도구를 쓴다. 켜고 끄는 것(그라시데아꽃·비추는거울·굴레의항아리·지가르데큐브), 고르는 것
+    (로토무카탈로그·운석), 꽃꿀(쓰면 없어진다). 합체 도구는 넣지 않았다 (2026-10-17 사용자 결정)."""
+    iid = it["id"]
+    forms = [m for m in (dex.forms_of.get(mon["species"]) or []) if m.get("useItem") == iid]
+    if not forms and BASE_ITEM.get(iid) != mon["species"]:
+        raise HTTPException(400, "%s은(는) %s에게 쓸 수 없습니다." % (it["kr"], _name(mon, dex)))
+    cur = mon.get("form")
+    if iid in BASE_ITEM:
+        want = None                                        # 다홍꿀: 원래 모습으로
+    elif len(forms) == 1:
+        # 켜고 끄기. 꽃꿀은 그 모습으로만 바꾼다 (이미 그 모습이면 쓸 필요가 없다)
+        want = forms[0]["form"] if (cur != forms[0]["form"] or iid in NECTARS) else None
+    else:
+        keys = [m["form"] for m in forms]
+        want = (choice or "").upper() or None
+        if want is not None and want not in keys:
+            raise HTTPException(400, "고를 수 있는 모습이 아닙니다.")
+    if want == cur:
+        raise HTTPException(409, "이미 그 모습입니다.")
+    moves = list(mon.get("moves") or [])
+    pending = list(mon.get("pending") or [])
+    learned = None
+    if mon["species"] == "ROTOM":
+        moves, pending, learned = _rotom_moves(moves, pending, forms, want, dex)
+    db.run("UPDATE pokemon SET form=?, moves=?, pending=? WHERE id=? AND user_id=?",
+           (want, _json(moves), _json(pending), mon["id"], uid))
+    name = _name(mon, dex)
+    if want:
+        fk = next((m.get("formKr") for m in forms if m["form"] == want), want)
+        msg = "%s은(는) %s(으)로 모습이 바뀌었다!" % (name, fk)
+    else:
+        msg = "%s은(는) 원래 모습으로 돌아왔다!" % name
+    if learned:
+        msg += " %s을(를) 배웠다!" % dex.move_name(learned)
+    return {"ok": True, "form": want, "keep": iid not in NECTARS, "message": msg}
+
+
+def _rotom_moves(moves, pending, forms, want, dex):
+    """로토무가 모습을 바꾸면 그 폼의 기술로 갈아 끼운다 (본가와 같다). 자리가 없으면 배우려고 기다린다."""
+    sig = next(((m.get("formMoves") or {}).get("sig") for m in forms if m["form"] == want), None)
+    slot = next((i for i, k in enumerate(moves) if k in ROTOM_SIGS), None)
+    moves = [k for k in moves if k not in ROTOM_SIGS or k == sig]
+    pending = [k for k in pending if k not in ROTOM_SIGS]
+    if not sig or sig in moves or not dex.move(sig):
+        return moves or ["THUNDERSHOCK"], pending, None
+    if len(moves) < 4:
+        moves.insert(min(slot if slot is not None else len(moves), len(moves)), sig)
+        return moves, pending, sig
+    return moves, pending + [sig], None
 
 
 def _use_ticket(uid, it, eff):

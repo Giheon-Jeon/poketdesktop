@@ -147,6 +147,8 @@ def move_type(move, user):
         return MEMORY_TYPE.get(user.held)
     if k == "TECHNOBLAST" and MC.item_on(user):
         return DRIVE_TYPE.get(user.held)
+    if k == "IVYCUDGEL" and MC.item_on(user) and (user.mon or {}).get("species") == "OGERPON":
+        return H.MASK.get(user.held)         # 덩굴방망이: 쓰고 있는 가면의 타입 (1.13)
     if k == "AURAWHEEL" and user.cond.get("hangry"):
         return "DARK"                       # 모르페코의 배고픈 모양
     return None
@@ -181,6 +183,8 @@ def power(k, base, move, user, target):
         return base * 2
     if k == "RAGEFIST":
         return min(350, base + 50 * int(uc.get("hitsTaken") or 0))
+    if k == "WATERSHURIKEN" and (getattr(user, "ab", None) or {}).get("ash"):
+        return 20                         # 지우개굴닌자 (1.13): 위력 20, 늘 3번 (battle 이 센다)
     ch = uc.get("chain")
     curl = 2 if k in ("ROLLOUT", "ICEBALL") and uc.get("curled") else 1    # 웅크리기를 쓴 뒤
     if k in CHAIN and ch and ch.get("move") == k:
@@ -257,9 +261,9 @@ def parental_ok(k, move, fixed_move):
 
 
 def powder_immune(move, user, target):
-    """가루·포자 기술을 풀 타입에게 썼나 (안 통한다)."""
+    """가루·포자 기술을 풀 타입에게 썼나, 방진고글(1.13)을 낀 상대에게 썼나 (안 통한다)."""
     return ("powder" in SM.flags(move) and target is not user and A.aims_at_foe(move)
-            and "GRASS" in target.types())
+            and ("GRASS" in target.types() or (getattr(target, "held", None) and H.powder_safe(target))))
 
 
 def thaws_user(bt, user, key):
@@ -581,7 +585,7 @@ def after_attack(bt, k, move, who, user, target, tw, total, sub_hit, ev):
 
     # ---- 도구
     if k in STEAL and landed and user.alive() and not MC.item_on(user) and MC.item_on(target) \
-            and not H.stuck(target._held) and not H.stuck(user._held) \
+            and not H.stuck(target._held, target) and not H.stuck(user._held, user) \
             and not (A.has(target, "STICKYHOLD") and not A.breaks(user)):
         # 이 판에서만 옮겨 간다 (트릭·탁쳐서떨구기와 같다 - DB 의 도구는 안 건드린다)
         got = target.held
@@ -847,6 +851,11 @@ def end_turn(bt, ev, sides=("me", "foe"), field=True):
 def ai_mult(bt, k, md, user, target):
     """이 공격기의 점수에 곱할 값. 0 이면 지금 쓰면 실패한다."""
     uc = user.cond
+    gone = {"rain": "FIRE", "sun": "WATER"}.get(A.strong_weather(user))
+    if gone and (A.move_type(user, md) or md.get("type")) == gone:
+        # 강한 비에는 불꽃, 강한 햇살에는 물 공격이 사라진다 (원시회귀, 1.13). 모르면 원시 그란돈에게
+        # 물 기술만 계속 쓰다 진다 (데미지 셈은 날씨로 사라지는 것을 안 본다).
+        return 0.0
     if SM.first_turn_spent(bt, user, k):
         return 0.0                          # 속이기·만나자마자: 나온 턴이 지났다 (쓰면 실패한다)
     if (k in NEED_FOE_ATTACK or k == "UPPERHAND") and uc.get("lastMove") == k and uc.get("lastFailed"):

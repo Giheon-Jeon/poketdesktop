@@ -36,10 +36,13 @@
 700KB 라 한 번 받으면 요약값 이름으로 이 PC 에 남긴다. 서버의 요약값이
 바뀌었을 때만 다시 받는다.
 """
+import datetime
 import io
 import json
 import math
 import os
+import random
+import time
 import tkinter as tk
 import tkinter.font as tkfont
 
@@ -48,6 +51,31 @@ from PIL import Image, ImageDraw, ImageTk
 from . import config, sprite_cache, sprites
 from . import ui_common as U
 from .ui_common import run_async
+
+KST = datetime.timezone(datetime.timedelta(hours=9))
+BOSS_FROM, BOSS_UNTIL = 9, 12   # 악당이 나타날 수 있는 때 (한국 시각, 서버 boss.START_HOUR · LAST_HOUR)
+BOSS_POLL = 300                 # 그 사이에는 5분마다 다시 물어본다
+STALE_SEC = 120                 # 탭을 다시 골랐을 때 이보다 오래된 것이면 다시 불러온다
+
+
+def boss_watch_in(boss, now=None):
+    """악당이 아직 안 나타났으면 몇 초 뒤에 다시 물어볼까. 물어볼 일이 없으면 None.
+
+    서버는 나타날 시각을 미리 알려 주지 않는다 (나타나기 전에는 active 가 False 일 뿐). 그래서 관장 탭을 켜 둔
+    채로 09:00 을 넘기면 자정까지 다시 안 불러와서, 악당이 밤 11시까지 있는데도 안 보였다 (2026-10-17 게시판
+    #252 "9~12시에 접속을 안 했더니 악당이 안 보인다"). 09:00 전이면 09:00 에, 09:00~12:05 에는 5분마다 다시
+    본다 (나타나는 것은 12:00 전이다). 서버가 오늘은 기간이 아니라고 하면(event False) 안 본다.
+    """
+    b = boss or {}
+    if b.get("active") or b.get("event") is False:
+        return None
+    k = (now or datetime.datetime.now(datetime.timezone.utc)).astimezone(KST)
+    start = k.replace(hour=BOSS_FROM, minute=0, second=0, microsecond=0)
+    if k < start:
+        return int((start - k).total_seconds()) + 5
+    if k < start.replace(hour=BOSS_UNTIL) + datetime.timedelta(minutes=5):
+        return BOSS_POLL
+    return None
 
 W, H = 1040, 700
 SIDE_W = 340
@@ -246,7 +274,9 @@ class GymWindow(object):
         self.hot = None              # 마우스가 올라간 곳 (목록의 줄이 밝아진다)
         self._mode = None            # 오른쪽이 지금 'list' 인가 'card' 인가
         self._list_key = None        # 목록이 무엇을 보여 주고 있나 (같으면 보던 자리 그대로)
-        self._reset_job = None       # 자정에 한 번 다시 불러온다
+        self._reset_job = None       # 자정에 한 번 다시 불러온다 (악당이 나올 때가 되면 그때도)
+        self._loading = False
+        self._loaded_at = 0.0        # 마지막으로 불러온 때 (탭을 다시 고르면 오래된 것은 다시 불러온다)
         self._sgg = {}               # 시·군·구 코드 -> 지도 자료
         self.boss = {}               # 악당 출현 (시즌 4): 서버 개요의 "boss" 칸
         self.boss_win = None
@@ -418,6 +448,8 @@ class GymWindow(object):
 
     # ---------------- 불러오기 ----------------
     def reload(self):
+        self._loading = True
+
         def work():
             data = self.app.api.gym()
             digest = data.get("mapDigest") or "x"
@@ -434,10 +466,12 @@ class GymWindow(object):
             return data, m
 
         def done(r, err):
+            self._loading = False
             if not self.alive:
                 return
             if err:
                 return self.say("불러오지 못했습니다. %s" % getattr(err, "message", err), U.RED)
+            self._loaded_at = time.time()
             self.data, self.map = r
             self.by_region = {x["region"]: x for x in self.data["regions"]}
             self.sido_names = {s["code"]: s["name"] for s in self.map["sido"]}
@@ -447,10 +481,14 @@ class GymWindow(object):
                                % (self.data["cleared"], self.data["total"], today))
             self.source.configure(text="지도: 통계청 SGIS · vuski/admdongkor")
             self.boss = self.data.get("boss") or {}
-            # 자정에는 '오늘 완료' 가 풀리고, 밤 11시에는 악당이 떠난다 - 먼저 오는 때에 다시 불러온다
+            # 자정에는 '오늘 완료' 가 풀리고, 밤 11시에는 악당이 떠난다 - 먼저 오는 때에 다시 불러온다.
+            # 악당이 아직 안 나왔으면 나올 때가 되었는지도 본다 (boss_watch_in). 몰려서 묻지 않게 조금씩 흩는다.
             waits = [self.data.get("resetIn")]
             if self.boss.get("active") and not self.boss.get("done"):
                 waits.append(self.boss.get("endsIn"))
+            watch = boss_watch_in(self.boss)
+            if watch:
+                waits.append(watch + random.randint(0, 30))
             self._arm_reset(min((int(x) for x in waits if isinstance(x, (int, float)) and x > 0), default=None))
             self._paint_boss()
             self.redraw()
@@ -485,6 +523,12 @@ class GymWindow(object):
             return
         if sec > 0:
             self._reset_job = self.root.after((sec + 5) * 1000, self._reset_day)
+
+    def on_shown(self):
+        """허브에서 이 탭을 다시 골랐다. 불러온 지 오래면 다시 불러온다 (그사이 악당이 나왔을 수 있다)."""
+        if self.alive and not self._loading and time.time() - self._loaded_at > STALE_SEC \
+                and not (self.battle and self.battle.alive):
+            self.reload()
 
     def _reset_day(self):
         self._reset_job = None

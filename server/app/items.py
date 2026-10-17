@@ -87,7 +87,30 @@ def public_list():
             # 지녔을 때 실제 배율 ("불꽃 타입 기술의 위력이 20% 올라간다 (1.2배)")
             "heldNote": held_note(it["id"]),
         })
+        if (it.get("effect") or {}).get("kind") == "form":
+            out[-1]["forms"] = form_targets(it)
     out.sort(key=lambda x: (x["cat"], x["cost"], x["kr"]))
+    return out
+
+
+def form_targets(it):
+    """폼 도구가 바꾸는 모습들 (1.13). 가방이 대상 포켓몬을 밝히고, 고를 모습을 띄우는 데 쓴다.
+
+    [{"of": 바뀌는 종, "ofKr", "form": 열쇠 또는 None(원래 모습), "formKr"}]
+    """
+    from . import deps
+    d = deps.dex()
+    out = []
+    for key in (it.get("effect") or {}).get("forms") or []:
+        f = d.get(key)                    # 폼도 도감에서 찾힌다 (by_internal)
+        if not f:
+            continue
+        if not f.get("formOf"):
+            # 다홍꿀: 원래 모습(이글이글스타일)으로 되돌린다
+            out.append({"of": key, "ofKr": d.name(key), "form": None, "formKr": "원래 모습"})
+            continue
+        out.append({"of": f["formOf"], "ofKr": d.name(f["formOf"]), "form": f.get("form"),
+                    "formKr": f.get("formKr") or f.get("form")})
     return out
 
 

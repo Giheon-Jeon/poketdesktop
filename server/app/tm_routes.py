@@ -265,13 +265,17 @@ def rememberable(r, sp, d=None):
     대부분 이미 위에 들어 있지만, 진화 전에 생긴 것은 지금 표에 없을 수 있다.
     그때는 레벨을 None 으로 둔다.
 
+    **떠올리기로만 배우는 기술**(도감의 remind 칸 - 오거폰의 우드혼, 앤테이의 성스러운불꽃 …, 1.13)도
+    레벨 1 로 넣는다 (tools/add_reminder.py).
+
     이미 아는 기술과 도감에 없는 기술은 뺀다.
     """
     d = d or deps.dex()
     known = set(json.loads(r["moves"]))
     level = int(r["level"])
     best = {}
-    for lv, mv in (sp or {}).get("moves", []):
+    learn = list((sp or {}).get("moves", [])) + [(1, mv) for mv in (sp or {}).get("remind") or []]
+    for lv, mv in learn:
         if lv > level or mv in known or d.move(mv) is None:
             continue
         if mv not in best or lv < best[mv]:

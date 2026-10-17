@@ -154,6 +154,20 @@ def remember_checks(d, R, Body):
     chk("  기술도 돈도 그대로",
         money() == 2000 and moves_of(pid) == [target, first, rest[0], rest[1]])
 
+    print("\n=== 떠올리기로만 배우는 기술 (1.13 - '오거폰 떠올리기에 우드혼이 없다') ===")
+    og = mkmon(uid, "OGERPON", ["IVYCUDGEL"], level=70)
+    names = [x["move"] for x in R.remember_list(og, me)["remember"]]
+    chk("오거폰: 우드혼 · 두번차기가 나온다 (본가 SV 의 떠올리기 목록)",
+        {"HORNLEECH", "DOUBLEKICK"} <= set(names), names)
+    chk("  레벨업 표에는 없다 (새로 생기는 포켓몬의 처음 기술은 그대로)",
+        "HORNLEECH" not in [m for _lv, m in d.get("OGERPON")["moves"]])
+    items.money_add(uid, cost)
+    r = R.remember(Body(pokemon=og, move="HORNLEECH", forget=""), me)
+    chk("  실제로 떠올린다", r["ok"] and "HORNLEECH" in moves_of(og), moves_of(og))
+    chk("아기 포켓몬의 알 기술은 넣지 않는다 (피츄 - 진화형의 교배로 받는 진짜 알 기술)",
+        not d.get("PICHU").get("remind"), d.get("PICHU").get("remind"))
+    chk("  돈은 떠올린 만큼만", money() == 2000, money())
+
     print("\n=== 떠올리기 - 기다리던 기술은 공짜 ===")
     owed = rest[3]
     db.run("UPDATE pokemon SET pending=? WHERE id=?",

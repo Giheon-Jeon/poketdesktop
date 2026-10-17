@@ -103,6 +103,9 @@ jobs:
         run: python client/test_new_settings.py
       - name: 지닌 도구 (엔진)
         run: python common/test_held.py
+      # 1.13: 그동안 없던 지닌 도구 110종 + 폼체인지 (지니면·써서·배틀 중·원시회귀)
+      - name: 새 지닌 도구·폼
+        run: python common/test_held_113.py
       - name: 기술 배우기·잊기 (엔진)
         run: python common/test_moves_learn.py
       - name: 떠오르는 글씨가 안 겹치는가
@@ -327,6 +330,9 @@ jobs:
       # 1.12.1: 색이 다른 야생이 나오면 도트 둘레에서 별이 터진다
       - name: 이로치 야생 반짝임 (진짜 Tk)
         run: python client/test_shiny_fx.py
+      # 1.13: 가방의 폼 도구 - 모습 고르기 · formNum 그림
+      - name: 폼 도구 (진짜 Tk)
+        run: python client/test_form_items.py
       # 1.8.0: 이로치 색 고르기 - 색조 돌리기·캐시·바탕화면 갈아 입기·고르기 창
       - name: 이로치 색 고르기 (진짜 Tk)
         run: python client/test_tint_ui.py
@@ -469,6 +475,9 @@ jobs:
       # 1.12.1: 색이 다른 야생이 나오면 도트 둘레에서 별이 터진다
       - name: 이로치 야생 반짝임 (진짜 Tk)
         run: python client/test_shiny_fx.py
+      # 1.13: 가방의 폼 도구 - 모습 고르기 · formNum 그림
+      - name: 폼 도구 (진짜 Tk)
+        run: python client/test_form_items.py
       # 1.8.0: 이로치 색 고르기 - 색조 돌리기·캐시·바탕화면 갈아 입기·고르기 창
       - name: 이로치 색 고르기 (진짜 Tk)
         run: python client/test_tint_ui.py
@@ -572,6 +581,7 @@ jobs:
           # 시즌 4 (1.12.0): 점수 매칭 / Z링·Z크리스탈 / 시즌 3 -> 4 전환 /
           # 악당 출현 / 길드전
           python test_match_rp.py
+          python test_forms.py           # 1.13: 폼 도구 (켜고 끄기·고르기·꽃꿀)
           python test_gimmick.py
           python test_season4.py
           python test_boss.py

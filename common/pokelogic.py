@@ -381,6 +381,21 @@ class Pokedex(object):
         if self.megas:
             from . import held          # 늦게 부른다 - held 가 pokelogic 을 안 부르므로 안전
             held.register_megas(self)
+        # 폼체인지 (forms, tools/add_forms.py). 메가처럼 species 에는 넣지 않는다. 배우는 기술은
+        # 자료에 안 적고 원래 종의 것을 같이 쓴다. **포켓몬은 종을 그대로 두고** 폼은 따로 적는다
+        # (mon["form"]) - 지니면 바뀌는 폼은 지닌 도구로 정한다 (form_for).
+        self.forms = []
+        self.forms_of = {}              # 원래 종 -> [폼]
+        for raw in data.get("forms") or []:
+            m = dict(raw)               # 원본(raw)은 그대로 둔다 - digest 가 그것을 잰다
+            # 폼 자료에 없는 것(분류·전설 여부·세대·알 그룹 …)은 원래 종의 것을 그대로 쓴다.
+            # 그래서 폼 종류는 kind(분류 "씨앗포켓몬")와 겹치지 않게 formKind 에 둔다.
+            for k, v in (self.by_internal.get(m["formOf"]) or {}).items():
+                m.setdefault(k, v)
+            self.forms.append(m)
+            self.by_internal[m["internal"]] = m
+            self.by_num[m["num"]] = m
+            self.forms_of.setdefault(m["formOf"], []).append(m)
         self.moves = data.get("moves", {})
         self.abilities = data.get("abilities", {})
         self.types = data.get("types", {})
@@ -416,6 +431,52 @@ class Pokedex(object):
             if not m.get("megaGender"):
                 return m
         return cand[0]
+
+    def form_for(self, mon):
+        """이 포켓몬이 **배틀 밖에서** 서 있는 폼 (도감 forms 의 것). 원래 모습이면 None.
+
+          1) 적어 둔 폼 (mon["form"]) - 도구를 써서 바꾼 것 (formKind use)
+          2) 지닌 도구로 바뀌는 폼 (kind held) - 백금옥을 지닌 기라티나, 가면을 쓴 오거폰
+          3) 그 기술을 알면 그 모습 (kind move) - 신비의칼을 아는 케르디오
+
+        원시회귀·배틀 중 폼(kind primal·battle)은 배틀 중에만 된다 - battle.Fighter 가 본다.
+        """
+        forms = self.forms_of.get((mon or {}).get("species"))
+        if not forms:
+            return None
+        want = mon.get("form")
+        if want:
+            for m in forms:
+                if m["form"] == want and m["formKind"] == "use":
+                    return m
+        held = mon.get("held")
+        if held:
+            for m in forms:
+                if m["formKind"] == "held" and held in (m.get("items") or ()):
+                    return m
+        moves = mon.get("moves") or ()
+        for m in forms:
+            if m["formKind"] == "move" and m.get("move") in moves:
+                return m
+        return None
+
+    def form_ability(self, mon, form=None):
+        """그 폼에서 쓰는 특성. 원래 종의 몇 번째 특성(숨은 특성인지)을 폼에서도 그대로 따른다."""
+        ab = (mon or {}).get("ability")
+        form = form or self.form_for(mon)
+        if not form:
+            return ab
+        base = self.get(mon.get("species")) or {}
+        fa = form.get("abil") or []
+        if mon.get("hiddenAbility") or (ab and ab == base.get("hidden")):
+            return form.get("hidden") or (fa[0] if fa else ab)
+        normal = base.get("abil") or []
+        i = normal.index(ab) if ab in normal else 0
+        return fa[min(i, len(fa) - 1)] if fa else ab
+
+    def look(self, mon):
+        """화면에 그릴 도감 항목 - 폼이면 그 폼, 아니면 원래 종."""
+        return self.form_for(mon) or self.get((mon or {}).get("species"))
 
     def digest(self):
         blob = json.dumps(self.raw, ensure_ascii=False,
@@ -533,7 +594,9 @@ class Pokedex(object):
 
     # ---- 개체 요약 ----
     def stats_of(self, mon):
-        s = self.get(mon["species"])
+        # 폼이면 그 폼의 종족값 (기라티나 오리진·쉐이미 스카이 ...). 메가는 부르는 쪽이 species 를 메가
+        # 폼으로 바꿔 넘기므로 form_for 가 None 이다 (메가에는 폼이 없다).
+        s = self.form_for(mon) or self.get(mon["species"])
         if not s:
             return dict((k, 0) for k in STATS)
         return calc_all_stats(s, effective_ivs(mon), mon.get("evs", {}),
@@ -553,11 +616,15 @@ class Pokedex(object):
         # 병뚜껑을 써서 능력치가 올라가 놓고도 "개체 7" 이 그대로라
         # 아무 일도 안 일어난 것처럼 보인다. 원래 값도 같이 보낸다.
         eff = effective_ivs(mon)
+        form = self.form_for(mon)
+        look = form or s
+        ability = self.form_ability(mon, form) if form else mon.get("ability")
         return {
-            "num": s["num"],
+            "num": look["num"],
             "name": mon.get("nickname") or s["kr"],
             "species": s["kr"],
-            "types": [self.type_name(t) for t in s["types"]],
+            "form": form.get("formKr") if form else None,
+            "types": [self.type_name(t) for t in look["types"]],
             "level": mon.get("level", lv),
             "stats": self.stats_of(mon),
             "ivs": dict((k, int(eff.get(k, 0))) for k in STATS),
@@ -571,8 +638,8 @@ class Pokedex(object):
             # 성격이 무엇을 올리고 내리는지, 특성이 무슨 일을 하는지.
             # 이름만으로는 알 수가 없어서 같이 보낸다 (포켓몬 관리 창).
             "natureNote": nature_note(mon.get("nature", "HARDY")),
-            "ability": self.ability_name(mon.get("ability")),
-            "abilityNote": self.ability_desc(mon.get("ability")),
+            "ability": self.ability_name(ability),
+            "abilityNote": self.ability_desc(ability),
             "hiddenAbility": mon.get("hiddenAbility", False),
             "gender": mon.get("gender", "N"),
             "shiny": mon.get("shiny", False),

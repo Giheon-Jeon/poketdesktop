@@ -2185,6 +2185,1523 @@
   "species": 1025,
   "types": 19
  },
+ "forms": [
+  {
+   "abil": [
+    "PRESSURE"
+   ],
+   "base": {
+    "atk": 180,
+    "def": 20,
+    "hp": 50,
+    "spa": 180,
+    "spd": 20,
+    "spe": 150
+   },
+   "dot": true,
+   "en": "Deoxys",
+   "evo": [],
+   "form": "ATTACK",
+   "formKind": "use",
+   "formKr": "어택폼",
+   "formOf": "DEOXYS",
+   "height": 1.7,
+   "hidden": null,
+   "internal": "DEOXYS_ATTACK",
+   "kg": 60.8,
+   "kr": "테오키스",
+   "num": 10001,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "PSYCHIC"
+   ],
+   "useItem": "METEORITE",
+   "walk": "0386/0001"
+  },
+  {
+   "abil": [
+    "PRESSURE"
+   ],
+   "base": {
+    "atk": 70,
+    "def": 160,
+    "hp": 50,
+    "spa": 70,
+    "spd": 160,
+    "spe": 90
+   },
+   "dot": true,
+   "en": "Deoxys",
+   "evo": [],
+   "form": "DEFENSE",
+   "formKind": "use",
+   "formKr": "디펜스폼",
+   "formOf": "DEOXYS",
+   "height": 1.7,
+   "hidden": null,
+   "internal": "DEOXYS_DEFENSE",
+   "kg": 60.8,
+   "kr": "테오키스",
+   "num": 10002,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "PSYCHIC"
+   ],
+   "useItem": "METEORITE",
+   "walk": "0386/0002"
+  },
+  {
+   "abil": [
+    "PRESSURE"
+   ],
+   "base": {
+    "atk": 95,
+    "def": 90,
+    "hp": 50,
+    "spa": 95,
+    "spd": 90,
+    "spe": 180
+   },
+   "dot": true,
+   "en": "Deoxys",
+   "evo": [],
+   "form": "SPEED",
+   "formKind": "use",
+   "formKr": "스피드폼",
+   "formOf": "DEOXYS",
+   "height": 1.7,
+   "hidden": null,
+   "internal": "DEOXYS_SPEED",
+   "kg": 60.8,
+   "kr": "테오키스",
+   "num": 10003,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "PSYCHIC"
+   ],
+   "useItem": "METEORITE",
+   "walk": "0386/0003"
+  },
+  {
+   "abil": [
+    "SERENEGRACE"
+   ],
+   "base": {
+    "atk": 103,
+    "def": 75,
+    "hp": 100,
+    "spa": 120,
+    "spd": 75,
+    "spe": 127
+   },
+   "dot": true,
+   "en": "Shaymin",
+   "evo": [],
+   "form": "SKY",
+   "formKind": "use",
+   "formKr": "스카이폼",
+   "formOf": "SHAYMIN",
+   "height": 0.4,
+   "hidden": null,
+   "internal": "SHAYMIN_SKY",
+   "kg": 5.2,
+   "kr": "쉐이미",
+   "num": 10006,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GRASS",
+    "FLYING"
+   ],
+   "useItem": "GRACIDEA",
+   "walk": "0492/0001"
+  },
+  {
+   "abil": [
+    "LEVITATE"
+   ],
+   "base": {
+    "atk": 120,
+    "def": 100,
+    "hp": 150,
+    "spa": 120,
+    "spd": 100,
+    "spe": 90
+   },
+   "dot": true,
+   "en": "Giratina",
+   "evo": [],
+   "form": "ORIGIN",
+   "formKind": "held",
+   "formKr": "오리진폼",
+   "formOf": "GIRATINA",
+   "height": 6.9,
+   "hidden": "TELEPATHY",
+   "internal": "GIRATINA_ORIGIN",
+   "items": [
+    "GRISEOUSORB",
+    "GRISEOUSCORE"
+   ],
+   "kg": 650.0,
+   "kr": "기라티나",
+   "num": 10007,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GHOST",
+    "DRAGON"
+   ],
+   "walk": "0487/0001"
+  },
+  {
+   "abil": [
+    "LEVITATE"
+   ],
+   "base": {
+    "atk": 65,
+    "def": 107,
+    "hp": 50,
+    "spa": 105,
+    "spd": 107,
+    "spe": 86
+   },
+   "dot": true,
+   "en": "Rotom",
+   "evo": [],
+   "form": "HEAT",
+   "formKind": "use",
+   "formKr": "히트로토무",
+   "formMoves": {
+    "sig": "OVERHEAT"
+   },
+   "formOf": "ROTOM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "ROTOM_HEAT",
+   "kg": 0.3,
+   "kr": "로토무",
+   "num": 10008,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "FIRE"
+   ],
+   "useItem": "ROTOMCATALOG",
+   "walk": "0479/0001"
+  },
+  {
+   "abil": [
+    "LEVITATE"
+   ],
+   "base": {
+    "atk": 65,
+    "def": 107,
+    "hp": 50,
+    "spa": 105,
+    "spd": 107,
+    "spe": 86
+   },
+   "dot": true,
+   "en": "Rotom",
+   "evo": [],
+   "form": "WASH",
+   "formKind": "use",
+   "formKr": "워시로토무",
+   "formMoves": {
+    "sig": "HYDROPUMP"
+   },
+   "formOf": "ROTOM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "ROTOM_WASH",
+   "kg": 0.3,
+   "kr": "로토무",
+   "num": 10009,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "WATER"
+   ],
+   "useItem": "ROTOMCATALOG",
+   "walk": "0479/0002"
+  },
+  {
+   "abil": [
+    "LEVITATE"
+   ],
+   "base": {
+    "atk": 65,
+    "def": 107,
+    "hp": 50,
+    "spa": 105,
+    "spd": 107,
+    "spe": 86
+   },
+   "dot": true,
+   "en": "Rotom",
+   "evo": [],
+   "form": "FROST",
+   "formKind": "use",
+   "formKr": "프로스트로토무",
+   "formMoves": {
+    "sig": "BLIZZARD"
+   },
+   "formOf": "ROTOM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "ROTOM_FROST",
+   "kg": 0.3,
+   "kr": "로토무",
+   "num": 10010,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "ICE"
+   ],
+   "useItem": "ROTOMCATALOG",
+   "walk": "0479/0003"
+  },
+  {
+   "abil": [
+    "LEVITATE"
+   ],
+   "base": {
+    "atk": 65,
+    "def": 107,
+    "hp": 50,
+    "spa": 105,
+    "spd": 107,
+    "spe": 86
+   },
+   "dot": true,
+   "en": "Rotom",
+   "evo": [],
+   "form": "FAN",
+   "formKind": "use",
+   "formKr": "스핀로토무",
+   "formMoves": {
+    "sig": "AIRSLASH"
+   },
+   "formOf": "ROTOM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "ROTOM_FAN",
+   "kg": 0.3,
+   "kr": "로토무",
+   "num": 10011,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "FLYING"
+   ],
+   "useItem": "ROTOMCATALOG",
+   "walk": "0479/0004"
+  },
+  {
+   "abil": [
+    "LEVITATE"
+   ],
+   "base": {
+    "atk": 65,
+    "def": 107,
+    "hp": 50,
+    "spa": 105,
+    "spd": 107,
+    "spe": 86
+   },
+   "dot": true,
+   "en": "Rotom",
+   "evo": [],
+   "form": "MOW",
+   "formKind": "use",
+   "formKr": "커트로토무",
+   "formMoves": {
+    "sig": "LEAFSTORM"
+   },
+   "formOf": "ROTOM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "ROTOM_MOW",
+   "kg": 0.3,
+   "kr": "로토무",
+   "num": 10012,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "GRASS"
+   ],
+   "useItem": "ROTOMCATALOG",
+   "walk": "0479/0005"
+  },
+  {
+   "abil": [
+    "FORECAST"
+   ],
+   "ability": "FORECAST",
+   "base": {
+    "atk": 70,
+    "def": 70,
+    "hp": 70,
+    "spa": 70,
+    "spd": 70,
+    "spe": 70
+   },
+   "dot": true,
+   "en": "Castform",
+   "evo": [],
+   "form": "SUNNY",
+   "formKind": "battle",
+   "formKr": "태양의 모습",
+   "formOf": "CASTFORM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "CASTFORM_SUNNY",
+   "kg": 0.8,
+   "kr": "캐스퐁",
+   "num": 10013,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "FIRE"
+   ],
+   "walk": "0351/0001"
+  },
+  {
+   "abil": [
+    "FORECAST"
+   ],
+   "ability": "FORECAST",
+   "base": {
+    "atk": 70,
+    "def": 70,
+    "hp": 70,
+    "spa": 70,
+    "spd": 70,
+    "spe": 70
+   },
+   "dot": true,
+   "en": "Castform",
+   "evo": [],
+   "form": "RAINY",
+   "formKind": "battle",
+   "formKr": "빗방울의 모습",
+   "formOf": "CASTFORM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "CASTFORM_RAINY",
+   "kg": 0.8,
+   "kr": "캐스퐁",
+   "num": 10014,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "WATER"
+   ],
+   "walk": "0351/0002"
+  },
+  {
+   "abil": [
+    "FORECAST"
+   ],
+   "ability": "FORECAST",
+   "base": {
+    "atk": 70,
+    "def": 70,
+    "hp": 70,
+    "spa": 70,
+    "spd": 70,
+    "spe": 70
+   },
+   "dot": true,
+   "en": "Castform",
+   "evo": [],
+   "form": "SNOWY",
+   "formKind": "battle",
+   "formKr": "설운의 모습",
+   "formOf": "CASTFORM",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "CASTFORM_SNOWY",
+   "kg": 0.8,
+   "kr": "캐스퐁",
+   "num": 10015,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ICE"
+   ],
+   "walk": "0351/0003"
+  },
+  {
+   "abil": [
+    "SHEERFORCE"
+   ],
+   "ability": "ZENMODE",
+   "base": {
+    "atk": 30,
+    "def": 105,
+    "hp": 105,
+    "spa": 140,
+    "spd": 105,
+    "spe": 55
+   },
+   "dot": true,
+   "en": "Darmanitan",
+   "evo": [],
+   "form": "ZEN",
+   "formKind": "battle",
+   "formKr": "달마모드",
+   "formOf": "DARMANITAN",
+   "height": 1.3,
+   "hidden": "ZENMODE",
+   "internal": "DARMANITAN_ZEN",
+   "kg": 92.9,
+   "kr": "불비달마",
+   "num": 10017,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "FIRE",
+    "PSYCHIC"
+   ],
+   "walk": "0555/0001"
+  },
+  {
+   "abil": [
+    "SERENEGRACE"
+   ],
+   "base": {
+    "atk": 128,
+    "def": 90,
+    "hp": 100,
+    "spa": 77,
+    "spd": 77,
+    "spe": 128
+   },
+   "dot": true,
+   "en": "Meloetta",
+   "evo": [],
+   "form": "PIROUETTE",
+   "formKind": "battle",
+   "formKr": "스텝폼",
+   "formOf": "MELOETTA",
+   "height": 0.6,
+   "hidden": null,
+   "internal": "MELOETTA_PIROUETTE",
+   "kg": 6.5,
+   "kr": "메로엣타",
+   "move": "RELICSONG",
+   "num": 10018,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "NORMAL",
+    "FIGHTING"
+   ],
+   "walk": "0648/0001"
+  },
+  {
+   "abil": [
+    "REGENERATOR"
+   ],
+   "base": {
+    "atk": 100,
+    "def": 80,
+    "hp": 79,
+    "spa": 110,
+    "spd": 90,
+    "spe": 121
+   },
+   "dot": true,
+   "en": "Tornadus",
+   "evo": [],
+   "form": "THERIAN",
+   "formKind": "use",
+   "formKr": "영물폼",
+   "formOf": "TORNADUS",
+   "height": 1.4,
+   "hidden": "DEFIANT",
+   "internal": "TORNADUS_THERIAN",
+   "kg": 63.0,
+   "kr": "토네로스",
+   "num": 10019,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "FLYING"
+   ],
+   "useItem": "REVEALGLASS"
+  },
+  {
+   "abil": [
+    "VOLTABSORB"
+   ],
+   "base": {
+    "atk": 105,
+    "def": 70,
+    "hp": 79,
+    "spa": 145,
+    "spd": 80,
+    "spe": 101
+   },
+   "dot": true,
+   "en": "Thundurus",
+   "evo": [],
+   "form": "THERIAN",
+   "formKind": "use",
+   "formKr": "영물폼",
+   "formOf": "THUNDURUS",
+   "height": 3.0,
+   "hidden": "DEFIANT",
+   "internal": "THUNDURUS_THERIAN",
+   "kg": 61.0,
+   "kr": "볼트로스",
+   "num": 10020,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "FLYING"
+   ],
+   "useItem": "REVEALGLASS"
+  },
+  {
+   "abil": [
+    "INTIMIDATE"
+   ],
+   "base": {
+    "atk": 145,
+    "def": 90,
+    "hp": 89,
+    "spa": 105,
+    "spd": 80,
+    "spe": 91
+   },
+   "dot": true,
+   "en": "Landorus",
+   "evo": [],
+   "form": "THERIAN",
+   "formKind": "use",
+   "formKr": "영물폼",
+   "formOf": "LANDORUS",
+   "height": 1.3,
+   "hidden": "SHEERFORCE",
+   "internal": "LANDORUS_THERIAN",
+   "kg": 68.0,
+   "kr": "랜드로스",
+   "num": 10021,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GROUND",
+    "FLYING"
+   ],
+   "useItem": "REVEALGLASS",
+   "walk": "0645/0001"
+  },
+  {
+   "abil": [
+    "JUSTIFIED"
+   ],
+   "base": {
+    "atk": 72,
+    "def": 90,
+    "hp": 91,
+    "spa": 129,
+    "spd": 90,
+    "spe": 108
+   },
+   "dot": true,
+   "en": "Keldeo",
+   "evo": [],
+   "form": "RESOLUTE",
+   "formKind": "move",
+   "formKr": "각오의 모습",
+   "formOf": "KELDEO",
+   "height": 1.4,
+   "hidden": null,
+   "internal": "KELDEO_RESOLUTE",
+   "kg": 48.5,
+   "kr": "케르디오",
+   "move": "SECRETSWORD",
+   "num": 10024,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "WATER",
+    "FIGHTING"
+   ]
+  },
+  {
+   "abil": [
+    "STANCECHANGE"
+   ],
+   "ability": "STANCECHANGE",
+   "base": {
+    "atk": 140,
+    "def": 50,
+    "hp": 60,
+    "spa": 140,
+    "spd": 50,
+    "spe": 60
+   },
+   "dot": true,
+   "en": "Aegislash",
+   "evo": [],
+   "form": "BLADE",
+   "formKind": "battle",
+   "formKr": "블레이드폼",
+   "formOf": "AEGISLASH",
+   "height": 1.7,
+   "hidden": null,
+   "internal": "AEGISLASH_BLADE",
+   "kg": 53.0,
+   "kr": "킬가르도",
+   "num": 10026,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "STEEL",
+    "GHOST"
+   ],
+   "walk": "0681/0001"
+  },
+  {
+   "abil": [
+    "PRIMORDIALSEA"
+   ],
+   "base": {
+    "atk": 150,
+    "def": 90,
+    "hp": 100,
+    "spa": 180,
+    "spd": 160,
+    "spe": 90
+   },
+   "dot": true,
+   "en": "Kyogre",
+   "evo": [],
+   "form": "PRIMAL",
+   "formKind": "primal",
+   "formKr": "원시회귀의 모습",
+   "formOf": "KYOGRE",
+   "height": 9.8,
+   "hidden": null,
+   "internal": "KYOGRE_PRIMAL",
+   "items": [
+    "BLUEORB"
+   ],
+   "kg": 430.0,
+   "kr": "가이오가",
+   "num": 10077,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "WATER"
+   ],
+   "walk": "0382/0001"
+  },
+  {
+   "abil": [
+    "DESOLATELAND"
+   ],
+   "base": {
+    "atk": 180,
+    "def": 160,
+    "hp": 100,
+    "spa": 150,
+    "spd": 90,
+    "spe": 90
+   },
+   "dot": true,
+   "en": "Groudon",
+   "evo": [],
+   "form": "PRIMAL",
+   "formKind": "primal",
+   "formKr": "원시회귀의 모습",
+   "formOf": "GROUDON",
+   "height": 5.0,
+   "hidden": null,
+   "internal": "GROUDON_PRIMAL",
+   "items": [
+    "REDORB"
+   ],
+   "kg": 999.7,
+   "kr": "그란돈",
+   "num": 10078,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GROUND",
+    "FIRE"
+   ],
+   "walk": "0383/0001"
+  },
+  {
+   "abil": [
+    "MAGICIAN"
+   ],
+   "base": {
+    "atk": 160,
+    "def": 60,
+    "hp": 80,
+    "spa": 170,
+    "spd": 130,
+    "spe": 80
+   },
+   "dot": true,
+   "en": "Hoopa",
+   "evo": [],
+   "form": "UNBOUND",
+   "formKind": "use",
+   "formKr": "굴레를 벗어난 후파",
+   "formOf": "HOOPA",
+   "height": 6.5,
+   "hidden": null,
+   "internal": "HOOPA_UNBOUND",
+   "kg": 490.0,
+   "kr": "후파",
+   "num": 10086,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "PSYCHIC",
+    "DARK"
+   ],
+   "useItem": "PRISONBOTTLE",
+   "walk": "0720/0001"
+  },
+  {
+   "abil": [
+    "BATTLEBOND"
+   ],
+   "ability": "BATTLEBOND",
+   "base": {
+    "atk": 145,
+    "def": 67,
+    "hp": 72,
+    "spa": 153,
+    "spd": 71,
+    "spe": 132
+   },
+   "dot": true,
+   "en": "Greninja",
+   "evo": [],
+   "form": "ASH",
+   "formKind": "battle",
+   "formKr": "지우개굴닌자",
+   "formOf": "GRENINJA",
+   "height": 1.5,
+   "hidden": "PROTEAN",
+   "internal": "GRENINJA_ASH",
+   "kg": 40.0,
+   "kr": "개굴닌자",
+   "num": 10117,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "WATER",
+    "DARK"
+   ]
+  },
+  {
+   "abil": [
+    "POWERCONSTRUCT"
+   ],
+   "ability": "POWERCONSTRUCT",
+   "base": {
+    "atk": 100,
+    "def": 121,
+    "hp": 216,
+    "spa": 91,
+    "spd": 95,
+    "spe": 85
+   },
+   "dot": true,
+   "en": "Zygarde",
+   "evo": [],
+   "form": "COMPLETE",
+   "formKind": "battle",
+   "formKr": "퍼펙트폼",
+   "formOf": "ZYGARDE",
+   "height": 4.5,
+   "hidden": null,
+   "internal": "ZYGARDE_COMPLETE",
+   "kg": 610.0,
+   "kr": "지가르데",
+   "num": 10120,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "DRAGON",
+    "GROUND"
+   ],
+   "walk": "0718/0002"
+  },
+  {
+   "abil": [
+    "DANCER"
+   ],
+   "base": {
+    "atk": 70,
+    "def": 70,
+    "hp": 75,
+    "spa": 98,
+    "spd": 70,
+    "spe": 93
+   },
+   "dot": true,
+   "en": "Oricorio",
+   "evo": [],
+   "form": "POMPOM",
+   "formKind": "use",
+   "formKr": "파칙파칙스타일",
+   "formOf": "ORICORIO",
+   "height": 0.6,
+   "hidden": null,
+   "internal": "ORICORIO_POMPOM",
+   "kg": 3.4,
+   "kr": "춤추새",
+   "num": 10123,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "FLYING"
+   ],
+   "useItem": "YELLOWNECTAR",
+   "walk": "0741/0001"
+  },
+  {
+   "abil": [
+    "DANCER"
+   ],
+   "base": {
+    "atk": 70,
+    "def": 70,
+    "hp": 75,
+    "spa": 98,
+    "spd": 70,
+    "spe": 93
+   },
+   "dot": true,
+   "en": "Oricorio",
+   "evo": [],
+   "form": "PAU",
+   "formKind": "use",
+   "formKr": "훌라훌라스타일",
+   "formOf": "ORICORIO",
+   "height": 0.6,
+   "hidden": null,
+   "internal": "ORICORIO_PAU",
+   "kg": 3.4,
+   "kr": "춤추새",
+   "num": 10124,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "PSYCHIC",
+    "FLYING"
+   ],
+   "useItem": "PINKNECTAR",
+   "walk": "0741/0002"
+  },
+  {
+   "abil": [
+    "DANCER"
+   ],
+   "base": {
+    "atk": 70,
+    "def": 70,
+    "hp": 75,
+    "spa": 98,
+    "spd": 70,
+    "spe": 93
+   },
+   "dot": true,
+   "en": "Oricorio",
+   "evo": [],
+   "form": "SENSU",
+   "formKind": "use",
+   "formKr": "하늘하늘스타일",
+   "formOf": "ORICORIO",
+   "height": 0.6,
+   "hidden": null,
+   "internal": "ORICORIO_SENSU",
+   "kg": 3.4,
+   "kr": "춤추새",
+   "num": 10125,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GHOST",
+    "FLYING"
+   ],
+   "useItem": "PURPLENECTAR"
+  },
+  {
+   "abil": [
+    "SCHOOLING"
+   ],
+   "ability": "SCHOOLING",
+   "base": {
+    "atk": 140,
+    "def": 130,
+    "hp": 45,
+    "spa": 140,
+    "spd": 135,
+    "spe": 30
+   },
+   "dot": true,
+   "en": "Wishiwashi",
+   "evo": [],
+   "form": "SCHOOL",
+   "formKind": "battle",
+   "formKr": "군집의 모습",
+   "formOf": "WISHIWASHI",
+   "height": 8.2,
+   "hidden": null,
+   "internal": "WISHIWASHI_SCHOOL",
+   "kg": 78.6,
+   "kr": "약어리",
+   "num": 10127,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "WATER"
+   ],
+   "walk": "0746/0001"
+  },
+  {
+   "abil": [
+    "SHIELDSDOWN"
+   ],
+   "ability": "SHIELDSDOWN",
+   "base": {
+    "atk": 100,
+    "def": 60,
+    "hp": 60,
+    "spa": 100,
+    "spd": 60,
+    "spe": 120
+   },
+   "dot": true,
+   "en": "Minior",
+   "evo": [],
+   "form": "CORE",
+   "formKind": "battle",
+   "formKr": "빨간색 코어",
+   "formOf": "MINIOR",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "MINIOR_CORE",
+   "kg": 0.3,
+   "kr": "메테노",
+   "num": 10136,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ROCK",
+    "FLYING"
+   ],
+   "walk": "0774/0001"
+  },
+  {
+   "abil": [
+    "DISGUISE"
+   ],
+   "ability": "DISGUISE",
+   "base": {
+    "atk": 90,
+    "def": 80,
+    "hp": 55,
+    "spa": 50,
+    "spd": 105,
+    "spe": 96
+   },
+   "dot": true,
+   "en": "Mimikyu",
+   "evo": [],
+   "form": "BUSTED",
+   "formKind": "battle",
+   "formKr": "들킨 모습",
+   "formOf": "MIMIKYU",
+   "height": 0.2,
+   "hidden": null,
+   "internal": "MIMIKYU_BUSTED",
+   "kg": 0.7,
+   "kr": "따라큐",
+   "num": 10143,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GHOST",
+    "FAIRY"
+   ],
+   "walk": "0778/0001"
+  },
+  {
+   "abil": [
+    "AURABREAK"
+   ],
+   "base": {
+    "atk": 100,
+    "def": 71,
+    "hp": 54,
+    "spa": 61,
+    "spd": 85,
+    "spe": 115
+   },
+   "dot": true,
+   "en": "Zygarde",
+   "evo": [],
+   "form": "TEN",
+   "formKind": "use",
+   "formKr": "10%폼",
+   "formOf": "ZYGARDE",
+   "height": 1.2,
+   "hidden": null,
+   "internal": "ZYGARDE_TEN",
+   "kg": 33.5,
+   "kr": "지가르데",
+   "num": 10181,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "DRAGON",
+    "GROUND"
+   ],
+   "useItem": "ZYGARDECUBE",
+   "walk": "0718/0001"
+  },
+  {
+   "abil": [
+    "ICEFACE"
+   ],
+   "ability": "ICEFACE",
+   "base": {
+    "atk": 80,
+    "def": 70,
+    "hp": 75,
+    "spa": 65,
+    "spd": 50,
+    "spe": 130
+   },
+   "dot": true,
+   "en": "Eiscue",
+   "evo": [],
+   "form": "NOICE",
+   "formKind": "battle",
+   "formKr": "나이스페이스",
+   "formOf": "EISCUE",
+   "height": 1.4,
+   "hidden": null,
+   "internal": "EISCUE_NOICE",
+   "kg": 89.0,
+   "kr": "빙큐보",
+   "num": 10185,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ICE"
+   ],
+   "walk": "0875/0001"
+  },
+  {
+   "abil": [
+    "HUNGERSWITCH"
+   ],
+   "ability": "HUNGERSWITCH",
+   "base": {
+    "atk": 95,
+    "def": 58,
+    "hp": 58,
+    "spa": 70,
+    "spd": 58,
+    "spe": 97
+   },
+   "dot": true,
+   "en": "Morpeko",
+   "evo": [],
+   "form": "HANGRY",
+   "formKind": "battle",
+   "formKr": "배고픈 모양",
+   "formOf": "MORPEKO",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "MORPEKO_HANGRY",
+   "kg": 3.0,
+   "kr": "모르페코",
+   "num": 10187,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "ELECTRIC",
+    "DARK"
+   ],
+   "walk": "0877/0001"
+  },
+  {
+   "abil": [
+    "INTREPIDSWORD"
+   ],
+   "base": {
+    "atk": 150,
+    "def": 115,
+    "hp": 92,
+    "spa": 80,
+    "spd": 115,
+    "spe": 148
+   },
+   "dot": true,
+   "en": "Zacian",
+   "evo": [],
+   "form": "CROWNED",
+   "formKind": "held",
+   "formKr": "검왕",
+   "formOf": "ZACIAN",
+   "height": 2.8,
+   "hidden": null,
+   "internal": "ZACIAN_CROWNED",
+   "items": [
+    "RUSTEDSWORD"
+   ],
+   "kg": 355.0,
+   "kr": "자시안",
+   "num": 10188,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "FAIRY",
+    "STEEL"
+   ],
+   "walk": "0888/0001"
+  },
+  {
+   "abil": [
+    "DAUNTLESSSHIELD"
+   ],
+   "base": {
+    "atk": 120,
+    "def": 140,
+    "hp": 92,
+    "spa": 80,
+    "spd": 140,
+    "spe": 128
+   },
+   "dot": true,
+   "en": "Zamazenta",
+   "evo": [],
+   "form": "CROWNED",
+   "formKind": "held",
+   "formKr": "방패왕",
+   "formOf": "ZAMAZENTA",
+   "height": 2.9,
+   "hidden": null,
+   "internal": "ZAMAZENTA_CROWNED",
+   "items": [
+    "RUSTEDSHIELD"
+   ],
+   "kg": 785.0,
+   "kr": "자마젠타",
+   "num": 10189,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "FIGHTING",
+    "STEEL"
+   ],
+   "walk": "0889/0001"
+  },
+  {
+   "abil": [
+    "PRESSURE"
+   ],
+   "base": {
+    "atk": 100,
+    "def": 120,
+    "hp": 100,
+    "spa": 150,
+    "spd": 120,
+    "spe": 90
+   },
+   "dot": true,
+   "en": "Dialga",
+   "evo": [],
+   "form": "ORIGIN",
+   "formKind": "held",
+   "formKr": "오리진폼",
+   "formOf": "DIALGA",
+   "height": 7.0,
+   "hidden": "TELEPATHY",
+   "internal": "DIALGA_ORIGIN",
+   "items": [
+    "ADAMANTCRYSTAL"
+   ],
+   "kg": 848.7,
+   "kr": "디아루가",
+   "num": 10245,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "STEEL",
+    "DRAGON"
+   ],
+   "walk": "0483/0001"
+  },
+  {
+   "abil": [
+    "PRESSURE"
+   ],
+   "base": {
+    "atk": 100,
+    "def": 100,
+    "hp": 90,
+    "spa": 150,
+    "spd": 120,
+    "spe": 120
+   },
+   "dot": true,
+   "en": "Palkia",
+   "evo": [],
+   "form": "ORIGIN",
+   "formKind": "held",
+   "formKr": "오리진폼",
+   "formOf": "PALKIA",
+   "height": 6.3,
+   "hidden": "TELEPATHY",
+   "internal": "PALKIA_ORIGIN",
+   "items": [
+    "LUSTROUSGLOBE"
+   ],
+   "kg": 659.0,
+   "kr": "펄기아",
+   "num": 10246,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "WATER",
+    "DRAGON"
+   ],
+   "walk": "0484/0001"
+  },
+  {
+   "abil": [
+    "OVERCOAT"
+   ],
+   "base": {
+    "atk": 115,
+    "def": 110,
+    "hp": 74,
+    "spa": 135,
+    "spd": 100,
+    "spe": 46
+   },
+   "dot": true,
+   "en": "Enamorus",
+   "evo": [],
+   "form": "THERIAN",
+   "formKind": "use",
+   "formKr": "영물폼",
+   "formOf": "ENAMORUS",
+   "height": 1.6,
+   "hidden": "CONTRARY",
+   "internal": "ENAMORUS_THERIAN",
+   "kg": 48.0,
+   "kr": "러브로스",
+   "num": 10249,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "FAIRY",
+    "FLYING"
+   ],
+   "useItem": "REVEALGLASS",
+   "walk": "0905/0001"
+  },
+  {
+   "abil": [
+    "ZEROTOHERO"
+   ],
+   "ability": "ZEROTOHERO",
+   "base": {
+    "atk": 160,
+    "def": 97,
+    "hp": 100,
+    "spa": 106,
+    "spd": 87,
+    "spe": 100
+   },
+   "dot": true,
+   "en": "Palafin",
+   "evo": [],
+   "form": "HERO",
+   "formKind": "battle",
+   "formKr": "마이티폼",
+   "formOf": "PALAFIN",
+   "height": 1.8,
+   "hidden": null,
+   "internal": "PALAFIN_HERO",
+   "kg": 97.4,
+   "kr": "돌핀맨",
+   "num": 10256,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "WATER"
+   ],
+   "walk": "0964/0001"
+  },
+  {
+   "abil": [
+    "WATERABSORB"
+   ],
+   "base": {
+    "atk": 120,
+    "def": 84,
+    "hp": 80,
+    "spa": 60,
+    "spd": 96,
+    "spe": 110
+   },
+   "dot": false,
+   "en": "Ogerpon",
+   "evo": [],
+   "form": "WELLSPRING",
+   "formKind": "held",
+   "formKr": "우물의가면",
+   "formOf": "OGERPON",
+   "height": 1.2,
+   "hidden": null,
+   "internal": "OGERPON_WELLSPRING",
+   "items": [
+    "WELLSPRINGMASK"
+   ],
+   "kg": 39.8,
+   "kr": "오거폰",
+   "num": 10273,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GRASS",
+    "WATER"
+   ],
+   "walk": "1017/0005"
+  },
+  {
+   "abil": [
+    "MOLDBREAKER"
+   ],
+   "base": {
+    "atk": 120,
+    "def": 84,
+    "hp": 80,
+    "spa": 60,
+    "spd": 96,
+    "spe": 110
+   },
+   "dot": false,
+   "en": "Ogerpon",
+   "evo": [],
+   "form": "HEARTHFLAME",
+   "formKind": "held",
+   "formKr": "화덕의가면",
+   "formOf": "OGERPON",
+   "height": 1.2,
+   "hidden": null,
+   "internal": "OGERPON_HEARTHFLAME",
+   "items": [
+    "HEARTHFLAMEMASK"
+   ],
+   "kg": 39.8,
+   "kr": "오거폰",
+   "num": 10274,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GRASS",
+    "FIRE"
+   ],
+   "walk": "1017/0006"
+  },
+  {
+   "abil": [
+    "STURDY"
+   ],
+   "base": {
+    "atk": 120,
+    "def": 84,
+    "hp": 80,
+    "spa": 60,
+    "spd": 96,
+    "spe": 110
+   },
+   "dot": false,
+   "en": "Ogerpon",
+   "evo": [],
+   "form": "CORNERSTONE",
+   "formKind": "held",
+   "formKr": "주춧돌의가면",
+   "formOf": "OGERPON",
+   "height": 1.2,
+   "hidden": null,
+   "internal": "OGERPON_CORNERSTONE",
+   "items": [
+    "CORNERSTONEMASK"
+   ],
+   "kg": 39.8,
+   "kr": "오거폰",
+   "num": 10275,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "GRASS",
+    "ROCK"
+   ],
+   "walk": "1017/0007"
+  },
+  {
+   "abil": [
+    "TERASHELL"
+   ],
+   "ability": "TERASHIFT",
+   "base": {
+    "atk": 95,
+    "def": 110,
+    "hp": 95,
+    "spa": 105,
+    "spd": 110,
+    "spe": 85
+   },
+   "dot": false,
+   "en": "Terapagos",
+   "evo": [],
+   "form": "TERASTAL",
+   "formKind": "battle",
+   "formKr": "테라스탈폼",
+   "formOf": "TERAPAGOS",
+   "height": 0.3,
+   "hidden": null,
+   "internal": "TERAPAGOS_TERASTAL",
+   "kg": 16.0,
+   "kr": "테라파고스",
+   "num": 10276,
+   "prevo": null,
+   "spawnable": false,
+   "types": [
+    "NORMAL"
+   ],
+   "walk": "1024/0001"
+  }
+ ],
  "megas": [
   {
    "abil": [
@@ -65737,6 +67254,10 @@
    ],
    "num": 244,
    "prevo": null,
+   "remind": [
+    "EXTREMESPEED",
+    "SACREDFIRE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -65856,6 +67377,10 @@
    ],
    "num": 245,
    "prevo": null,
+   "remind": [
+    "EXTREMESPEED",
+    "SHEERCOLD"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -66355,6 +67880,9 @@
    ],
    "num": 249,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -111659,6 +113187,9 @@
    ],
    "num": 640,
    "prevo": null,
+   "remind": [
+    "TAKEDOWN"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -150659,6 +152190,9 @@
    ],
    "num": 985,
    "prevo": null,
+   "remind": [
+    "SUNNYDAY"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -150771,6 +152305,9 @@
    ],
    "num": 986,
    "prevo": null,
+   "remind": [
+    "SUNNYDAY"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -150887,6 +152424,9 @@
    ],
    "num": 987,
    "prevo": null,
+   "remind": [
+    "SUNNYDAY"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -151007,6 +152547,9 @@
    ],
    "num": 988,
    "prevo": null,
+   "remind": [
+    "SUNNYDAY"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -151127,6 +152670,9 @@
    ],
    "num": 989,
    "prevo": null,
+   "remind": [
+    "SUNNYDAY"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -151351,6 +152897,9 @@
    ],
    "num": 991,
    "prevo": null,
+   "remind": [
+    "ELECTRICTERRAIN"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -151471,6 +153020,9 @@
    ],
    "num": 992,
    "prevo": null,
+   "remind": [
+    "ELECTRICTERRAIN"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -151711,6 +153263,9 @@
    ],
    "num": 994,
    "prevo": null,
+   "remind": [
+    "ELECTRICTERRAIN"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -151831,6 +153386,9 @@
    ],
    "num": 995,
    "prevo": null,
+   "remind": [
+    "ELECTRICTERRAIN"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -152966,6 +154524,12 @@
    ],
    "num": 1005,
    "prevo": null,
+   "remind": [
+    "BREAKINGSWIPE",
+    "JAWLOCK",
+    "SCALESHOT",
+    "SUNNYDAY"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -153090,6 +154654,9 @@
    ],
    "num": 1006,
    "prevo": null,
+   "remind": [
+    "ELECTRICTERRAIN"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -154330,6 +155897,12 @@
    ],
    "num": 1017,
    "prevo": null,
+   "remind": [
+    "COUNTER",
+    "DOUBLEKICK",
+    "HORNLEECH",
+    "RETALIATE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -154677,6 +156250,11 @@
    ],
    "num": 1020,
    "prevo": null,
+   "remind": [
+    "ANCIENTPOWER",
+    "DOUBLEKICK",
+    "NOBLEROAR"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -154797,6 +156375,9 @@
    ],
    "num": 1021,
    "prevo": null,
+   "remind": [
+    "ANCIENTPOWER"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -155240,6 +156821,11 @@
    ],
    "num": 1025,
    "prevo": null,
+   "remind": [
+    "DEFENSECURL",
+    "MEANLOOK",
+    "ROLLOUT"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [

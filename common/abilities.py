@@ -57,6 +57,11 @@ FORMS = {
                             "types": ["FIRE", "PSYCHIC"], "kr": "달마모드"},
     ("PALAFIN", "hero"): {"base": {"atk": 160, "def": 97, "spa": 106, "spd": 87, "spe": 100},
                           "kr": "마이티폼"},
+    # 1.13: 유대변화(쓰러뜨리면)·스웜체인지(체력 절반 이하, 체력도 늘어난다)
+    ("GRENINJA", "ash"): {"base": {"atk": 145, "def": 67, "spa": 153, "spd": 71, "spe": 132},
+                          "kr": "지우개굴닌자"},
+    ("ZYGARDE", "complete"): {"base": {"atk": 100, "def": 121, "spa": 91, "spd": 95, "spe": 85},
+                              "hp": 216, "kr": "퍼펙트폼"},
     ("EISCUE", "noice"): {"base": {"def": 70, "spd": 50, "spe": 130}, "kr": "나이스페이스"},
     ("TERAPAGOS", "terastal"): {"base": {"atk": 95, "def": 110, "spa": 105, "spd": 110, "spe": 85},
                                 "kr": "테라스탈폼"},
@@ -81,6 +86,9 @@ ENTRY_SAY = {
     "TABLETSOFRUIN": "%s 의 재앙의목간으로 주위의 공격이 약해졌다!",
     "VESSELOFRUIN": "%s 의 재앙의그릇으로 주위의 특수공격이 약해졌다!",
     "DELTASTREAM": "수수께끼의 난기류가 비행 포켓몬을 지킨다!",
+    # 원시회귀 (1.13). 나와 있는 동안만 강한 비·강한 햇살 (strong_weather)
+    "PRIMORDIALSEA": "강한 비가 내리기 시작했다!",
+    "DESOLATELAND": "햇살이 아주 강해졌다!",
     "MEGASOL": "%s 의 머리 위에만 강한 햇살이 내리쬔다!",
 }
 # 메모리 (AR시스템). 지금 도구 목록에는 없지만 들어오면 그대로 통한다.
@@ -198,7 +206,7 @@ IMPLEMENTED = (
        # 1.9.2: 남아 있던 것 중 1:1 에서 뜻이 있는 것 전부
        "NEUTRALIZINGGAS", "UNSEENFIST", "PIERCINGDRILL", "PARENTALBOND", "OPPORTUNIST",
        "WANDERINGSPIRIT", "PICKPOCKET", "MAGICIAN", "HARVEST", "CUDCHEW", "SPICYSPRAY",
-       "MEGASOL", "DELTASTREAM", "IMPOSTER", "DANCER", "GULPMISSILE", "EMERGENCYEXIT", "WIMPOUT",
+       "MEGASOL", "DELTASTREAM", "PRIMORDIALSEA", "DESOLATELAND", "IMPOSTER", "DANCER", "GULPMISSILE", "EMERGENCYEXIT", "WIMPOUT",
        "MULTITYPE", "RKSSYSTEM", "FORECAST", "FLOWERGIFT", "HUNGERSWITCH", "SHIELDSDOWN",
        "SCHOOLING", "ZENMODE", "ZEROTOHERO", "ICEFACE", "TERASHIFT", "AURABREAK"}
     | set(PRIORITY_GUARD) | set(TRAP_ABILITY) | set(RUIN) | set(AURA))
@@ -287,8 +295,10 @@ def flags(move):
 
 
 def is_contact(move, user=None):
-    """접촉하는 기술인가. **원격**은 무엇을 써도 안 닿는다."""
+    """접촉하는 기술인가. **원격**은 무엇을 써도 안 닿는다. 펀치글러브(1.13)를 끼면 펀치 기술이 안 닿는다."""
     if user is not None and has(user, "LONGREACH"):
+        return False
+    if user is not None and getattr(user, "held", None) == "PUNCHINGGLOVE" and "punch" in flags(move):
         return False
     return _raw_contact(move)
 
@@ -389,7 +399,8 @@ def stat_mult(f, key):
         return 5461 / 4096.0
     if key == "spa" and a == "HADRONENGINE" and _terrain(f) == "electric":
         return 5461 / 4096.0
-    if (a == "PROTOSYNTHESIS" and w == "sun") or (a == "QUARKDRIVE" and _terrain(f) == "electric"):
+    if (a == "PROTOSYNTHESIS" and (w == "sun" or f.cond.get("booster"))) \
+            or (a == "QUARKDRIVE" and (_terrain(f) == "electric" or f.cond.get("booster"))):   # 부스트에너지 (1.13)
         top = max(("atk", "def", "spa", "spd", "spe"), key=lambda s: f.base.get(s, 0))
         if key == top:
             return 1.5 if key == "spe" else 1.3
@@ -552,6 +563,20 @@ def ruin_mult(user, target, atk_key, def_key):
     if on(user) and RUIN.get(user.ability) == def_key and not has(target, user.ability):
         d = 0.75                       # 재앙의검·재앙의구슬: 맞는 쪽의 방어·특수방어
     return a, d
+
+
+def strong_weather(f):
+    """시작의바다·끝의대지 (원시회귀, 1.13): 그 특성이 나와 있는 동안만 강한 비·강한 햇살.
+
+    델타스트림처럼 날씨 칸에 적지 않고 **서 있는 포켓몬으로** 정한다 - 그 포켓몬이 물러나거나 쓰러지면
+    저절로 끝나고, 다른 날씨로 덮이지도 않는다. 둘 다 서 있으면(드물다) 시작의바다가 먼저다.
+    """
+    pair = (f, getattr(f, "rival", None))
+    for ab, w in (("PRIMORDIALSEA", "rain"), ("DESOLATELAND", "sun")):
+        for x in pair:
+            if x is not None and x.alive() and has(x, ab):
+                return w
+    return None
 
 
 def delta_stream(user, target):
@@ -758,6 +783,9 @@ def on_switch_in(bt, f, who, ev):
             if has(foe, "RATTLED"):
                 pop(bt, foe, fwho, ev)
                 bt._change_stat(foe, "spe", 1, ev, fwho, source=foe)
+        if getattr(foe, "held", None):
+            from . import held as H
+            H.on_intimidated(bt, foe, fwho, ev)    # 주눅구슬 (1.13)
     elif a == "DOWNLOAD" and foe is not None and foe.alive():
         pop(bt, f, who, ev)
         stat = "atk" if foe.stat("def") < foe.stat("spd") else "spa"
@@ -770,12 +798,13 @@ def on_switch_in(bt, f, who, ev):
                            % (f.name, foe.name, bt.dex.ability_name(foe.ability))})
         if f.ability != "TRACE":
             on_switch_in(bt, f, who, ev)
-    elif a == "INTREPIDSWORD":
-        pop(bt, f, who, ev)
-        bt._change_stat(f, "atk", 1, ev, who, source=f)
-    elif a == "DAUNTLESSSHIELD":
-        pop(bt, f, who, ev)
-        bt._change_stat(f, "def", 1, ev, who, source=f)
+    elif a in ("INTREPIDSWORD", "DAUNTLESSSHIELD"):
+        # 불굴의검·불요의방패: **한 판에 한 번** (본가 9세대 규칙, 2026-10-17 사용자 결정). 전에는 8세대처럼
+        # 나올 때마다 올랐다. f.ab 는 물러나도 남고 관장·실시간·레이드 판에서는 같이 저장된다.
+        if not f.ab.get("swordShield"):
+            f.ab["swordShield"] = True
+            pop(bt, f, who, ev)
+            bt._change_stat(f, "atk" if a == "INTREPIDSWORD" else "def", 1, ev, who, source=f)
     elif a in ("PRESSURE", "UNNERVE") or a in MOLD_BREAKERS:
         pop(bt, f, who, ev)
     elif a == "SLOWSTART":
@@ -893,7 +922,11 @@ def survive(bt, user, uwho, target, twho, move, dmg, ev):
         target.ab["busted"] = True
         pop(bt, target, twho, ev)
         chip = max(1, target.maxhp // 8)
-        ev.append({"t": "msg", "who": twho, "text": "탈이 대신 공격을 받았다!"})
+        e = {"t": "msg", "who": twho, "text": "탈이 대신 공격을 받았다!"}
+        look = form_look(bt, target, "busted")
+        if look:
+            e["look"], e["label"] = look, "탈이 벗겨졌다!"
+        ev.append(e)
         target.hp = max(1, target.hp - chip)
         return 0
     if g == "STURDY" and target.hp >= target.maxhp and dmg >= target.hp:
@@ -916,7 +949,8 @@ def after_hit(bt, user, uwho, target, twho, move, dmg, eff, crit, hp_before, ev)
     if dmg <= 0:
         return
     mtype = move_type(user, move)
-    contact = is_contact(move, user)
+    # 방호패드 (1.13): 닿아도 다치지 않는다 (까칠한피부·정전기·미라 …)
+    contact = is_contact(move, user) and getattr(user, "held", None) != "PROTECTIVEPADS"
     rng = bt.rng
     # ---- 맞는 쪽이 접촉에 반응
     if contact and on(target) and user.alive():
@@ -1140,6 +1174,10 @@ def after_ko(bt, user, uwho, ev):
         best = max(STAGE_STATS, key=lambda s: user.base.get(s, 0))
         pop(bt, user, uwho, ev)
         bt._change_stat(user, best, 1, ev, uwho, source=user)
+    elif a == "BATTLEBOND" and (user.mon or {}).get("species") == "GRENINJA" and not user.ab.get("ash"):
+        user.ab["ash"] = True                   # 유대변화 (1.13): 지우개굴닌자가 된다
+        ev.append({"t": "msg", "who": uwho, "text": "%s 과(와) 트레이너의 유대가 깊어졌다!" % user.name})
+        update_form(bt, user, uwho, ev)
 
 
 def use_after_electric(user, mtype):
@@ -1346,8 +1384,16 @@ def _end_of_turn(bt, f, who, ev):
         else:
             f.cond.pop("hangry", None)
         pop(bt, f, who, ev)
-        ev.append({"t": "msg", "who": who, "form": "hangry" if hangry else "base",
-                   "text": "%s 은(는) %s 모양이 되었다!" % (f.name, "배고픈" if hangry else "배부른")})
+        e = {"t": "msg", "who": who, "form": "hangry" if hangry else "base",
+             "text": "%s 은(는) %s 모양이 되었다!" % (f.name, "배고픈" if hangry else "배부른")}
+        look = form_look(bt, f, "hangry" if hangry else None)
+        if look:
+            e["look"], e["label"] = look, ("배고픈 모양!" if hangry else "배부른 모양!")
+        ev.append(e)
+    if a == "POWERCONSTRUCT" and (f.mon or {}).get("species") == "ZYGARDE" and not f.ab.get("complete") \
+            and f.alive() and f.hp * 2 <= f.maxhp:
+        f.ab["complete"] = True                 # 스웜체인지 (1.13): 퍼펙트폼이 된다
+        ev.append({"t": "msg", "who": who, "text": "%s 에게 셀이 모여든다!" % f.name})
     update_form(bt, f, who, ev)             # 달마모드·리밋실드·어군은 턴 끝에 모습이 바뀐다
     if st.get("slow", 0) > 0:
         st["slow"] -= 1
@@ -1409,6 +1455,10 @@ def want_form(bt, f):
         return "noice" if f.ab.get("noice") else None
     if a == "TERASHIFT" and sp == "TERAPAGOS":
         return "terastal"
+    if a == "BATTLEBOND" and sp == "GRENINJA":
+        return "ash" if f.ab.get("ash") else None
+    if a == "POWERCONSTRUCT" and sp == "ZYGARDE":
+        return "complete" if f.ab.get("complete") else None
     if a == "FORECAST" and sp == "CASTFORM":
         return {"sun": "sunny", "rain": "rainy", "hail": "snowy", "snow": "snowy"}.get(_weather(f))
     return None
@@ -1435,8 +1485,50 @@ def update_form(bt, f, who, ev, quiet=False):
     if not quiet:
         pop(bt, f, who, ev)
     kr = FORMS[(sp, want)]["kr"] if want else "원래 모습"
-    ev.append({"t": "msg", "who": who, "form": want or "base",
-               "text": "%s 은(는) %s(으)로 변했다!" % (f.name, kr)})
+    spec = FORMS.get((sp, want)) if want else None
+    if spec and spec.get("hp") and not f.ab.get("hpUp"):
+        # 퍼펙트폼: 최대 체력이 그 폼의 것으로 오르고, 오른 만큼 지금 체력도 오른다 (본가와 같다)
+        sp_d = dict(getattr(f, "_dex", None).get(sp) or {}) if getattr(f, "_dex", None) else {}
+        b = dict(sp_d.get("base") or {})
+        b["hp"] = spec["hp"]
+        sp_d["base"] = b
+        from . import pokelogic as P
+        new_max = P.calc_all_stats(sp_d, P.effective_ivs(f.mon), f.mon.get("evs", {}),
+                                   f.mon.get("level", 1), f.mon.get("nature", "HARDY"))["hp"]
+        if new_max > f.maxhp:
+            f.hp += new_max - f.maxhp
+            f.maxhp = new_max
+            f.base = dict(f.base, hp=new_max)
+        f.ab["hpUp"] = True
+    e = {"t": "msg", "who": who, "form": want or "base",
+         "text": "%s 은(는) %s(으)로 변했다!" % (f.name, kr)}
+    look = form_look(bt, f, want)
+    if look:
+        e["look"], e["label"] = look, kr + "!"      # 화면이 도트를 갈아입는다 (1.13)
+        e["hp"], e["maxhp"] = f.hp, f.maxhp
+    ev.append(e)
+
+
+def form_look(bt, f, form):
+    """배틀 중 폼의 도트 번호 (1.13). 도감 forms 에 그 폼이 있으면 그 번호, 원래 모습으로 돌아오면 원래 번호.
+
+    판 상태(num)도 이것을 따르게 cond["look"] 에 적는다 - 물러나면 같이 풀린다. 그 폼의 도트가 도감에
+    없으면 None (문구만 나온다 - 그동안처럼).
+    """
+    dex = getattr(bt, "dex", None)
+    sp = (f.mon or {}).get("species")
+    if dex is None or not sp:
+        return None
+    if form:
+        m = dex.get("%s_%s" % (sp, form.upper()))
+        if not m:
+            return None
+        f.cond["look"] = m["num"]
+        return m["num"]
+    if f.cond.pop("look", None) is None:
+        return None
+    base = dex.get(sp)
+    return base["num"] if base else None
 
 
 def weather_changed(bt, ev):

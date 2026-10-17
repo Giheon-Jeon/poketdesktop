@@ -126,8 +126,10 @@ def look_num(mon):
     보통은 자기 번호다. 메가진화한 모습으로 걸어다니게 해 두었으면(1.8.0)
     app 이 lookNum 에 메가 폼의 번호를 넣어 준다. **num 은 건드리지 않는다** -
     투기장 명단 맞추기처럼 '무슨 종인가' 를 num 으로 보는 곳이 많다.
+    폼(1.13: 스카이폼 쉐이미, 가면을 쓴 오거폰 …)은 서버가 formNum 에 그 폼의 번호를 실어 준다.
     """
-    return (mon or {}).get("lookNum") or (mon or {}).get("num")
+    mon = mon or {}
+    return mon.get("lookNum") or mon.get("formNum") or mon.get("num")
 
 
 class Pet(object):
@@ -1180,11 +1182,12 @@ class Overlay(object):
 
     def make(self, mon, cls=None):
         anim = self.anim_of(mon)
-        if anim is None and mon.get("lookNum"):
-            # 메가 폼의 도트를 못 구했다 - 원래 모습으로라도 세운다.
-            # (다음 동기화가 lookNum 을 다시 실어 오면 그때 갈아 입힌다.)
+        if anim is None and (mon.get("lookNum") or mon.get("formNum")):
+            # 메가 폼·폼의 도트를 못 구했다 - 원래 모습으로라도 세운다.
+            # (다음 동기화가 lookNum·formNum 을 다시 실어 오면 그때 갈아 입힌다.)
             mon = dict(mon)
             mon.pop("lookNum", None)
+            mon.pop("formNum", None)
             anim = self.anim_of(mon)
         if anim is None:
             return None

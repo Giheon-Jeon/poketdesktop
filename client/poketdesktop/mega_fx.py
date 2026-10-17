@@ -195,7 +195,7 @@ def play(app, pet, num, revert=False, on_done=None):
 
 
 # ---------------------------------------------------------------- 2. 배틀 중
-def battle(host, pet, num, done):
+def battle(host, pet, num, done, label=None):
     """바탕화면 배틀에서 pet 이 메가진화한다. 끝나면 done().
 
     host 는 그 판 (desktop_battle.DesktopBattle / arena.Arena) - layer, after,
@@ -242,7 +242,7 @@ def battle(host, pet, num, done):
                 config.log("배틀 메가 폼 도트 실패: %s" % e)
         _burst(host, pet)
         try:
-            host.float_over(pet, TEXT, TEXT_COLOR)
+            host.float_over(pet, label or TEXT, TEXT_COLOR)     # 원시회귀는 '원시회귀!' (1.13)
         except Exception:                                   # noqa: BLE001
             pass
         host.after(B_AFTER_MS, done)
@@ -273,7 +273,7 @@ T_WAIT_MS = 900          # 도트를 이만큼만 기다린다. 늦게 오면 �
 T_AFTER_MS = 520
 
 
-def transform(host, pet, num, done):
+def transform(host, pet, num, done, label=None):
     """바탕화면 배틀에서 pet 이 변신했다 (1.12.1). 상대의 모습(num)으로 갈아입고 done().
 
     예전에는 '변신했다!' 글만 뜨고 도트는 메타몽 그대로였다. 메가처럼 그 판이 끝날 때까지
@@ -294,7 +294,7 @@ def transform(host, pet, num, done):
             return
         state["went"] = True
         try:
-            host.float_over(pet, T_TEXT, T_COLOR)
+            host.float_over(pet, label or T_TEXT, T_COLOR)
         except Exception:                                   # noqa: BLE001
             pass
         host.after(T_AFTER_MS, done)

@@ -175,9 +175,10 @@ def t_카탈로그와_맞는다():
         all(it[k].get("desc") for k in held_cat),
         [k for k in held_cat if not it[k].get("desc")][:5])
     both = sorted((set(H.KR) & set(it)) - held_cat)
-    chk("돌이면서 지닐 수 있는 넷은 돌로 남는다",
-        both == ["KINGSROCK", "METALCOAT", "RAZORCLAW", "RAZORFANG"], both)
-    chk("도구 종류가 121 이다", len(H.KR) == 121, len(H.KR))
+    # 1.13: 심해의이빨·심해의비늘(진주몽 전용)도 지니는 효과가 생겼다 - 진화 도구로 남는다
+    chk("돌이면서 지닐 수 있는 여섯은 돌로 남는다",
+        both == ["DEEPSEASCALE", "DEEPSEATOOTH", "KINGSROCK", "METALCOAT", "RAZORCLAW", "RAZORFANG"], both)
+    chk("도구 종류가 233 이다 (1.13 에 112 종을 더했다)", len(H.KR) == 233, len(H.KR))
 
 
 # ---------------------------------------------------------------- 3. 효과

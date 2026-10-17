@@ -599,8 +599,9 @@ class Arena(object):
             self.float_over(src, "+%d" % (ev.get("amount") or 0), "#7bffa0")
         # 변신 (1.12.1). 상대의 모습으로 갈아입는다 - 물러나면(_step_out) 풀린다.
         # 글은 transform 이 '변신!' 으로 띄운다 - 아래의 줄인 글과 둘이 겹치지 않게 먼저 본다.
-        if t == "msg" and ev.get("transform") and src:
-            return mega_fx.transform(self, src, ev["transform"], done)
+        if t == "msg" and (ev.get("transform") or ev.get("look")) and src:
+            return mega_fx.transform(self, src, ev.get("transform") or ev["look"], done,
+                                     None if ev.get("transform") else ev.get("label"))   # 배틀 중 폼 (1.13)
         # **못 움직인 턴을 보여준다.** 예전에는 이 셋을 그리지 않아서,
         # 잠들거나 마비돼서 한 턴을 쉬면 화면에는 아무것도 안 뜨고
         # 상대만 연달아 때리는 것처럼 보였다.
@@ -619,7 +620,7 @@ class Arena(object):
         # 메가진화 (시즌 3). 무지갯빛이 모였다 터지고, 메가 폼의 도트가 있으면
         # 이 판 동안 그 모습으로 싸운다 (1.8.0). 끝나면 cleanup 이 되돌린다.
         if t == "mega" and src:
-            return mega_fx.battle(self, src, ev.get("num"), done)
+            return mega_fx.battle(self, src, ev.get("num"), done, ev.get("label"))
         # Z기술 (시즌 4). 머리 위 글씨로 알린다 - 기술 자체는 뒤따르는 move 가 그린다.
         if t == "zpower" and src:
             self.float_over(src, "Z기술!", "#ffd23c")

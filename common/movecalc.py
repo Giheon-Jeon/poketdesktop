@@ -114,6 +114,7 @@ PLATE_TYPE = {
     "ICICLEPLATE": "ICE", "FISTPLATE": "FIGHTING", "TOXICPLATE": "POISON", "EARTHPLATE": "GROUND",
     "SKYPLATE": "FLYING", "MINDPLATE": "PSYCHIC", "INSECTPLATE": "BUG", "STONEPLATE": "ROCK",
     "SPOOKYPLATE": "GHOST", "DRACOPLATE": "DRAGON", "DREADPLATE": "DARK", "IRONPLATE": "STEEL",
+    "PIXIEPLATE": "FAIRY",          # 정령플레이트 (1.13)
 }
 # 잠재파워: 개체값 홀짝으로 정하는 16타입 (노말·페어리는 안 나온다)
 HIDDEN_POWER_TYPES = ["FIGHTING", "FLYING", "POISON", "GROUND", "ROCK", "BUG", "GHOST", "STEEL",
@@ -177,6 +178,8 @@ def kg(f, by=None):
         w *= 2
     elif ab == "LIGHTMETAL":
         w /= 2.0
+    if getattr(f, "held", None) == "FLOATSTONE":
+        w /= 2.0                    # 가벼운돌 (1.13)
     return max(0.1, round(w, 1))
 
 

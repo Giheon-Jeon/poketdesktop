@@ -1051,6 +1051,10 @@ MIGRATIONS = [
     # 이로치 포켓몬이 고른 색 (1.8.0). 옛 행은 NULL = 이로치 색 그대로.
     ("pokemon", "tint",
      "ALTER TABLE pokemon ADD COLUMN tint TEXT"),
+    # 폼체인지 (1.13). form = 도구를 써서 바꾼 폼의 열쇠 (SKY, THERIAN, HEAT …). NULL 이면 원래 모습
+    # (지니면 바뀌는 폼은 적지 않는다 - 지닌 도구로 정한다).
+    ("pokemon", "form",
+     "ALTER TABLE pokemon ADD COLUMN form TEXT"),
     # 옛 행은 전부 1 로 둔다. 그때는 걸려온 판도 점수에 들어갔으니
     # '내가 건 것' 과 구분이 없었다. 어차피 시즌 1 로 점수를 초기화한다.
     ("battle_record", "started",
@@ -1280,6 +1284,8 @@ def row_to_mon(r):
         # 이로치가 고른 색 (1.8.0). **이로치일 때만** 뜻이 있다.
         "tint": (TINT.clean(r["tint"])
                  if "tint" in r.keys() and r["shiny"] else None),
+        # 폼 (1.13). 도구를 써서 바꾼 모습의 열쇠
+        "form": (r["form"] if "form" in r.keys() else None) or None,
     }
 
 

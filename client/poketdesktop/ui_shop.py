@@ -45,7 +45,7 @@ MAX_QTY = 999                 # 서버 item_routes.MAX_QTY 와 같은 값
 PANEL = "#101623"             # 액자 안 (ui_box 상세와 같은 색)
 
 # (분류 키, 보여줄 이름)
-CATS = [("all", "전체"), ("held", "지닌 도구"), ("zcrystal", "Z크리스탈"), ("ball", "몬스터볼"),
+CATS = [("all", "전체"), ("held", "지닌 도구"), ("form", "폼 도구"), ("zcrystal", "Z크리스탈"), ("ball", "몬스터볼"),
         ("stone", "진화의돌"), ("ev", "노력치"), ("iv", "개체값"),
         ("misc", "기타")]
 
@@ -152,6 +152,10 @@ def effect_text(it):
         # {"kind": "held"} 뿐이라 이게 설명의 전부다.
         return (it or {}).get("desc") or "포켓몬에게 지니게 하면 배틀에서 효과가 난다"
 
+    if kind == "form":
+        # 폼 도구 (1.13). 누가 어떤 모습이 되는지는 덧말(effect_note)에 적는다.
+        return (it or {}).get("desc") or "포켓몬에게 쓰면 모습이 바뀐다 (가방에서 쓴다)"
+
     if kind == "shiny":
         # 1.4.0 에서 이 칸이 빠져 있어서 상점 탭이 "아직 쓸 수 없는 물건" 이라고
         # 적었다. 가방에서는 멀쩡히 쓰이는데 막아 둔 것처럼 보였다.
@@ -169,6 +173,10 @@ def effect_note(it):
         # 한 줄을 그대로 쓴다("밤에 잘 통한다" 같은).
         return it["note"]
     note = eff.get("note") or ""
+    if kind == "form":
+        # 누가 어떤 모습이 되는지 (가방 설명과 같은 줄)
+        from . import ui_bag
+        return ui_bag.form_note(it or {})
     if (it or {}).get("heldNote"):
         # 지녔을 때 실제로 몇 배인지 (본가 설명에는 숫자가 없다)
         return it["heldNote"]

@@ -9,7 +9,8 @@
      가까운 띠의 사람을 고른다.
   2. 띠는 ±50 -> ±100 -> ±200 -> 전체로 넓어진다. 전체까지 가므로 받을 수 있는 사람이
      하나라도 있으면 붙는다 (전력 띠는 이제 사람을 떨어뜨리지 않는다).
-  3. 띠 안에서는 전력이 가까운 몇 명 중에서 고른다.
+  3. **띠 안에서도 RP 가 가장 가까운 사람부터** (10/17 제보 "4·10점 차이도 있는데 50점 차이와 붙는다").
+     하루 안에 만난 사람은 RP 30점 더 먼 것으로 친다. RP 가 거의 같으면(10점 안) 전력이 가까운 몇 명 중에서.
   4. 그대로인 것: 받는 쪽 마릿수, 방금 붙은 사람·차단한 사람 제외.
   5. **RP 띠가 배치보다 먼저다** (10/17). 같은 띠 안에서만 배치를 마친 사람끼리 먼저 붙인다 -
      배치가 같은 사람을 찾느라 RP 가 먼 상대를 고르지 않는다.
@@ -115,16 +116,40 @@ def main():
     chk("전력이 25% 넘게 달라도", gap > pvp.POWER_BANDS[-1], gap)
     chk("RP 가 같으면 붙는다", set(picks(me, 6)) == {weak}, set(picks(me, 6)))
 
-    print("\n=== 띠 안에서는 전력이 가까운 사람 ===")
+    print("\n=== 띠 안에서도 RP 가 가장 가까운 사람 (10/17 제보) ===")
+    wipe()
+    me = mkuser("mm_me", rp=100)
+    r4, r10, r48 = mkuser("mm_r4", rp=104), mkuser("mm_r10", rp=110), mkuser("mm_r48", rp=148)
+    got = set(picks(me, 60))
+    chk("4점 · 10점 차이가 있으면 48점 차이와는 안 붙는다", r48 not in got, got)
+    chk("  RP 가 거의 같은 둘(10점 안)은 번갈아 나온다 (같은 얼굴만 나오지 않게)", got == {r4, r10}, got)
+
+    def met_hours_ago(foe, hours):
+        at = pvp._iso(pvp._now() - __import__("datetime").timedelta(hours=hours))
+        db.run("INSERT INTO battle_record (user_id, foe_id, foe_name, kind, result, ended_at, started)"
+               " VALUES (?,?,?,?,?,?,1)", (me, foe, "x", "random", "win", at))
+    met_hours_ago(r4, 5)
+    got = set(picks(me, 40))
+    chk("오늘 만난 사람은 30점 더 먼 것으로 친다 (4점이 34점이 되어 10점 차이를 고른다)", got == {r10}, got)
+    met_hours_ago(r10, 5)
+    got = set(picks(me, 40))
+    chk("  둘 다 만났어도 48점 차이보다는 가깝다 (34 · 40 < 48)", got == {r4, r10}, got)
+    db.run("DELETE FROM battle_record")
+    met_hours_ago(r4, 1)                                  # 3시간 안에 붙은 사람은 아예 안 고른다 (그대로)
+    got = set(picks(me, 40))
+    chk("  3시간 안에 붙은 사람은 RP 가 가까워도 안 고른다", got == {r10}, got)
+    db.run("DELETE FROM battle_record")
+
+    print("\n=== RP 가 같으면 전력이 가까운 사람 ===")
     wipe()
     me = mkuser("mm_me", level=50, rp=100)
-    # 피카츄(320) 와 종족값이 가까운 셋 (전력 차 2~7%) / 먼 넷 (전력 차 50% 쯤) - 모두 Lv.50
-    close = [mkuser("mm_c%d" % i, species=sp, rp=100 + 5 * i)
+    # 피카츄(320) 와 종족값이 가까운 셋 (전력 차 2~7%) / 먼 넷 (전력 차 50% 쯤) - 모두 Lv.50, RP 도 같다
+    close = [mkuser("mm_c%d" % i, species=sp, rp=100)
              for i, sp in enumerate(("KRABBY", "CLEFAIRY", "MANKEY"), 1)]
     loose = [mkuser("mm_l%d" % i, species=sp, rp=100)
              for i, sp in enumerate(("CATERPIE", "WEEDLE", "MAGIKARP", "SUNKERN"))]
     got = set(picks(me, 60))
-    chk("같은 띠에 여럿이면 전력이 가까운 셋 중에서만", got == set(close), (got, close))
+    chk("RP 가 같은 사람이 여럿이면 전력이 가까운 셋 중에서만", got == set(close), (got, close))
     chk("늘 한 사람만 나오지는 않는다", len(got) >= 2, got)
 
     print("\n=== 그대로인 규칙 ===")

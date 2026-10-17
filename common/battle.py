@@ -118,6 +118,11 @@ def stage_mult(stage, kind="normal"):
     return (2.0 + s) / 2.0 if s >= 0 else 2.0 / (2.0 - s)
 
 
+# 폼이 되면 이 판 안에서만 바뀌는 기술 (1.13). 검왕·방패왕은 아이언헤드가 전용 기술이 된다.
+FORM_MOVES = {"ZACIAN_CROWNED": {"IRONHEAD": "BEHEMOTHBLADE"},
+              "ZAMAZENTA_CROWNED": {"IRONHEAD": "BEHEMOTHBASH"}}
+
+
 class Fighter(object):
     """배틀에 나와 있는 포켓몬 한 마리."""
 
@@ -137,6 +142,7 @@ class Fighter(object):
         self.status = status
         self.sleep_turns = 0
         self.moves = list(mon.get("moves") or [])
+        self.alias = {}
         self.pp = dict(pp) if pp else {}
         for m in self.moves:
             md = dex.move(m)
@@ -157,6 +163,20 @@ class Fighter(object):
         # 특성 (common/abilities.py). **ability_on 이 True 인 판에서만** 돈다.
         # 야생·PvP 는 끈다 - 켜면 예전 판의 결과가 달라진다.
         self.ability = "".join(c for c in str(mon.get("ability") or "").upper() if c.isalnum()) or None
+        # 폼 (1.13, 도감 forms): 도구를 써서 바꾼 폼(쉐이미 스카이 …)·지니면 바뀌는 폼(백금옥의
+        # 기라티나, 가면을 쓴 오거폰 …). 종족값은 dex.stats_of 가 이미 폼으로 셌다. 여기서는 타입·특성·
+        # 도트 번호(species)를 그 폼으로 입힌다. 이름은 원래 종 그대로다 (본가와 같다).
+        form = dex.form_for(mon) if hasattr(dex, "form_for") else None
+        if form:
+            self.species = form
+            ab = dex.form_ability(mon, form)
+            self.ability = "".join(c for c in str(ab or "").upper() if c.isalnum()) or self.ability
+            for old, new in (FORM_MOVES.get(form["internal"]) or {}).items():
+                # 검왕 자시안의 거수참, 방패왕 자마젠타의 거수탄 - 이 판 안에서만 (메가와 같다)
+                if old in self.moves and dex.move(new):
+                    self.moves[self.moves.index(old)] = new
+                    self.pp.setdefault(new, self.pp.get(old, (dex.move(new) or {}).get("pp", 5)))
+                    self.alias[old] = new
         self.ability_on = False
         self.ab = {}                 # 이 판에서 특성이 기억할 것 (타오르는불꽃, 탈 ...)
         self.types_override = None   # 변환자재가 바꾼 타입
@@ -180,7 +200,7 @@ class Fighter(object):
         self.mega = None
         # 메가진화하면서 바뀐 기술 {원래 열쇠: 바뀐 열쇠} (attackfx.MEGA_MOVES). 메가진화하는 그 턴에는
         # 고른 기술이 아직 원래 열쇠로 넘어오므로, 쓰는 순간에 이것을 보고 바꿔 쓴다 (Battle._use).
-        self.alias = {}
+        # (폼의 기술 바꾸기가 먼저 쓰므로 __init__ 앞쪽에서 이미 만들었다.)
         # 킬가르도의 블레이드폼 능력치 (처음 쓸 때 센다). 지금 폼은 cond["blade"] -
         # 물러나면 cond 가 비워져 실드폼으로 돌아간다 (본가와 같다).
         self._blade = None
@@ -635,8 +655,8 @@ def type_eff(dex, move, mtype, user, target, abil):
         if "FLYING" in ttypes and (SM.forced_grounded(target) or mk == "THOUSANDARROWS"):
             ttypes = [t for t in ttypes if t != "FLYING"]
         elif mk != "THOUSANDARROWS" and not SM.forced_grounded(target) \
-                and (target.cond.get("magnetrise") or target.cond.get("telekinesis")):
-            return 0.0
+                and (target.cond.get("magnetrise") or target.cond.get("telekinesis") or H.floating(target)):
+            return 0.0                           # 전자부유·텔레키네시스·풍선(1.13)
     if mk in AF.HITS_FAIRY and mtype == "DRAGON" and "FAIRY" in ttypes:
         ttypes = [t for t in ttypes if t != "FAIRY"]     # 니힐레이저: 페어리에게도 맞는다 (나머지 타입만 본다)
     eff = effectiveness(dex, mtype, ttypes)
@@ -650,6 +670,10 @@ def type_eff(dex, move, mtype, user, target, abil):
         eff *= 2.0
     if MC.key(move) == "FREEZEDRY" and "WATER" in ttypes:
         eff *= 4.0                               # 프리즈드라이: 물에게 굉장 (얼음->물 0.5 를 2 로)
+    if eff == 0 and getattr(target, "held", None) and H.ring_target(target):
+        # 겨냥표적 (1.13): 타입 때문에 안 맞던 기술이 맞는다 - 무효인 타입만 빼고 다시 센다
+        row = (dex.types.get(mtype) or {}).get("eff") or {}
+        eff = effectiveness(dex, mtype, [t for t in ttypes if row.get(t, 1.0) != 0])
     return eff
 
 
@@ -783,6 +807,9 @@ class Battle(object):
         return self.me if who == "me" else self.foe
 
     def weather(self):
+        strong = A.strong_weather(self.me) if self.me is not None else None
+        if strong:
+            return strong                     # 시작의바다·끝의대지 (원시회귀, 1.13)
         return None if getattr(self.field, "suppressed", False) else self.field.weather
 
     def grounded(self, f):
@@ -1160,6 +1187,27 @@ class Battle(object):
                 # 메가는 새로 나온 것이 아니다 - 가속(메가블레이범)은 그 턴 끝에도 붙는다.
                 f.ab.pop("fresh", None)
 
+    # ---------------- 원시회귀 (1.13) ----------------
+    def primal(self, f, who, ev):
+        """주홍구슬을 지닌 그란돈·쪽빛구슬을 지닌 가이오가가 나오면 원시회귀한다 (나올 때마다, 판 동안).
+
+        메가진화의 틀(mega_evolve)을 그대로 쓴다 - 종족값·타입·특성이 바뀌고 체력은 그대로다. 메가가 아니라
+        한 판 한 번(mega_done)에 안 든다. 그 판에서 이미 바뀌었으면(f.mega) 다시 안 한다.
+        """
+        if f.mega or not f.alive() or not f._held:
+            return
+        for form in (getattr(self.dex, "forms_of", None) or {}).get(f.mon.get("species")) or []:
+            if form.get("formKind") == "primal" and f._held in (form.get("items") or ()):
+                before = f.name
+                f.mega_evolve(form)
+                ev.append({"t": "mega", "who": who, "name": before, "to": form.get("formKr") or form["kr"],
+                           "newName": f.name, "species": form["internal"], "num": form["num"],
+                           "types": list(form.get("types") or []), "label": "원시회귀!",
+                           "ability": f.ability, "abilityKr": self.dex.ability_name(f.ability),
+                           "text": "%s 의 원시회귀! 원래의 모습을 되찾았다!" % before})
+                f.ab["shown"] = True
+                return
+
     # ---------------- Z기술 (시즌 4) ----------------
     def z_moves(self, who):
         """이 쪽이 지금 Z기술로 쓸 수 있는 기술 열쇠들. 없으면 빈 목록.
@@ -1369,7 +1417,7 @@ class Battle(object):
                 ev.append({"t": "msg", "who": who, "text": "%s 은(는) 방어를 뚫고 공격했다!" % user.name})
             else:
                 ev.append({"t": "msg", "who": tw, "text": "%s 은(는) 공격으로부터 몸을 지켰다!" % target.name})
-                if A.is_contact(move, user) and user.alive():
+                if H.contact_hurts(move, user) and user.alive():      # 방호패드면 니들가드도 안 아프다 (1.13)
                     if guard == "SPIKYSHIELD" and not A.has(user, "MAGICGUARD"):
                         SM._chip(user, who, user.maxhp / 8.0, ev, "%s 은(는) 니들가드에 찔렸다!" % user.name)
                     elif guard == "KINGSSHIELD":
@@ -1471,13 +1519,19 @@ class Battle(object):
         if MC.attacks(move) and not blade:
             user.cond["blade"] = True
             A.pop(self, user, who, ev)
-            ev.append({"t": "msg", "who": who, "form": "blade",
-                       "text": "%s 은(는) 블레이드폼이 되었다!" % user.name})
+            e = {"t": "msg", "who": who, "form": "blade", "text": "%s 은(는) 블레이드폼이 되었다!" % user.name}
+            look = A.form_look(self, user, "blade")
+            if look:
+                e["look"], e["label"] = look, "블레이드폼!"     # 도트도 바뀐다 (1.13)
+            ev.append(e)
         elif k == "KINGSSHIELD" and blade:
             user.cond.pop("blade", None)
             A.pop(self, user, who, ev)
-            ev.append({"t": "msg", "who": who, "form": "shield",
-                       "text": "%s 은(는) 실드폼이 되었다!" % user.name})
+            e = {"t": "msg", "who": who, "form": "shield", "text": "%s 은(는) 실드폼이 되었다!" % user.name}
+            look = A.form_look(self, user, None)
+            if look:
+                e["look"], e["label"] = look, "실드폼!"
+            ev.append(e)
 
     def _use(self, who, user, target, key, ev, called=False, instructed=False, bounced=False):
         """기술 하나를 쓴다. 실제 일은 _do_use 가 하고, 여기서는 **쓰고 난 뒤**를 본다.
@@ -1522,6 +1576,11 @@ class Battle(object):
                 if key not in used_moves:
                     user.cond["usedMoves"] = used_moves + [key]
             self._zcur = None                 # Z기술은 이 한 수로 끝난다
+            if user.held and mk and not self.over \
+                    and any(e.get("t") == "move" and e.get("who") == who for e in ev[n0:]):
+                H.after_move(self, user, who, self.move_of(used), ev)     # 목스프레이 (1.13)
+            if (self.me.held or self.foe.held) and not self.over:
+                H.settle(self, ev)            # 멘탈허브·시몬열매·빨간실·탈출 도구 (1.13)
         return out
 
     def _do_use(self, who, user, target, key, ev, called=False, instructed=False, bounced=False):
@@ -1655,6 +1714,14 @@ class Battle(object):
             if A.blocks(self, user, who, target, tw, move, key, ev):
                 return
 
+        # ---- 강한 비에는 불꽃, 강한 햇살에는 물 공격이 사라진다 (원시회귀, 1.13) ----
+        if abil and MC.attacks(move) and key != STRUGGLE:
+            strong = A.strong_weather(user)
+            gone = {"rain": "FIRE", "sun": "WATER"}.get(strong)
+            if gone and (A.move_type(user, move) or move.get("type")) == gone:
+                ev.append({"t": "msg", "who": who, "text": "강한 비 때문에 불꽃 공격이 사라졌다!" if gone == "FIRE"
+                           else "강한 햇살 때문에 물 공격이 증발했다!"})
+                return
         # ---- 조건이 안 맞으면 실패한다 (꿈먹기·기습·힘껏펀치·비장의무기 ...) ----
         if not bounced and AF.cant_use(self, k, move, who, user, target, tw, ev,
                                        prev_move=getattr(self, "_prev_move", None)):
@@ -1703,6 +1770,8 @@ class Battle(object):
             hit = accuracy_check(self.dex, move, user, target, self.rng)
         if not hit:
             ev.append({"t": "miss", "who": who, "text": "하지만 빗나갔다!"})
+            if user.held and k not in MC.OHKO:
+                H.on_miss(self, user, who, ev)          # 허탕보험 (1.13)
             return
         if k not in ("LOCKON", "MINDREADER"):
             user.cond.pop("lockon", None)             # 록온은 다음 기술 한 번에 쓰인다
@@ -1746,6 +1815,10 @@ class Battle(object):
                 times = len(members)
             elif hi > 1:
                 forced = A.hit_count(user, lo, hi) if abil else None
+                if k == "WATERSHURIKEN" and user.ab.get("ash"):
+                    forced = 3                                          # 지우개굴닌자 (1.13)
+                if not forced and user.held:
+                    forced = H.dice_hits(user, lo, hi, self.rng)       # 속임수주사위 (1.13)
                 if forced:
                     times = forced
                 else:
@@ -1762,6 +1835,8 @@ class Battle(object):
                     else AF.hit_power(k, move, i)             # 트리플킥·트리플악셀
                 if parental and i == 1:
                     hit_move = dict(hit_move, _pb=True)
+                if i == 0 and user.held in H.GEM:
+                    hit_move = H.before_damage(self, user, who, typed(hit_move, user, target), ev)   # 주얼 (1.13)
                 dmg, crit, eff = damage(self.dex, hit_move, user, target, self.rng)
                 if fixed_move and eff != 0 and dmg <= 0:
                     return self._fail(who, ev)       # 카운터로 돌려줄 것이 없다 ...
@@ -1809,6 +1884,8 @@ class Battle(object):
                     ev.append({"t": "msg", "text": "급소에 맞았다!"})
                 if abil:
                     A.after_hit(self, user, who, target, tw, move, dmg, eff, crit, hp_before, ev)
+                if target.held:
+                    H.on_each_hit(self, user, who, target, tw, move, hp_before - target.hp, ev)  # 울퉁불퉁멧·풍선
                 AF.on_hit_taken(self, target, tw, hp_before - target.hp, ev)   # 분노의주먹·분노
                 AF.beak_blast(self, who, user, target, tw, move, ev)
                 if hp_before > 0 and not target.alive():
@@ -1907,6 +1984,8 @@ class Battle(object):
         if abil:
             sec_mult = A.secondary_mult(user)
             sec_off, sec_shield = A.secondary_off(user, target)
+        cloak = target is not user and bool(target.held) and H.cloaked(target)    # 은밀망토 (1.13)
+        sec_shield = sec_shield or cloak
 
         # 능력 변화
         stats = move.get("stat") or []
@@ -1958,7 +2037,7 @@ class Battle(object):
 
         # 풀죽음
         fl = move.get("flinch") or 0
-        if abil and (sec_off or sec_shield or A.flinch_immune(user, target)):
+        if cloak or (abil and (sec_off or sec_shield or A.flinch_immune(user, target))):
             fl = 0
         elif abil:
             fl *= sec_mult
@@ -1967,7 +2046,8 @@ class Battle(object):
         if fl and target.alive() and not sub_hit and self.rng.uniform(0, 100) < fl:
             target.flinched = True
         if user.held:
-            H.flinch(self, user, target, move)          # 왕의징표석·예리한이빨
+            if not cloak:
+                H.flinch(self, user, target, move)      # 왕의징표석·예리한이빨 (은밀망토면 안 걸린다)
             H.note_move(user, key)                      # 구애 잠금·메트로놈
 
         if not called:
@@ -2249,6 +2329,9 @@ class Battle(object):
                 and self.field.side(who).get("mist") and not A.has(source, "INFILTRATOR"):
             ev.append({"t": "msg", "who": who, "text": "%s 은(는) 흰안개에 보호받고 있다!" % f.name})
             return
+        if change < 0 and f.held and H.clear_amulet(f, source):
+            ev.append({"t": "msg", "who": who, "text": "%s 은(는) 클리어참 덕분에 능력이 떨어지지 않았다!" % f.name})
+            return                                   # 클리어참 (1.13)
         if f.ability_on:
             change, blocked = A.adjust_stat_change(self, f, stat, change, source, who, ev)
             if blocked or not change:
@@ -2271,9 +2354,12 @@ class Battle(object):
                    "text": "%s 의 %s 이(가) %s!"
                            % (f.name, STAT_KR.get(stat, stat), text)})
         if change < 0 and f.held:
-            H.on_stat_drop(self, f, who, ev)            # 하양허브
+            H.on_stat_drop(self, f, who, ev)            # 하양허브·탈출팩
         if change < 0 and f.ability_on:
             A.after_drop(self, f, who, source, ev)      # 오기·승기
+        rose = f.stages[stat] - before
+        if rose > 0 and getattr(f.rival, "held", None):
+            H.on_foe_boost(self, f.rival, "foe" if who == "me" else "me", stat, rose, ev)   # 흉내허브 (1.13)
 
     def status_kr(self, ail):
         return STATUS_KR.get(ail, ail)
@@ -2381,6 +2467,8 @@ class Battle(object):
         AF.end_turn(self, ev, sides, field)         # 소금절이·시럽봄·미래예지
         SM.end_turn_post(self, ev, sides, field)
         self._check_faint(ev)
+        if (self.me.held or self.foe.held) and not self.over:
+            H.settle(self, ev)                      # 멘탈허브·시몬열매·빨간실·탈출 도구 (1.13)
 
     def _drain_seed(self, f, who, ev):
         """씨뿌리기: 최대 체력의 1/8 을 빼앗아 맞은편에 준다.

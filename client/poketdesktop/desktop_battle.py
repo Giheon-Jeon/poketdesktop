@@ -348,10 +348,12 @@ class DesktopBattle(object):
             # 그 모습으로 싸운다 (1.8.0). 끝나면 finish_cleanup 이 되돌린다.
             side = self.mine if who == "me" else self.foe
             if side:
-                return mega_fx.battle(self, side, ev.get("num"), done)
-        if t == "msg" and ev.get("transform") and src:
-            # 변신 (1.12.1): 상대의 모습으로 갈아입는다. 판이 끝나면 release 가 되돌린다
-            return mega_fx.transform(self, src, ev["transform"], done)
+                return mega_fx.battle(self, side, ev.get("num"), done, ev.get("label"))
+        if t == "msg" and (ev.get("transform") or ev.get("look")) and src:
+            # 변신 (1.12.1)·배틀 중 폼 (1.13, 달마모드·블레이드폼 …): 그 모습으로 갈아입는다.
+            # 판이 끝나면 release 가 되돌린다
+            return mega_fx.transform(self, src, ev.get("transform") or ev["look"], done,
+                                     None if ev.get("transform") else ev.get("label"))
         self.after(220, done)
 
     def turn_done(self, result):

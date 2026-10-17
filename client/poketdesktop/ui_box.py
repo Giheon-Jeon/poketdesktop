@@ -87,6 +87,14 @@ def _text_width(widget, text, font):
     return f.measure(text)
 
 
+def _species_of(dex, mon):
+    """줄·상세 칸에 그릴 종 자료. 폼(1.13)이면 그 폼의 것 - 타입·종족값이 다르다 (스카이폼 쉐이미는 풀/비행)."""
+    if not dex:
+        return None
+    key = mon.get("formKey")
+    return (key and dex.get("%s_%s" % (mon["species"], key))) or dex.get(mon["species"])
+
+
 def _row_sig(mon):
     """줄에 그려지는 값. 다시 불러왔을 때 이게 같으면 줄을 그대로 쓴다."""
     info = mon.get("info") or {}
@@ -94,7 +102,7 @@ def _row_sig(mon):
         e = mon.get("egg") or {}
         return ("egg", e.get("kind"), info.get("name"), bool(mon.get("onDesktop")),
                 box_filter.egg_progress(e))
-    return (mon.get("num"), mon.get("species"), info.get("name"),
+    return (mon.get("num"), mon.get("species"), mon.get("formKey"), info.get("name"),
             bool(mon.get("shiny")), mon.get("gender"), mon.get("level"),
             info.get("nature"), info.get("ivPercent"),
             bool(mon.get("onDesktop")), bool(mon.get("away")))
@@ -287,7 +295,7 @@ class Row(object):
             U.chip(self.types, EGG_KIND.get(kind, "알"), _egg_color(kind),
                    padx=6).pack(side="left")
         else:
-            sp = dex.get(mon["species"]) if dex else None
+            sp = _species_of(dex, mon)
             for i, t in enumerate((sp or {}).get("types", [])):
                 U.chip(self.types, dex.type_name(t), U.TYPE_COLOR.get(t, U.BG3),
                        padx=6).pack(side="left", padx=(0, 3))
@@ -2132,10 +2140,12 @@ class BoxWindow(object):
         self.d_gender.configure(text=g, fg=U.gender_color(m.get("gender")))
         self.d_lv.configure(text="Lv.%d" % m["level"])
 
-        sp = dex.get(m["species"]) if dex else None
+        sp = _species_of(dex, m)
         # 특성·성격은 아래 칸에 설명과 함께 따로 둔다. 여기 또 적으면
         # 같은 말이 두 번 나온다.
         bits = [(sp or {}).get("kind", "")]
+        if m.get("formKr"):
+            bits.append(m["formKr"])
         if m.get("shiny"):
             bits.append("★ 색이 다른 개체")
         self.d_sub.configure(text="  ·  ".join(x for x in bits if x.strip()))
@@ -2541,7 +2551,7 @@ class BoxWindow(object):
             n = fn(m) if fn else None
         except Exception:                                   # noqa: BLE001
             n = None
-        return n or m.get("num")
+        return n or m.get("formNum") or m.get("num")
 
     def refresh_look(self, pid=None):
         """바탕화면의 모습이 바뀌었다 (메가 모습으로 걷기를 켰다·껐다). 그 포켓몬을 보고 있으면 다시 그린다."""
@@ -2954,6 +2964,41 @@ def ask_text(parent, title, message, hint="", initial=""):
     return out.get("v")
 
 
+def ask_choice(parent, title, message, options):
+    """여럿 중 하나를 고른다 (1.13: 로토무카탈로그·운석의 모습). 고른 열쇠, 취소면 None.
+
+    options = [(열쇠, 글, 덧붙임 글 또는 None)]. 줄이 많으면 창을 키우지 않고 안쪽이 굴러간다.
+    """
+    win, f = _shell(parent, title, 380, 240)
+    out = {}
+    tk.Label(f, text=natural(message), bg=U.BG, fg=U.FG_DIM, font=U.FONT_S,
+             wraplength=320, justify="left").pack(anchor="w", pady=(0, 10))
+    # 취소 줄을 먼저 아래에 붙인다 - 굴러가는 칸이 창을 다 차지해도 잘리지 않게.
+    end = tk.Frame(f, bg=U.BG)
+    end.pack(side="bottom", fill="x", pady=(8, 0))
+    U.ghost_button(end, "취소", win.destroy, height=34).pack(side="right")
+    many = len(options) > 7
+    box, cv = scroll_body(f) if many else (f, None)
+
+    def pick(k):
+        out["v"] = k
+        win.destroy()
+    for key, label, sub in options:
+        row = tk.Frame(box, bg=U.BG)
+        row.pack(fill="x", pady=(0, 6))
+        if sub:
+            tk.Label(row, text=sub, bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS).pack(side="right", padx=(10, 0))
+        U.ghost_button(row, label, lambda k=key: pick(k), height=32).pack(side="left", fill="x", expand=True)
+    win.bind("<Escape>", lambda ev: win.destroy())
+    if many:
+        fit(win, hi=U.h(520), scroll=(cv, box))
+    else:
+        fit(win)
+    win.grab_set()
+    parent.wait_window(win)
+    return out.get("v")
+
+
 def confirm(parent, title, message, danger=True, ok_text="확인"):
     """예/아니오 확인.
 
@@ -3005,7 +3050,8 @@ def confirm_release(parent, app, mon):
     keep = {}
 
     def work():
-        return sprite_cache.ensure(app.api, mon.get("num"), T.skin(mon))
+        return (mon.get("formNum") and sprite_cache.ensure(app.api, mon["formNum"], T.skin(mon))) \
+            or sprite_cache.ensure(app.api, mon.get("num"), T.skin(mon))
 
     def done(path, err):
         if err or not path:

@@ -581,9 +581,11 @@ class LiveBattleWindow(Z.Resizable):
         if mon is None:
             return STEP_MS
         mon = dict(mon)
-        mon["num"] = ev["transform"]
+        mon["num"] = ev.get("transform") or ev["look"]
+        if "hp" in ev and ev.get("look"):
+            mon["hp"], mon["maxhp"] = ev["hp"], ev.get("maxhp", mon.get("maxhp"))   # 퍼펙트폼은 체력이 는다
         self.set_mon(who, mon)
-        self._banner(who, "변신!")
+        self._banner(who, "변신!" if ev.get("transform") else (ev.get("label") or "폼체인지!"))
         return STEP_MS + 300
 
     def _mega(self, ev):
@@ -607,7 +609,7 @@ class LiveBattleWindow(Z.Resizable):
 
         def swap():
             self.set_mon(who, mon)
-            self._banner(who, "메가진화!")
+            self._banner(who, ev.get("label") or "메가진화!")     # 원시회귀 (1.13)
         ui_mega.play_in(self, self._center(who), swap, size=Z.px(MON_H[who]) * 0.55)
 
     def _banner(self, who, text):
@@ -708,8 +710,8 @@ class LiveBattleWindow(Z.Resizable):
         if t == "mega":
             self._mega(ev)
             return None
-        if t == "msg" and ev.get("transform"):
-            return self._transform(ev)
+        if t == "msg" and (ev.get("transform") or ev.get("look")):
+            return self._transform(ev)             # 변신·배틀 중 폼 (1.13)
         if t == "zpower":                    # Z파워를 두른다 - 기술은 뒤따르는 move 가 그린다
             ui_gimmick.z_event(self, ev, size=Z.px(MON_H.get(who, 100)) * 0.55,
                                banner=lambda s: self._banner(who, s))

@@ -214,6 +214,39 @@ def main():
     chk("지도는 평소 색", plain != ui_gym.BOSS_FILL and gw.boss_sido() is None, plain)
     chk("'악당 출현' 단추가 없다", not gw.boss_btn.holder.winfo_ismapped())
 
+    print("\n=== 나타나기 전에 켜 둔 탭도 나타나면 안다 (2026-10-17 게시판 #252) ===")
+    import datetime
+    import time
+    from poketdesktop import ui_hub
+    kst = ui_gym.KST
+
+    def at(h, m):
+        return datetime.datetime(2026, 10, 18, h, m, tzinfo=kst)
+    w = ui_gym.boss_watch_in
+    chk("09:00 전이면 09:00 에 다시 본다", w({"active": False}, at(8, 30)) == 30 * 60 + 5, w({"active": False}, at(8, 30)))
+    chk("  09:00 ~ 12:05 에는 5분마다", w({"active": False}, at(9, 40)) == ui_gym.BOSS_POLL
+        and w({"active": False}, at(12, 3)) == ui_gym.BOSS_POLL)
+    chk("  12:05 가 지나면 안 본다 (그날은 안 나온다)", w({"active": False}, at(12, 10)) is None
+        and w({"active": False}, at(15, 0)) is None)
+    chk("  이미 나와 있으면 안 본다", w({"active": True}, at(9, 40)) is None)
+    chk("  서버가 오늘은 기간이 아니라고 하면 안 본다", w({"active": False, "event": False}, at(9, 40)) is None)
+    armed = []
+    real_arm, real_watch = gw._arm_reset, ui_gym.boss_watch_in
+    gw._arm_reset = lambda sec: (armed.append(sec), real_arm(sec))[1]
+    ui_gym.boss_watch_in = lambda boss, now=None: 300
+    gw.reload()
+    TG.pump(root, lambda: armed)
+    chk("안 나와 있으면 자정보다 먼저 다시 물어보게 걸어 둔다", armed and 300 <= armed[-1] <= 330, armed)
+    gw._arm_reset, ui_gym.boss_watch_in = real_arm, real_watch
+    n0 = gw._loaded_at
+    gw.on_shown()
+    root.update()
+    chk("탭을 다시 골라도 방금 불러온 것이면 그대로", gw._loaded_at == n0 and not gw._loading)
+    gw._loaded_at = time.time() - ui_gym.STALE_SEC - 5
+    ui_hub.HubWindow._shown(gw)                    # 허브가 이미 만든 탭을 다시 보여 줄 때 부르는 것
+    TG.pump(root, lambda: gw._loaded_at > time.time() - 5)
+    chk("  오래된 것이면 다시 불러온다", gw._loaded_at > time.time() - 5, gw._loaded_at)
+
     print("\n=== 나타났다 ===")
     api.on = True
     gw.reload()

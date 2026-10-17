@@ -319,6 +319,9 @@ def _sprite_fetch(num, shiny):
     sources = [("%s/%s" % (SPRITE_BASE, pat % (sub, num)), ext) for pat, ext in SPRITE_SOURCES]
     if SF.source(num):                                   # 납작한 쇼다운 도트 대신
         sources.insert(0, ("%s/%s" % (SPRITE_BASE, SF.source(num) % (sub, num)), ".gif"))
+    if num > 1025 and (dex().by_num.get(num) or {}).get("formOf"):
+        # 폼 (1.13). 움직이는 도트가 없는 폼(오거폰의 가면 …)은 일러스트 대신 정지 도트(96px)로 선다.
+        sources.insert(1, ("%s/%s%d.png" % (SPRITE_BASE, sub, num), ".png"))
     site_url, site_ext = SF.site(num, shiny)
     if site_url:
         # 레전드 Z-A 의 메가 폼 (1.9.1). PokeAPI 저장소에는 도트가 없어서 쇼다운
@@ -377,7 +380,7 @@ def sprite(num: int, shiny: bool = False):
     # 1~1025 에 더해 메가 폼 번호(10033~)도 받는다 (시즌 3). 도감에 있는
     # 번호만 - 아무 번호나 받으면 남의 서버에 헛걸음을 시킨다.
     mega = dex().by_num.get(num) if num > 1025 else None
-    if not (1 <= num <= 1025 or (mega and mega.get("mega"))):
+    if not (1 <= num <= 1025 or (mega and (mega.get("mega") or mega.get("formOf")))):   # 폼도 (1.13)
         raise HTTPException(404, "그런 도감 번호가 없습니다.")
     p, ext = _sprite_cached(num, shiny)
     if not p:
@@ -388,8 +391,8 @@ def sprite(num: int, shiny: bool = False):
             p, ext = _sprite_fetch(num, False)
     if not p and mega:
         # 새 메가(Z-A)는 도트가 아직 없을 수 있다. 원래 종 도트로 대신한다 -
-        # 모습은 안 바뀌어도 배틀은 이어져야 한다.
-        base = dex().get(mega.get("megaOf")) or {}
+        # 모습은 안 바뀌어도 배틀은 이어져야 한다. 폼도 같다 (1.13).
+        base = dex().get(mega.get("megaOf") or mega.get("formOf")) or {}
         if base.get("num"):
             return sprite(int(base["num"]), shiny)
     if not p:
@@ -903,7 +906,7 @@ def _mega_walk(num):
     if num <= 1025:
         return None
     m = dex().by_num.get(num) or {}
-    return m.get("walk") if m.get("mega") else None
+    return m.get("walk") if (m.get("mega") or m.get("formOf")) else None     # 폼도 (1.13)
 
 
 def _check_anim(num, name):
@@ -1177,6 +1180,8 @@ def me(ctx=Depends(current)):
         # 이걸 위해 폴링을 새로 두지 않는다 - 어차피 90초마다 도는 sync 가
         # 이 라우트를 부르므로 여기에 얹는다. 쿼리 한 번 는다.
         "pvpUnseen": pvp.unseen_count(uid),
+        # 오늘 랜덤 배틀을 몇 판 더 걸 수 있나 (1.13 - 트레이 메뉴의 '랜덤 배틀 (N판 남음)'). 같은 이유로 여기에 얹는다.
+        "fight": pvp.fight_left(uid),
         # 운영자가 넣어 둔 선물. **위에서 이미 지급했다** - 받았다는 것을
         # 알리려면 지급과 알림이 한 흐름이어야 한다. 대전 수와 같은
         # 이유로 폴링을 새로 두지 않고 여기에 얹는다.
@@ -1596,8 +1601,21 @@ def hold(pid: int, body: HoldIn, ctx=Depends(current)):
     msg = "%s에게 %s을(를) 지니게 했다." % (name, items.name_of(item))
     if cur:
         msg += " %s은(는) 가방에 넣었다." % items.name_of(cur)
-    return {"ok": True, "pokemon": _decorate(db.row_to_mon(_own(uid, pid))),
+    after = db.row_to_mon(_own(uid, pid))
+    msg += _form_note(db.row_to_mon(r), after, name)
+    return {"ok": True, "pokemon": _decorate(after),
             "bag": items.bag_get(uid), "message": korean.natural(msg)}
+
+
+def _form_note(before, after, name):
+    """지니거나 벗겨서 모습이 바뀌었으면 한 문장 (기라티나 오리진폼·가면을 쓴 오거폰 …, 1.13)."""
+    d = dex()
+    a, b = d.form_for(before), d.form_for(after)
+    if (a or {}).get("internal") == (b or {}).get("internal"):
+        return ""
+    if b:
+        return " %s은(는) %s(이)가 되었다!" % (name, b.get("formKr") or b["internal"])
+    return " %s은(는) 원래 모습으로 돌아왔다!" % name
 
 
 @app.delete("/api/pokemon/{pid}/hold")
@@ -1616,10 +1634,11 @@ def unhold(pid: int, ctx=Depends(current)):
     items.bag_add(uid, cur, 1)
     db.run("UPDATE pokemon SET held=NULL WHERE id=?", (pid,))
     name = r["nickname"] or dex().name(r["species"])
-    return {"ok": True, "pokemon": _decorate(db.row_to_mon(_own(uid, pid))),
+    after = db.row_to_mon(_own(uid, pid))
+    return {"ok": True, "pokemon": _decorate(after),
             "bag": items.bag_get(uid),
             "message": korean.natural("%s의 %s을(를) 가방에 넣었다."
-                                      % (name, items.name_of(cur)))}
+                                      % (name, items.name_of(cur)) + _form_note(db.row_to_mon(r), after, name))}
 
 
 @app.post("/api/pokemon/{pid}/exp")

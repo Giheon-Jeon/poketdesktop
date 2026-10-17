@@ -49,16 +49,17 @@ STAT_ROWS = [("hp", "HP"), ("atk", "공격"), ("def", "방어"),
 STAT_KR = dict(STAT_ROWS)
 
 # 분류 — 실제로 쓸 수 있는 것부터 위로 올린다
-CAT_ORDER = ["megastone", "zcrystal", "held", "stone", "ev", "iv", "misc", "ball"]
-CAT_KR = {"megastone": "메가스톤", "zcrystal": "Z크리스탈", "held": "지닌 도구", "stone": "진화의 돌",
-          "ev": "노력치", "iv": "단련", "misc": "기타", "ball": "볼"}
-CAT_COLOR = {"megastone": "#a98bff", "zcrystal": "#ffd23c", "held": U.ACCENT, "stone": U.PINK,
-             "ev": U.GOOD, "iv": U.SHINY, "misc": U.INFO, "ball": U.RED}
+CAT_ORDER = ["megastone", "zcrystal", "form", "held", "stone", "ev", "iv", "misc", "ball"]
+CAT_KR = {"megastone": "메가스톤", "zcrystal": "Z크리스탈", "form": "폼 도구", "held": "지닌 도구",
+          "stone": "진화의 돌", "ev": "노력치", "iv": "단련", "misc": "기타", "ball": "볼"}
+CAT_COLOR = {"megastone": "#a98bff", "zcrystal": "#ffd23c", "form": "#5fd3c6", "held": U.ACCENT,
+             "stone": U.PINK, "ev": U.GOOD, "iv": U.SHINY, "misc": U.INFO, "ball": U.RED}
 
 # /api/bag/use 가 받아주는 효과. 나머지(볼, 파는 물건)는 여기서 쓸 수 없다.
 # "held" 는 use 가 아니라 /api/pokemon/{id}/hold 로 간다 - 대상을 고르는
 # 흐름은 같아서 여기서 같이 다룬다.
-USABLE = ("ev", "iv", "level", "stone", "noevolve", "held", "shiny", "ticket")
+# "form" (1.13) 은 폼 도구 - 고르는 도구(로토무카탈로그·운석)는 쓰기 전에 모습을 한 번 더 묻는다.
+USABLE = ("ev", "iv", "level", "stone", "noevolve", "held", "shiny", "ticket", "form")
 # **대상 포켓몬이 없는 도구.** 고를 것이 없으니 목록을 띄우지 않고 바로 쓴다.
 NO_TARGET = ("ticket",)
 
@@ -89,18 +90,27 @@ def fetch_shop(api):
     return api._call("GET", "/api/shop")
 
 
-def use_item(api, item_id, pid, stat, hour):
+def use_item(api, item_id, pid, stat, hour, form=""):
     """도구를 쓴다. 시각(hour)은 **이 PC 기준**으로 반드시 같이 보낸다.
 
     서버는 도커 안에서 UTC 로 돌기 때문에 사용자의 밤낮을 스스로 알 수 없다.
     (이브이의 밤 진화처럼 시각을 보는 조건이 있다.)
+    form 은 폼 도구(1.13)에서만 - 고른 모습.
     """
     fn = getattr(api, "use_item", None)
-    if fn is not None and _takes(fn, "hour"):
+    if fn is not None and _takes(fn, "hour") and (_takes(fn, "form") or not form):
+        if form:
+            return fn(item_id, pid, stat or "", hour=hour, form=form)
         return fn(item_id, pid, stat or "", hour=hour)
-    return api._call("POST", "/api/bag/use",
-                     {"item": item_id, "pokemon": pid, "stat": stat or "",
-                      "hour": hour})
+    body = {"item": item_id, "pokemon": pid, "stat": stat or "", "hour": hour}
+    if form:
+        body["form"] = form
+    return api._call("POST", "/api/bag/use", body)
+
+
+def form_targets(item, mon):
+    """이 폼 도구가 이 포켓몬에게 해 줄 수 있는 모습들 (서버가 도구마다 실어 보낸 forms 중 그 종의 것)."""
+    return [t for t in (item.get("forms") or []) if t.get("of") == (mon or {}).get("species")]
 
 
 # ---------------------------------------------------------------- 설명 만들기
@@ -160,6 +170,8 @@ def item_desc(item):
         if item.get("heldNote"):
             out += "\n\n" + item["heldNote"]
         return out
+    if kind == "form":
+        return form_desc(item)
     if kind == "ticket":
         out = item.get("desc") or "쓰면 확률로 알을 받는다."
         pct = int(round(float(eff.get("chance") or 0) * 100))
@@ -171,6 +183,31 @@ def item_desc(item):
     if kind == "sell":
         return "쓸 데는 없지만 상점에 팔면 값을 쳐준다."
     return "아직 쓸 수 없는 도구다."
+
+
+def form_desc(item):
+    """폼 도구 설명: 본가 설명 + 누가 어떤 모습이 되는지 + 쓰면 어떻게 되는지."""
+    return (item.get("desc") or "포켓몬에게 쓰면 모습이 바뀐다.") + "\n\n" + form_note(item)
+
+
+def form_note(item):
+    """폼 도구의 덧말: 누가 어떤 모습이 되는지 + 쓰면 어떻게 되는지 (상점도 이것을 쓴다)."""
+    eff = item.get("effect") or {}
+    out = ""
+    tg = item.get("forms") or []
+    by = {}
+    for t in tg:
+        by.setdefault(t.get("ofKr"), []).append(t.get("formKr"))
+    lines = ["%s → %s" % (who, " · ".join(fk)) for who, fk in by.items()]
+    if lines:
+        out += "\n".join(lines) + "\n\n"
+    if eff.get("consume"):
+        out += "쓰면 없어진다."
+    elif len(tg) > 1 and len(set(t.get("of") for t in tg)) == 1:
+        out += "쓸 때 모습을 고른다. '원래 모습'을 고르면 되돌아온다. 도구는 없어지지 않는다."
+    else:
+        out += "한 번 더 쓰면 원래 모습으로 돌아온다. 도구는 없어지지 않는다."
+    return out
 
 
 def target_hint(item):
@@ -190,6 +227,8 @@ def target_hint(item):
         return "이미 이로치인 포켓몬에게는 못 쓴다"
     if kind == "held":
         return "한 마리에 하나. 이미 지닌 것은 가방으로 돌아온다"
+    if kind == "form":
+        return "이 도구가 통하는 포켓몬을 밝게 표시했다"
     return ""
 
 
@@ -723,7 +762,9 @@ class BagWindow(object):
             # 칸을 넓히지는 않는다 - 이름과 레벨 자리가 옮겨 간다.
             thumbs = {}
             for m in mons:
-                path = sprite_cache.ensure(api, m.get("num"), T.skin(m))
+                # 폼(1.13)이면 그 폼의 그림. 못 받으면 원래 모습으로.
+                path = (m.get("formNum") and sprite_cache.ensure(api, m["formNum"], T.skin(m))) \
+                    or sprite_cache.ensure(api, m.get("num"), T.skin(m))
                 if not path:
                     continue
                 try:
@@ -1027,7 +1068,29 @@ class BagWindow(object):
                 return False, True, "이미 이로치", U.FG_FAINT
             return False, False, "이로치로 바꾸기", U.SHINY
 
+        if kind == "form":
+            return self._form_state(it, mon)
+
         return False, True, "쓸 수 없다", U.FG_FAINT
+
+    @staticmethod
+    def _form_state(it, mon):
+        """폼 도구 (1.13). 통하는 종만 밝히고, 지금 모습을 줄 끝에 적는다. 나머지는 막는다."""
+        tg = form_targets(it, mon)
+        if not tg:
+            return False, True, "", U.FG_FAINT
+        cur = mon.get("form")
+        if (it.get("effect") or {}).get("consume"):
+            # 꽃꿀: 그 모습으로만 바꾼다 (다홍꿀은 원래 모습으로)
+            if (tg[0].get("form") or None) == (cur or None):
+                return False, True, "이미 그 모습", U.FG_FAINT
+            return True, False, "→ %s" % tg[0].get("formKr"), U.GOOD
+        if len(tg) == 1:
+            if cur == tg[0].get("form"):
+                return True, False, "%s · 원래 모습으로" % tg[0].get("formKr"), U.PINK
+            return True, False, "→ %s" % tg[0].get("formKr"), U.GOOD
+        now = next((t.get("formKr") for t in tg if t.get("form") == cur), None) if cur else None
+        return True, False, "지금: %s" % (now or "원래 모습"), U.GOOD
 
     def pick_mon(self, pid, quiet=False):
         # 줄이 아직 안 만들어졌을 수 있어서 데이터(self._states)로 본다.
@@ -1240,6 +1303,12 @@ class BagWindow(object):
                     "되돌릴 수 없습니다." % name, danger=False, ok_text="먹이기"):
                 return
 
+        form = ""
+        if (it.get("effect") or {}).get("kind") == "form":
+            form = self._ask_form(it, mon)
+            if form is None:
+                return
+
         api = self.app.api
         item_id, pid, stat = it["id"], mon["id"], self.stat or ""
         # 낮/밤을 보는 조건이 있어서 이 PC 의 시각을 같이 보낸다.
@@ -1253,7 +1322,7 @@ class BagWindow(object):
             if held:
                 # 지니는 건 '쓰는' 게 아니다. 가방에서 빠져 포켓몬에게 간다.
                 return api.hold(pid, item_id)
-            return use_item(api, item_id, pid, stat, hour)
+            return use_item(api, item_id, pid, stat, hour, form=form)
 
         def done(r, err):
             if not self.alive:
@@ -1274,6 +1343,24 @@ class BagWindow(object):
                 else:
                     announce_evolve(self.win, self.app, info)
         U.run_async(self.root, work, done)
+
+    def _ask_form(self, it, mon):
+        """폼 도구를 쓰기 전에 물을 것. 고른 모습의 열쇠('' = 원래 모습), 그만두면 None.
+
+        · 고르는 도구 (로토무카탈로그·운석): 바뀔 모습을 고른다. '원래 모습' 도 있다.
+        · 나머지 (켜고 끄기·꽃꿀): 묻지 않는다.
+        """
+        tg = form_targets(it, mon)
+        if len(tg) < 2:
+            return ""                           # 묻지 않는다 (못 쓰는 대상이면 서버가 왜인지 말해 준다)
+        name = (mon.get("info") or {}).get("name") or "이 포켓몬"
+        cur = mon.get("form") or ""
+        opts = [(t["form"], t.get("formKr") or t["form"], None) for t in tg if t.get("form") != cur]
+        if cur:
+            opts.append(("", "원래 모습", None))
+        now = next((t.get("formKr") for t in tg if t.get("form") == cur), None) if cur else None
+        return ui_box.ask_choice(self.win, it["kr"],
+                                 "%s의 모습을 고르세요. (지금: %s)" % (name, now or "원래 모습"), opts)
 
     def _use_no_target(self, it):
         """대상이 없는 도구(뽑기권). 포켓몬을 안 고르고 바로 쓴다."""

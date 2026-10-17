@@ -99,9 +99,6 @@ def main():
     chk("조직마다 간부 셋을 채울 수 있다", all(len(t["pool"]) + (1 if t["boss"] else 0) >= 3 for t in teams))
     chk("간부는 전부 관장 자료에 있는 트레이너", all(gym.trainer(i) for t in teams
                                        for i in t["pool"] + ([t["boss"]] if t["boss"] else [])))
-    legends = sorted(set(s for t in teams for s in t["legends"]))
-    chk("만나는 전설은 전부 전설의 알에서 나올 수 있는 종", all(s in eggs.pool("legendary") for s in legends),
-        [s for s in legends if s not in eggs.pool("legendary")])
     chk("시·도 열여섯 곳", len(boss.sidos()) == 16 and boss.sidos()["11"] == "서울특별시", len(boss.sidos()))
 
     print("\n=== 날짜로 정해진다 ===")
@@ -119,21 +116,48 @@ def main():
     chk("늘 셋이 선다", all(len(p["members"]) == 3 and len(set(p["members"])) == 3 for p in plans))
     chk("보스가 있는 조직은 보스가 마지막에 선다",
         all(p["members"][-1] == p["team"]["boss"] for p in plans if p["team"]["boss"]))
-    chk("전설은 그 조직의 것", all(p["legend"] in p["team"]["legends"] for p in plans))
+
+    print("\n=== 전설은 사람마다 (2026-10-17 사용자 결정, 10/18 부터) ===")
+    pool = eggs.pool("legendary")
+    first = [boss.legend_of("2026-10-17", u) for u in range(1, 51)]
+    chk("10/17 은 예전처럼 모두 같다 (미라이돈)", set(first) == {"MIRAIDON"}
+        and boss.team_legend("2026-10-17") == "MIRAIDON", set(first))
+    chk("  사람마다는 10/18 부터", boss.PER_USER_FROM == "2026-10-18")
+    days = [x for x in days if x >= boss.PER_USER_FROM]
+    same_day = [boss.legend_of(days[0], u) for u in range(1, 201)]
+    chk("같은 날이라도 사람마다 다르다 (200명에 %d종)" % len(set(same_day)), len(set(same_day)) >= 40,
+        len(set(same_day)))
+    chk("  같은 날 같은 사람은 언제 물어도 같다", all(boss.legend_of(days[0], u) == same_day[u - 1]
+                                          for u in range(1, 201)))
+    days = [(datetime.date(2026, 10, 17) + datetime.timedelta(days=i)).isoformat() for i in range(120)]
+    one_user = [boss.legend_of(x, 7) for x in days]
+    chk("  한 사람도 날마다 다시 뽑는다", len(set(one_user)) >= 30, len(set(one_user)))
+    chk("  전부 전설의 알에서 나올 수 있는 종 (도감의 전설, 환상·울트라비스트·패러독스·이벤트 빼고)",
+        set(same_day + one_user) <= set(pool) and "MEW" not in pool and config.EVENT_SPECIES not in pool,
+        sorted(set(same_day + one_user) - set(pool)))
+    chk("  plan 에는 전설이 없다 (모두에게 같은 것은 조직·간부·곳·시각뿐)", "legend" not in plans[0])
 
     day = "2026-10-17"
     p = boss.plan(day)
     t0 = boss.appears_at(day)
-    print("  (%s: %s, %s, %02d:%02d, %s -> %s)" % (day, p["team"]["name"], boss.sidos()[p["sido"]], t0.hour,
-                                                   t0.minute, p["members"], p["legend"]))
+    print("  (%s: %s, %s, %02d:%02d, %s)" % (day, p["team"]["name"], boss.sidos()[p["sido"]], t0.hour,
+                                             t0.minute, p["members"]))
     before = t0 - datetime.timedelta(minutes=1)
     uid = mkuser("boss_a")
-    chk("나타나기 1분 전에는 없다", boss.active(before) is None and boss.brief(uid, before) == {"active": False}
+    LG = boss.legend_of(day, uid)                    # 이 사람이 오늘 만나는 전설
+    # 안 나와 있으면 '오늘이 기간인가' 만 싣는다 (관장 탭이 09~12시에 다시 물어볼지 정한다, 게시판 #252).
+    # 언제 나오는지는 여전히 안 알려 준다.
+    chk("나타나기 1분 전에는 없다 (기간이라는 것만, 시각은 안 알린다)", boss.active(before) is None
+        and boss.brief(uid, before) == {"active": False, "event": True}
         and boss.card(uid, before) == {"active": False}, boss.brief(uid, before))
     chk("그 시각부터 있다", (boss.active(t0) or {}).get("day") == day)
     chk("밤 11시 직전까지 머문다", (boss.active(at(day, 22, 59)) or {}).get("day") == day)
     chk("밤 11시가 되면 떠난다", boss.active(at(day, 23, 0)) is None
-        and boss.brief(uid, at(day, 23, 0)) == {"active": False} and boss.card(uid, at(day, 23, 0)) == {"active": False})
+        and boss.brief(uid, at(day, 23, 0)) == {"active": False, "event": True}
+        and boss.card(uid, at(day, 23, 0)) == {"active": False}, boss.brief(uid, at(day, 23, 0)))
+    late = datetime.datetime(2026, 11, 20, 10, 0, tzinfo=boss.KST)
+    chk("  기간이 끝나면 event False (관장 탭이 더 안 물어본다)",
+        boss.brief(uid, late) == {"active": False, "event": False}, boss.brief(uid, late))
     chk("자정이 지나면 다음 날의 것 (아직 안 나타났다)", boss.active(at("2026-10-18", 0, 1)) is None)
     chk("남은 시간은 밤 11시까지", boss.ends_in(at(day, 22, 0)) == 3600 and boss.ends_in(at(day, 23, 30)) == 0,
         (boss.ends_in(at(day, 22, 0)), boss.ends_in(at(day, 23, 30))))
@@ -175,13 +199,13 @@ def main():
     chk("한 마리만 데리고 가면 상대도 한 마리", len(one["team"]) == 1 and one["team"][0]["level"] == party[0]["level"])
 
     print("\n=== 전설 ===")
-    lg = boss.legend_trainer(p["legend"], party)
+    lg = boss.legend_trainer(LG, party)
     chk("한 마리, 내 파티의 가장 높은 레벨, 개체값 31",
         len(lg["team"]) == 1 and lg["team"][0]["level"] == 100 and lg["team"][0]["iv"] == 31
-        and lg["team"][0]["species"] == p["legend"], lg["team"])
+        and lg["team"][0]["species"] == LG, lg["team"])
     chk("그 레벨에서 아는 기술 넷", len(lg["team"][0]["moves"]) == 4, lg["team"][0]["moves"])
     chk("트레이너가 아니라 마주친 포켓몬이다", lg["wild"] and lg["role"] == "전설의 포켓몬"
-        and lg["name"] == d.get(p["legend"])["kr"])
+        and lg["name"] == d.get(LG)["kr"])
     tb = TB.TrainerBattle(d, party, lg, random.Random(3))
     ev = tb.start()
     chk("문구: 승부를 걸어오지 않고 모습을 드러낸다", "모습을 드러냈다" in ev[0]["text"]
@@ -266,7 +290,7 @@ def main():
     chk("간부를 다 이기기 전에는 전설전이 안 열린다",
         boss.next_fight(uid, party)[0] == "boss:%s:1" % day)
     chk("건너뛰어 전설을 이겼다고 해도 안 받는다",
-        win_now(uid, "boss:%s:3" % day, "legend:" + p["legend"], 100, 1)["lines"] == ["이미 끝난 승부다."]
+        win_now(uid, "boss:%s:3" % day, "legend:" + LG, 100, 1)["lines"] == ["이미 끝난 승부다."]
         and not boss.run(uid, day)["legend"])
     for i in (1, 2):
         region, tid, _t = boss.next_fight(uid, party)
@@ -277,10 +301,10 @@ def main():
     chk("상금은 간부마다", items.money(uid) == money1 + 2 * 100 * config.GYM_REPEAT_PER_LEVEL)
     card = boss.card(uid)
     chk("악당 창: 셋 다 이김", [m["state"] for m in card["members"]] == ["won", "won", "won"])
-    chk("악당 창: 전설이 누구인지 보인다", card["legend"]["open"] and card["legend"]["species"] == p["legend"]
-        and card["legend"]["name"] == d.get(p["legend"])["kr"] and not card["legend"]["done"], card["legend"])
+    chk("악당 창: 전설이 누구인지 보인다", card["legend"]["open"] and card["legend"]["species"] == LG
+        and card["legend"]["name"] == d.get(LG)["kr"] and not card["legend"]["done"], card["legend"])
     region, tid, t = boss.next_fight(uid, party)
-    chk("다음 상대는 전설", region == "boss:%s:3" % day and tid == "legend:" + p["legend"] and t["wild"])
+    chk("다음 상대는 전설", region == "boss:%s:3" % day and tid == "legend:" + LG and t["wild"])
     out = boss_routes.start(ctx=me(uid))
     chk("길로 열어도 전설전", out["region"] == region and out["battle"]["trainer"].get("wild")
         and len(out["battle"]["foe"]["team"]) == 1, out["region"])
@@ -298,7 +322,7 @@ def main():
     eggs0 = db.q1("SELECT COUNT(*) c FROM egg WHERE user_id=?", (uid,))["c"]
     rw = win_now(uid, region, tid, 100, lucky)
     egg = db.q1("SELECT * FROM egg WHERE user_id=? ORDER BY id DESC LIMIT 1", (uid,))
-    chk("나오면 그 전설의 알이 들어온다", rw["egg"] is True and egg is not None and egg["species"] == p["legend"]
+    chk("나오면 그 전설의 알이 들어온다", rw["egg"] is True and egg is not None and egg["species"] == LG
         and egg["kind"] == "legendary" and egg["known"] == 1
         and db.q1("SELECT COUNT(*) c FROM egg WHERE user_id=?", (uid,))["c"] == eggs0 + 1, dict(egg) if egg else rw)
     chk("  알을 얻었다고 알린다", any("알을 얻었다" in s for s in rw["lines"]), rw["lines"])
@@ -369,7 +393,7 @@ def main():
     chk("나타나 있으면 시·도와 조직", ov["boss"]["active"] and ov["boss"]["sido"] == p["sido"], ov["boss"])
     boss._now = lambda: before
     ov = gym_routes.overview(ctx=me(other))
-    chk("아직이면 active False 뿐", ov["boss"] == {"active": False}, ov["boss"])
+    chk("아직이면 active False 와 기간 여부뿐", ov["boss"] == {"active": False, "event": True}, ov["boss"])
     boss._now = real_now
 
     print("\n" + "=" * 54)

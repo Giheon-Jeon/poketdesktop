@@ -89,7 +89,10 @@ class HubWindow(object):
     def _on_tab(self, _e=None):
         key = self._key_at(self.nb.index("current"))
         if key:
-            self._build(key)
+            had = key in self.panes
+            pane = self._build(key)
+            if had:
+                self._shown(pane)
         # 길드 탭의 점은 '안 읽은 채팅이 남았고 지금 그 탭을 안 보고 있다' 는 뜻이다. 탭을
         # 옮겼으면 바로 다시 본다 (1.10.2) - 전에는 다음 동기화(최대 90초 뒤)에야 다시 찍혀서,
         # 아무 일도 없는데 한참 뒤에 점이 켜지는 것처럼 보였다. 새 탭이 화면에 붙은 뒤에 본다.
@@ -160,9 +163,22 @@ class HubWindow(object):
     def show(self, key):
         """그 탭으로 옮기고 창을 앞으로 꺼낸다."""
         if key in self.order:
+            had = key in self.panes
             self.nb.select(self.order.index(key))
-            self._build(key)
+            pane = self._build(key)
+            if had:
+                self._shown(pane)          # 이미 그 탭이면 탭이 바뀌었다는 알림이 안 온다
         self.focus()
+
+    @staticmethod
+    def _shown(pane):
+        """이미 만든 탭을 다시 보여 준다. 그 탭이 원하면(on_shown) 오래된 것을 새로 불러온다."""
+        fn = getattr(pane, "on_shown", None)
+        if fn is not None:
+            try:
+                fn()
+            except Exception:                               # noqa: BLE001
+                pass
 
     def focus(self):
         try:

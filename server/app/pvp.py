@@ -98,6 +98,14 @@ RP_BANDS = (50, 100, 200, None)
 # 안에서 순위만 조금 밀릴 뿐 걸러지지 않았다. 1493 짜리가 1000(한 판도 안 뛴
 # 기본값) 짜리를 사흘 동안 60번 만나 6턴에 전멸시킨 판이 그렇게 나왔다.
 MMR_WEIGHT = 0.30 / 400.0
+# **띠 안에서도 RP 가 가장 가까운 사람부터** (2026-10-17 사용자 제보: "4점·10점 차이 나는 사람도 있는데 거의
+# 50점 차이 나는 사람과 붙는다"). 전에는 띠(±50) 안에서 RP 를 안 보고 전력·숨은 점수만 봤고, 하루 안에 만난
+# 사람은 통째로 뒤로 뺐다 - 그래서 오늘 만난 가까운 사람을 두고 띠 끝의 처음 보는 사람이 골라졌다.
+# 이제 RP 차이가 가장 작은 사람부터 본다. 하루 안에 만난 사람은 RP 가 MET_PENALTY 만큼 더 먼 것으로 치고
+# (같은 얼굴만 계속 나오지 않게 - 3시간 안에 붙은 사람은 RANDOM_REPEAT_MIN 으로 아예 안 고른다),
+# RP 가 거의 같은 사람들(가장 가까운 사람에서 RP_TIE 안) 가운데서만 전력·숨은 점수가 가까운 몇 명 중 하나다.
+RP_TIE = 10
+MET_PENALTY = 30
 
 # 랜덤 배틀 상대를 고를 때는 최근에 붙은 사람을 이만큼 건너뛴다.
 # 직접 지목하는 쪽(PAIR_COOLDOWN_MIN)보다 길게 본다 - 후보가 서른 명
@@ -653,7 +661,7 @@ def find_opponent(uid, rng=None):
             near = [(g, u) for g, u in cands
                     if band is None or abs(points.get(u, 0) - my_rp) <= band]
             if near:
-                got = _pick_fresh(uid, near, rng, ratings, my_mmr)
+                got = _pick_fresh(uid, near, rng, ratings, my_mmr, points, my_rp)
                 _log_pick(uid, stage, -1 if band is None else band, near, got, played,
                           my_placed, len(pool), len(same))
                 return got
@@ -686,26 +694,27 @@ def _log_pick(uid, stage, band, near, got, played, my_placed, npool, nsame):
         pass
 
 
-def _pick_fresh(uid, cands, rng, ratings=None, my_mmr=BASE_RATING):
-    """오래 안 만난 사람 중에서, 가장 가까운 몇 명 중 하나.
+def _pick_fresh(uid, cands, rng, ratings=None, my_mmr=BASE_RATING, points=None, my_rp=0):
+    """띠 안에서 한 명. **RP 가 가장 가까운 사람부터** (RP_TIE · MET_PENALTY 를 보라).
 
-    cands 는 (전력 차이, user_id) 목록이다. 하루 안에 만난 적 없는 사람이
-    먼저다. 가까운 순으로 줄 세우고 앞의 몇 명 중에서 고른다 - 제일 가까운
-    한 명만 고르면 같은 얼굴이 계속 나오고, 아무나 고르면 띠 끝의 기울어진
-    판이 잦아진다.
+    cands 는 (전력 차이, user_id) 목록이다. 하루 안에 만난 사람은 RP 가 MET_PENALTY 만큼 더 먼 것으로 친다.
+    RP 가 거의 같은 사람들 가운데서는 전력·숨은 점수가 가까운 순으로 줄 세워 앞의 몇 명 중에서 고른다 -
+    제일 가까운 한 명만 고르면 같은 얼굴이 계속 나온다.
     """
     ratings = ratings or {}
+    points = points or {}
     met = _last_met(uid, FRESH_WINDOW_MIN)
+
+    def rp_cost(c):
+        return abs(points.get(c[1], 0) - my_rp) + (MET_PENALTY if c[1] in met else 0)
 
     def dist(c):
         gap, other = c
         return gap + abs(ratings.get(other, BASE_RATING) - my_mmr) * MMR_WEIGHT
 
-    fresh = sorted((c for c in cands if c[1] not in met), key=dist)
-    if fresh:
-        return rng.choice(fresh[:PICK_CLOSEST])[1]
-    # 다 만나 본 사람뿐이면 그중 가장 오래된 쪽
-    return min((c[1] for c in cands), key=lambda u: met.get(u) or "")
+    best = min(rp_cost(c) for c in cands)
+    close = sorted((c for c in cands if rp_cost(c) <= best + RP_TIE), key=dist)
+    return rng.choice(close[:PICK_CLOSEST])[1]
 
 
 def random_cooldown_left(uid):
@@ -814,6 +823,17 @@ def note_fight(uid, kind="random"):
     used = row["fought"] if row["fought_day"] == today else 0
     db.run("UPDATE rank_stat SET fought_day=?, fought=? WHERE user_id=?",
            (today, used + 1, uid))
+
+
+def fight_left(uid):
+    """오늘 랜덤 배틀을 몇 판 더 걸 수 있나 (1.13, /api/me 에 실어 트레이 메뉴가 쓴다).
+
+    **읽기만 한다** - fight_status 는 _rating_row 로 랭크 줄을 만들어 버리는데, /api/me 는 모두가 90초마다
+    부르므로 여기서 만들면 랜덤 배틀을 한 번도 안 한 사람까지 전부 줄이 생긴다.
+    """
+    r = db.q1("SELECT fought, fought_day FROM rank_stat WHERE user_id=?", (uid,))
+    used = r["fought"] if r and r["fought_day"] == _today() else 0
+    return {"left": max(0, DAILY_BATTLES - used), "dailyBattles": DAILY_BATTLES}
 
 
 def fight_status(uid):

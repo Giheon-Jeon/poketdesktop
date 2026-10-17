@@ -626,20 +626,20 @@ class RaidBattleWindow(Z.Resizable):
 
             def swap(key=key, mon=mon):
                 self.set_mon(key, mon, boss=(key == BOSS))
-                self._flash("메가진화!", "#c9b3ff")
+                self._flash(ev.get("label") or "메가진화!", "#c9b3ff")
             ui_mega.play_in(self, self._center(key), swap,
                             size=U.h(BOSS_H if key == BOSS else MON_H) * 0.6)
             return None
-        if t == "msg" and ev.get("transform"):
+        if t == "msg" and (ev.get("transform") or ev.get("look")):
             # 변신 (1.12.1): 도트가 상대의 모습으로. 서버도 변신한 동안은 num 을 그 번호로 보낸다
             # (안 그러면 라운드가 끝나고 맞출 때 메타몽으로 되돌아갔다).
             mon = self.shown.get(key) if key is not None else None
             self.say(text)
             if mon is not None:
                 mon = dict(mon)
-                mon["num"] = ev["transform"]
+                mon["num"] = ev.get("transform") or ev["look"]
                 self.set_mon(key, mon, boss=(key == BOSS))
-                self._flash("변신!", "#c9a0ff")
+                self._flash("변신!" if ev.get("transform") else (ev.get("label") or "폼체인지!"), "#c9a0ff")
             return STEP_MS + 300
         if t == "zpower":
             # Z기술 (시즌 4). 레이드는 자리(p)로 누구인지 안다.

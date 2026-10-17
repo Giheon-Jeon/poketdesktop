@@ -285,6 +285,14 @@ def main():
     st.show()
     settle(root, 0.2)
     app.settings["bossKey"] = ""
+    # 같은 메뉴의 랜덤 배틀 줄 (1.13): 오늘 남은 판을 괄호에 적는다
+    import types as _types
+    a2 = _types.SimpleNamespace()
+    chk("랜덤 배틀: 남은 판을 모르면 숫자 없이", TRAY.random_label(a2) == "랜덤 배틀")
+    a2.fight_left = 12
+    chk("  '랜덤 배틀  (12판 남음)'", TRAY.random_label(a2) == "랜덤 배틀  (12판 남음)", TRAY.random_label(a2))
+    a2.fight_left = 0
+    chk("  다 했으면 '오늘은 다 함'", TRAY.random_label(a2) == "랜덤 배틀  (오늘은 다 함)")
 
     print("\n=== 설정 창 ===")
     from poketdesktop.ui_settings import SettingsWindow

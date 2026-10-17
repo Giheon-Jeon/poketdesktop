@@ -234,6 +234,13 @@ def main():
         st = pvp.fight_status(i1)
         chk("랜덤 배틀은 한 판을 쓴다", st["foughtToday"] == n0 + 1, st)
         chk("  남은 판수도 그만큼 준다", st["left"] == pvp.DAILY_BATTLES - st["foughtToday"], st)
+        chk("/api/me 의 남은 판(fight_left)도 같다 (트레이 메뉴, 1.13)",
+            pvp.fight_left(i1) == {"left": st["left"], "dailyBattles": pvp.DAILY_BATTLES}, pvp.fight_left(i1))
+        j1 = mkuser("zz_pvp_cap4", 2, 30)
+        db.run("DELETE FROM rank_stat WHERE user_id=?", (j1,))
+        chk("  랭크 줄이 없는 사람은 상한 그대로, 줄을 만들지 않는다 (읽기만)",
+            pvp.fight_left(j1)["left"] == pvp.DAILY_BATTLES
+            and db.q1("SELECT 1 FROM rank_stat WHERE user_id=?", (j1,)) is None)
 
         print("\n=== 매칭 전력 (깍두기로 전력 깎기) ===")
         # 시즌 2 부터 평균 레벨이 아니라 팀 전력으로 붙인다. Lv.1 을 끼워 넣어도

@@ -867,10 +867,13 @@ class Api(object):
                           body={"pokemon": int(pokemon), "move": move,
                                 "forget": forget}, timeout=LEARN_TIMEOUT)
 
-    def use_item(self, item, pokemon=0, stat=""):
-        return self._call("POST", "/api/bag/use",
-                          {"item": item, "pokemon": pokemon, "stat": stat,
-                           "hour": _hour()})
+    def use_item(self, item, pokemon=0, stat="", hour=None, form=""):
+        """form = 폼 도구로 고른 모습 (1.13). 옛 서버는 모르는 칸을 무시한다."""
+        body = {"item": item, "pokemon": pokemon, "stat": stat,
+                "hour": _hour() if hour is None else hour}
+        if form:
+            body["form"] = form
+        return self._call("POST", "/api/bag/use", body)
 
 
 # ---------------------------------------------------------------- 도감 캐시

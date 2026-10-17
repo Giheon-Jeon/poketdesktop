@@ -228,6 +228,8 @@ def grounded(f):
         return False
     if f.cond.get("magnetrise") or f.cond.get("telekinesis"):
         return False
+    if H.floating(f):
+        return False                    # 풍선 (1.13). 맞으면 터진다
     return True
 
 
@@ -235,6 +237,9 @@ def weather(f):
     fl = f.field
     if A.has(f, "MEGASOL"):
         return "sun"                # 메가솔라: 이 포켓몬이 쓰는 기술은 늘 쾌청 아래다
+    strong = A.strong_weather(f)
+    if strong:
+        return strong               # 시작의바다·끝의대지 (원시회귀, 1.13) - 날씨부정에도 안 꺼진다
     if fl is None or fl.suppressed:
         return None
     return fl.weather
@@ -250,6 +255,10 @@ def restricted(bt, f, k):
     """이 기술을 지금 못 쓰는 까닭 (문구). 쓸 수 있으면 None."""
     if k == "STRUGGLE":
         return None
+    if f.held == "ASSAULTVEST":
+        why = H.blocks_status(f, bt.move_of(k))     # 돌격조끼: 변화기를 못 쓴다 (1.13)
+        if why:
+            return why
     c = f.cond
     enc = c.get("encore")
     if enc and enc.get("move") != k and f.pp.get(enc.get("move"), 0) > 0:
@@ -429,6 +438,8 @@ def field_mult(move, mtype, user, target, crit):
     m = 1.0
     k = key(move)
     w = weather(user)
+    if w in ("sun", "rain") and (H.umbrella(user) or H.umbrella(target)):
+        w = None                        # 만능우산: 쾌청·비가 위력에 안 끼어든다 (1.13)
     if w == "sun":
         if mtype == "FIRE":
             m *= 1.5
@@ -586,7 +597,7 @@ def set_weather(bt, w, ev, who=None):
     fl = bt.field
     if fl.weather == w:
         return False
-    fl.weather, fl.weather_turns = w, 5
+    fl.weather, fl.weather_turns = w, H.weather_turns(bt.fighter(who) if who else None, w)   # 바위면 8턴
     ev.append({"t": "msg", "who": who, "text": FD.WEATHER_START[w]})
     A.weather_changed(bt, ev)       # 캐스퐁의 모습, 빙큐보의 얼음
     return True
@@ -596,9 +607,10 @@ def set_terrain(bt, t, ev, who=None):
     fl = bt.field
     if fl.terrain == t:
         return False
-    fl.terrain, fl.terrain_turns = t, 5
+    fl.terrain, fl.terrain_turns = t, H.terrain_turns(bt.fighter(who) if who else None)   # 그라운드코트면 8턴
     ev.append({"t": "msg", "who": who, "text": FD.TERRAIN_START[t]})
     # 일렉트릭필드: 잠든 포켓몬은 그대로 두지만 새로 잠들지 않는다 / 미스트필드: 혼란 방지
+    H.on_terrain(bt, ev)                # 시드 (1.13)
     return True
 
 
@@ -613,6 +625,7 @@ def toggle_room(bt, room, ev, who=None):
         return fail(ev, who)
     fl.rooms[room] = 5
     ev.append({"t": "msg", "who": who, "text": FD.ROOM_START[room]})
+    H.on_room(bt, room, ev)             # 룸서비스 (1.13)
     if room == "gravity":
         for f in (bt.me, bt.foe):
             if f.alive() and (f.cond.pop("magnetrise", None) or f.cond.pop("telekinesis", None)):
@@ -733,8 +746,8 @@ def trapped(bt, f):
     검은눈빛·블록·문어굳히기·조이기·뿌리박기·페어리록과, 상대의 특성
     (그림자밟기·개미지옥·자력). 고스트 타입은 무엇에도 안 걸린다.
     """
-    if "GHOST" in f.types():
-        return False
+    if "GHOST" in f.types() or H.shed_shell(f):
+        return False                    # 아름다운허물 (1.13): 붙잡혀 있어도 바꿀 수 있다
     c = f.cond
     if bool(c.get("trapped") or c.get("octolock") or c.get("bound") or c.get("ingrain")
             or bt.field.room("fairylock")):
@@ -1040,8 +1053,8 @@ def h_fairylock(bt, move, who, user, target, tw, ev):
 
 
 def h_gastro(bt, move, who, user, target, tw, ev):
-    if target.cond.get("gastro") or target.ability in ABILITY_FIXED:
-        return fail(ev, who)
+    if target.cond.get("gastro") or target.ability in ABILITY_FIXED or H.ability_locked(target):
+        return fail(ev, who)                # 특성가드 (1.13)
     target.cond["gastro"] = True
     say(ev, tw, "%s 의 특성이 효과를 잃었다!" % target.name)
 
@@ -1055,6 +1068,10 @@ def _set_ability(bt, f, fw, ability, ev):
 
 def h_ability_change(bt, move, who, user, target, tw, ev):
     k = key(move)
+    # 특성가드 (1.13): 지닌 쪽의 특성은 바뀌지 않는다. 역할(롤플레이)은 내 특성이, 스킬스왑은 둘 다 바뀐다.
+    changes = {"ROLEPLAY": (user,), "DOODLE": (user,), "SKILLSWAP": (user, target)}.get(k, (target,))
+    if any(H.ability_locked(f) for f in changes):
+        return fail(ev, who)
     if k == "WORRYSEED":
         if target.ability in ABILITY_FIXED or target.ability in ("INSOMNIA", "TRUANT"):
             return fail(ev, who)
@@ -1546,7 +1563,7 @@ def h_trick(bt, move, who, user, target, tw, ev):
     if (not a and not b) or (A.has(target, "STICKYHOLD") and not A.breaks(user)) or target.cond.get("sub"):
         return fail(ev, who)
     # 메가스톤·Z크리스탈은 바꿔치기할 수 없다 (본가와 같다)
-    if H.stuck(a) or H.stuck(b):
+    if H.stuck(a, user) or H.stuck(b, target):       # 폼이 걸린 도구도 (1.13)
         return fail(ev, who)
     user.held, target.held = b, a
     user.used = target.used = False
@@ -1626,7 +1643,7 @@ def h_screen(bt, move, who, user, target, tw, ev):
     side = bt.field.side(who)
     if side.get(name) or (k == "AURORAVEIL" and weather(user) not in ("hail", "snow")):
         return fail(ev, who)
-    side[name] = 5
+    side[name] = H.screen_turns(user)               # 빛의점토면 8턴 (1.13)
     say(ev, who, "%s 이(가) %s 진영을 지킨다!" % (FD.SIDE_KR[name], "우리" if who == "me" else "상대"))
 
 
@@ -1778,7 +1795,7 @@ def after_attack(bt, k, move, who, user, target, tw, total, sub_hit, ev):
     if k in OUT_ATTACKS and total and user.alive() and bt.kind != "wild" and _team_others(bt, who, user):
         bt.request_switch(who, "out", ev, k)
     if (k == "KNOCKOFF" and total and target.alive() and not sub_hit
-            and MC.item_on(target) and not H.stuck(target._held)
+            and MC.item_on(target) and not H.stuck(target._held, target)
             and not (A.has(target, "STICKYHOLD") and not A.breaks(user))):
         # 탁쳐서떨구기. 위력 1.5배는 movecalc 가 이미 한다 - 여기서 **실제로
         # 떨군다**. 그동안 배수만 있고 도구는 그대로 붙어 있었다.
@@ -1857,7 +1874,7 @@ def apply_ail(bt, ail, move, user, target, who, tw, ev):
         confuse(bt, target, tw, ev, source=user, quiet=MC.attacks(move))
     elif ail == "trap":
         if not target.cond.get("bound"):
-            target.cond["bound"] = {"turns": bt.rng.randint(4, 5), "by": who, "move": k}
+            target.cond["bound"] = {"turns": H.bind_turns(user, bt.rng), "by": who, "move": k}   # 끈기갈고리손톱 7턴
             say(ev, tw, "%s 은(는) %s 에 붙잡혔다!" % (target.name, bt.move_name(k)))
     elif ail == "silence":
         target.cond["silenced"] = 2
@@ -1887,6 +1904,8 @@ def enter(bt, who, ev):
                            "text": "%s 은(는) 소원을 받아 기운을 되찾았다!" % f.name})
     magic = A.has(f, "MAGICGUARD")
     ground = grounded(f)
+    if H.no_hazards(f):
+        return                          # 통굽부츠 (1.13): 바닥에 깔린 것을 하나도 안 밟는다
     if side.get("stealthrock") and not magic:
         eff = bt.dex.effectiveness("ROCK", f.types())
         _chip(f, who, f.maxhp * eff / 8.0, ev, "뾰족한 바위가 %s 에게 박혔다!" % f.name)
@@ -1906,7 +1925,16 @@ def enter(bt, who, ev):
 
 
 def on_enter_abilities(bt, f, who, ev):
-    """날씨·필드를 부르는 특성 (가뭄·잔비·모래날림·눈퍼뜨리기·일렉트릭메이커 ...)."""
+    """날씨·필드를 부르는 특성 (가뭄·잔비·모래날림·눈퍼뜨리기·일렉트릭메이커 ...).
+
+    1.13: 원시회귀(주홍·쪽빛구슬)와 나올 때 도는 도구(풍선·시드·룸서비스·부스트에너지)도 여기서
+    먼저 본다 - 모든 배틀(관장·유저·실시간·레이드)이 나온 순간 이것을 부른다. 원시회귀는 특성이
+    바뀌므로(시작의바다·끝의대지) 특성보다 먼저다. 도구는 특성이 꺼진 판에서도 돈다.
+    """
+    primal = getattr(bt, "primal", None)
+    if primal is not None:
+        primal(f, who, ev)
+    H.on_entry(bt, f, who, ev)
     if not A.on(f) or f.cond.get("gastro"):
         return
     w = WEATHER_ABILITY.get(f.ability)
@@ -1931,7 +1959,7 @@ def end_turn_pre(bt, ev, sides=("me", "foe"), field=True):
         f = bt.fighter(who)
         if not f.alive():
             continue
-        magic = A.has(f, "MAGICGUARD", "OVERCOAT")
+        magic = A.has(f, "MAGICGUARD", "OVERCOAT") or H.weather_safe(f)    # 방진고글 (1.13)
         if w == "sand" and not magic and not any(t in f.types() for t in ("ROCK", "GROUND", "STEEL")) \
                 and not A.has(f, "SANDVEIL", "SANDRUSH", "SANDFORCE"):
             _chip(f, who, f.maxhp / 16.0, ev, "모래바람이 %s 을(를) 덮쳤다!" % f.name)
@@ -2007,7 +2035,8 @@ def end_turn_post(bt, ev, sides=("me", "foe"), field=True):
                 c.pop("bound", None)
                 say(ev, who, "%s 은(는) %s 에서 풀려났다!" % (f.name, bt.move_name(bound.get("move") or "BIND")))
             elif not magic:
-                _chip(f, who, f.maxhp / 8.0, ev, "%s 은(는) %s 의 데미지를 입고 있다!"
+                frac = H.bind_frac(bt.fighter(bound.get("by")) if bound.get("by") in ("me", "foe") else None)
+                _chip(f, who, f.maxhp / frac, ev, "%s 은(는) %s 의 데미지를 입고 있다!"
                       % (f.name, bt.move_name(bound.get("move") or "BIND")))
         if c.get("octolock") and f.alive():
             src = bt.fighter(other(who))

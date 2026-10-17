@@ -118,6 +118,8 @@ class App(object):
         # 받아 놓고 아직 안 받아준 친구 요청 수.
         # 트레이에 숫자로 남긴다 - 화면에 아무 자국이 없다.
         self.friend_unseen = 0
+        # 오늘 랜덤 배틀을 몇 판 더 걸 수 있나 (1.13, 트레이의 '랜덤 배틀 (N판 남음)'). 모르면 None.
+        self.fight_left = None
         # 게시판 (1.8.0): 서버가 알려 준 가장 최근 공지 번호. 마지막으로 본
         # 번호(settings.noticeSeen)보다 크면 탭과 트레이에 표시한다.
         self.board_notice = 0
@@ -438,6 +440,7 @@ class App(object):
         self._friend_seen = set()
         self._friend_first = True
         self.friend_unseen = 0
+        self.fight_left = None
         self.sync()
         # 첫 동기화가 실패하거나(서버가 깨는 중이라 느릴 수 있다) 도트를
         # 아직 못 받았으면 바탕화면이 비어 보인다. 잠시 뒤 한 번 더 맞춘다.
@@ -657,6 +660,8 @@ class App(object):
             if me is not None:
                 stone = bool(((me.get("bond") or {}).get("keystone") or {}).get("has"))
             want = [(m.get("num"), T.skin(m)) for m in mons]
+            # 폼(1.13)으로 바뀐 포켓몬은 그 폼의 도트도 받는다 (못 받으면 원래 모습으로 걷는다)
+            want += [(m["formNum"], T.skin(m)) for m in mons if m.get("formNum")]
             want += self.dress_megas(mons, stone)
             paths = sprite_cache.ensure_many(self.api, want)
             # 걷는 도트도 같이 받아 둔다. 없는 종은 알아서 건너뛴다.
@@ -708,6 +713,9 @@ class App(object):
                 # 새 기술머신 (1.11.0): 안 본 것이 있으면 가방 탭에 점
                 if "tmNew" in me:
                     self.note_tms(me.get("tmNew"))
+                # 오늘 남은 랜덤 배틀 (1.13): 트레이 메뉴에 적는다. 옛 서버는 안 실어 준다 (그러면 숫자 없이).
+                if "fight" in me:
+                    self.fight_left = (me.get("fight") or {}).get("left")
                 # 탐험 파견 (1.10.4): 돌아온 것이 있으면 바탕화면에 보따리를 놓는다
                 if self.expedition is not None and "expedition" in me:
                     self.expedition.note(me.get("expedition"))
@@ -1564,7 +1572,13 @@ class App(object):
     # 가져와 붙인다. 그래서 누르면 그 자리에서 끝나고, 상대는 다음에
     # 켤 때 결과를 받는다.
     def pvp_random(self, on_done=None, on_found=None):
-        self._pvp(lambda: self.api.pvp_random(), on_done, on_found)
+        def found(r):
+            # 서버는 붙이는 순간 한 판을 센다. 트레이의 남은 판 수를 다음 동기화까지 기다리지 않고 바로 줄인다.
+            if self.fight_left:
+                self.fight_left -= 1
+            if on_found:
+                on_found(r)
+        self._pvp(lambda: self.api.pvp_random(), on_done, found)
 
     def pvp_challenge(self, uid, on_done=None):
         self._pvp(lambda: self.api.pvp_challenge(uid), on_done)

@@ -9,12 +9,14 @@
 따로 돌리는 시계도, 적어 두는 표도 없다. 그 시각이 되기 전에는 아무것도 알려 주지 않는다.
 밤 11시 전에 시작한 판은 그 뒤에 끝나도 그날 것으로 센다 (region 에 날짜가 적혀 있다).
 
-**사람마다 따로 싸운다** (boss_run). 간부 셋을 차례로 이기면 전설의 포켓몬과 마주친다.
+**사람마다 따로 싸운다** (boss_run). 간부 셋을 차례로 이기면 전설의 포켓몬과 마주친다. **그 전설은
+사람마다 다르다** (legend_of - 도감의 전설 중 날짜와 사람으로 정해진다, 2026-10-17 사용자 결정, **10/18 부터**.
+그전에는 조직마다 정해 둔 전설 중 날짜로 하나여서 그날은 모두 같았다 - 10/17 은 모두 미라이돈).
 
     간부   마릿수 = 내 파티 수, 레벨 = 내 파티 레벨(높은 순으로 맞춘다), 개체값 전부 31.
            종·기술·특성·도구·노력치는 관장 자료(gyms.json)의 그 트레이너 것 그대로.
            지면 그 간부부터 다시 도전한다. 이긴 상금은 관장 재도전 상금과 같은 식.
-    전설   한 마리. 레벨 = 내 파티의 가장 높은 레벨, 개체값 31. **볼은 못 던진다.**
+    전설   한 마리 (사람마다 다르다). 레벨 = 내 파티의 가장 높은 레벨, 개체값 31. **볼은 못 던진다.**
            이길 때까지 다시 도전할 수 있고, 쓰러뜨리면 그날 한 번 70% 로 그 전설의 알.
 
 배틀 자체는 관장 배틀과 **같은 판**이다 (common/trainer_battle, gym_battle 표, 같은 창).
@@ -89,8 +91,29 @@ def plan(day):
         "day": day, "team": team, "sido": codes[_h(day, "sido") % len(codes)],
         "minute": _h(day, "minute") % span,            # START_HOUR 부터 몇 분 뒤에 나타나나
         "members": members,
-        "legend": team["legends"][_h(day, "legend") % len(team["legends"])],
     }
+
+
+PER_USER_FROM = "2026-10-18"     # 이날부터 사람마다 (사용자: "내일부터 적용되도록 (오늘은 미라이돈)")
+
+
+def team_legend(day):
+    """조직마다 정해 둔 전설 중 날짜로 하나 - 그날은 모두 같다 (PER_USER_FROM 전까지의 규칙)."""
+    legends = plan(day)["team"]["legends"]
+    return legends[_h(day, "legend") % len(legends)]
+
+
+def legend_of(day, uid):
+    """그날 그 사람이 만나는 전설 (2026-10-17 사용자 결정: 사람마다 따로, 도감의 모든 전설 중에서).
+
+    날짜와 사람으로 정해진다 - 같은 날 같은 사람은 언제 물어도 같고, 다음 날이면 다시 뽑는다.
+    목록은 알 목록(eggs.pool)과 같다 - 본가 분류의 전설(환상·울트라비스트·패러독스·이벤트 포켓몬은
+    빠진다)이라, 70% 로 받는 알도 그 종이다.
+    """
+    if day < PER_USER_FROM:
+        return team_legend(day)                     # 10/17 은 예전처럼 모두 같다 (이미 싸운 사람이 있다)
+    pool = eggs.pool("legendary")
+    return pool[_h(day, "legend:%s" % uid) % len(pool)]
 
 
 def appears_at(day):
@@ -210,10 +233,14 @@ def legend_trainer(species, party):
 
 # ---------------------------------------------------------------- 보여주기
 def brief(uid, now=None):
-    """관장 탭의 개요에 싣는다. 지도를 검게 칠할 곳과, 내가 어디까지 했나."""
+    """관장 탭의 개요에 싣는다. 지도를 검게 칠할 곳과, 내가 어디까지 했나.
+
+    안 나와 있으면 event 만 싣는다 - 오늘이 악당이 나오는 기간인가. 언제 나오는지는 여전히 안 알려 주고,
+    관장 탭은 그 기간이면 09:00~12:00 동안 몇 분마다 다시 물어본다 (ui_gym.boss_watch_in).
+    """
     p = active(now)
     if not p:
-        return {"active": False}
+        return {"active": False, "event": in_event(day_of(now))}
     r = run(uid, p["day"])
     return {"active": True, "day": p["day"], "sido": p["sido"], "sidoName": sidos().get(p["sido"]),
             "team": p["team"]["name"], "stage": r["stage"], "legend": r["legend"],
@@ -233,11 +260,12 @@ def card(uid, now=None):
         members.append({"id": tid, "name": t.get("name"), "role": t.get("role"),
                         "sprite": t.get("sprite"),
                         "state": "won" if i < r["stage"] else ("next" if i == r["stage"] else "locked")})
-    sp = d.get(p["legend"]) or {}
+    species = legend_of(p["day"], uid)
+    sp = d.get(species) or {}
     open_ = r["stage"] >= ADMINS
     legend = {"open": open_, "done": r["legend"], "egg": r["egg"]}
     if open_:                               # 간부를 다 이기기 전에는 누구인지 안 알려 준다
-        legend.update({"species": p["legend"], "name": sp.get("kr"), "num": sp.get("num"),
+        legend.update({"species": species, "name": sp.get("kr"), "num": sp.get("num"),
                        "types": [d.type_name(t) for t in sp.get("types") or []]})
     act = db.q1("SELECT id, region FROM gym_battle WHERE user_id=? AND state='active'"
                 " ORDER BY id DESC LIMIT 1", (uid,))
@@ -260,7 +288,7 @@ def next_fight(uid, party, now=None):
     if r["stage"] < ADMINS:
         tid = p["members"][r["stage"]]
         return region_of(p["day"], r["stage"]), tid, admin_trainer(tid, party)
-    t = legend_trainer(p["legend"], party)
+    t = legend_trainer(legend_of(p["day"], uid), party)
     return region_of(p["day"], LEGEND_STAGE), t["id"], t
 
 

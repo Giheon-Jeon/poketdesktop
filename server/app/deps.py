@@ -92,6 +92,12 @@ def decorate(mon):
     if sp:
         out["num"] = sp["num"]
         out["gen"] = sp.get("gen")
+        # 폼 (1.13). num 은 도감 번호 그대로 둔다 (도감 표시·찾기·전설 제한이 본다) - 그림은 formNum 으로.
+        form = d.form_for(mon) if hasattr(d, "form_for") else None
+        if form:
+            out["formNum"] = form["num"]
+            out["formKr"] = form.get("formKr")
+            out["formKey"] = form.get("form")
         # 친밀도로 진화하는 종이면 얼마나 남았는지 같이 준다. 안 그러면
         # 화면에 숫자만 뜨고 그게 뭘 향해 가는지 알 수가 없다.
         want = min([b.get("happiness", 999) for b in (sp.get("evo") or [])

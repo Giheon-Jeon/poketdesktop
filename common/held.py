@@ -4,8 +4,10 @@
 PokeAPI 는 도구의 **이름·설명·가격**만 준다. 무엇을 하는지는 구조화된
 자료가 없어서 여기 손으로 적는다. 목록은 PokeAPI 가 '지닐 수 있고 배틀에
 관여한다(holdable-passive/active)' 고 표시한 141종에서, 이 엔진에 없는
-개념(날씨·벽·교체·이중 배틀·콘테스트)에 걸린 20종을 뺀 121종이다.
+개념(날씨·벽·교체·이중 배틀·콘테스트)에 걸린 20종을 뺀 121종이었다.
 어느 것을 왜 뺐는지는 tools/build_items.py 의 HELD_SKIP 에 있다.
+1.13 에서 그동안 뺐던 것과 빠져 있던 것(울퉁불퉁멧·돌격조끼·주얼·시드·메모리·전설의 구슬·
+오거폰의 가면 …)을 전부 넣었다 - 상점에서만 판다 (tools/add_held.py).
 
 **규칙 둘.**
 
@@ -69,6 +71,48 @@ KR = {
     "FULLINCENSE": "만복향로", "WAVEINCENSE": "잔물결향로", "ROSEINCENSE": "꽃향로",
     "RAZORCLAW": "예리한손톱", "RAZORFANG": "예리한이빨",
 }
+# 1.13: 그동안 없던 지닌 도구 (사용자 요청 "아직 미추가된 도구들 전부"). 이름은 PokeAPI 한국어 그대로.
+# 예전에 HELD_SKIP 으로 뺐던 것(날씨 바위·빛의점토·파워풀허브·멘탈허브·끈기갈고리손톱·아름다운허물·빨간실·
+# 시몬열매)도 넣는다 - 그 뒤로 엔진에 날씨·필드·벽·교체·충전 기술·구속·혼란이 다 생겼다.
+KR.update({
+    # 배틀 도구
+    "MENTALHERB": "멘탈허브", "LIGHTCLAY": "빛의점토", "POWERHERB": "파워풀허브", "DESTINYKNOT": "빨간실",
+    "ICYROCK": "차가운바위", "SMOOTHROCK": "보송보송바위", "HEATROCK": "뜨거운바위", "DAMPROCK": "축축한바위",
+    "GRIPCLAW": "끈기갈고리손톱", "SHEDSHELL": "아름다운허물", "EVIOLITE": "진화의휘석", "FLOATSTONE": "가벼운돌",
+    "ROCKYHELMET": "울퉁불퉁멧", "AIRBALLOON": "풍선", "REDCARD": "레드카드", "RINGTARGET": "겨냥표적",
+    "BINDINGBAND": "조임밴드", "ABSORBBULB": "구근", "CELLBATTERY": "충전지", "EJECTBUTTON": "탈출버튼",
+    "WEAKNESSPOLICY": "약점보험", "ASSAULTVEST": "돌격조끼", "LUMINOUSMOSS": "빛이끼", "SNOWBALL": "눈덩이",
+    "SAFETYGOGGLES": "방진고글", "ADRENALINEORB": "주눅구슬", "TERRAINEXTENDER": "그라운드코트",
+    "PROTECTIVEPADS": "방호패드", "ELECTRICSEED": "일렉트릭시드", "PSYCHICSEED": "사이코시드",
+    "MISTYSEED": "미스트시드", "GRASSYSEED": "그래스시드", "THROATSPRAY": "목스프레이", "EJECTPACK": "탈출팩",
+    "HEAVYDUTYBOOTS": "통굽부츠", "BLUNDERPOLICY": "허탕보험", "ROOMSERVICE": "룸서비스",
+    "UTILITYUMBRELLA": "만능우산", "BOOSTERENERGY": "부스트에너지", "ABILITYSHIELD": "특성가드",
+    "CLEARAMULET": "클리어참", "MIRRORHERB": "흉내허브", "PUNCHINGGLOVE": "펀치글러브", "COVERTCLOAK": "은밀망토",
+    "LOADEDDICE": "속임수주사위", "FAIRYFEATHER": "요정의깃털",
+    "PERSIMBERRY": "시몬열매", "ROSELIBERRY": "로셀열매", "KEEBERRY": "악키열매", "MARANGABERRY": "타라프열매",
+    # 그 포켓몬 전용 (전설·환상 포함)
+    "LIGHTBALL": "전기구슬", "LUCKYPUNCH": "럭키펀치", "METALPOWDER": "금속파우더", "THICKCLUB": "굵은뼈",
+    "STICK": "대파", "QUICKPOWDER": "스피드파우더", "DEEPSEATOOTH": "심해의이빨", "DEEPSEASCALE": "심해의비늘",
+    "SOULDEW": "마음의물방울", "ADAMANTORB": "금강옥", "LUSTROUSORB": "백옥", "GRISEOUSORB": "백금옥",
+    "ADAMANTCRYSTAL": "큰금강옥", "LUSTROUSGLOBE": "큰백옥", "GRISEOUSCORE": "큰백금옥",
+    "RUSTEDSWORD": "녹슨검", "RUSTEDSHIELD": "녹슨방패", "PIXIEPLATE": "정령플레이트",
+    "DOUSEDRIVE": "아쿠아카세트", "SHOCKDRIVE": "번개카세트", "BURNDRIVE": "블레이즈카세트", "CHILLDRIVE": "프리즈카세트",
+    "WELLSPRINGMASK": "우물의가면", "HEARTHFLAMEMASK": "화덕의가면", "CORNERSTONEMASK": "주춧돌의가면",
+    "REDORB": "주홍구슬", "BLUEORB": "쪽빛구슬",
+    # 메모리 (실버디: 타입·멀티어택)
+    "FIGHTINGMEMORY": "파이팅메모리", "FLYINGMEMORY": "플라잉메모리", "POISONMEMORY": "포이즌메모리",
+    "GROUNDMEMORY": "그라운드메모리", "ROCKMEMORY": "록메모리", "BUGMEMORY": "버그메모리",
+    "GHOSTMEMORY": "고스트메모리", "STEELMEMORY": "스틸메모리", "FIREMEMORY": "파이어메모리",
+    "WATERMEMORY": "워터메모리", "GRASSMEMORY": "그래스메모리", "ELECTRICMEMORY": "일렉트릭메모리",
+    "PSYCHICMEMORY": "사이킥메모리", "ICEMEMORY": "아이스메모리", "DRAGONMEMORY": "드래곤메모리",
+    "DARKMEMORY": "다크메모리", "FAIRYMEMORY": "페어리메모리",
+    # 주얼 (그 타입 첫 공격 1.3배, 한 번)
+    "FIREGEM": "불꽃주얼", "WATERGEM": "물주얼", "ELECTRICGEM": "전기주얼", "GRASSGEM": "풀주얼",
+    "ICEGEM": "얼음주얼", "FIGHTINGGEM": "격투주얼", "POISONGEM": "독주얼", "GROUNDGEM": "땅주얼",
+    "FLYINGGEM": "비행주얼", "PSYCHICGEM": "에스퍼주얼", "BUGGEM": "벌레주얼", "ROCKGEM": "바위주얼",
+    "GHOSTGEM": "고스트주얼", "DARKGEM": "악주얼", "STEELGEM": "강철주얼", "DRAGONGEM": "드래곤주얼",
+    "NORMALGEM": "노말주얼", "FAIRYGEM": "페어리주얼",
+})
 
 # ---------------------------------------------------------------- 분류표
 # 그 타입 기술의 위력 1.2배 (타입 강화 도구 22 + 플레이트 16)
@@ -87,6 +131,7 @@ TYPE_BOOST = {
     "MINDPLATE": "PSYCHIC", "INSECTPLATE": "BUG", "STONEPLATE": "ROCK",
     "SPOOKYPLATE": "GHOST", "DRACOPLATE": "DRAGON", "DREADPLATE": "DARK",
     "IRONPLATE": "STEEL",
+    "FAIRYFEATHER": "FAIRY", "PIXIEPLATE": "FAIRY",          # 1.13: 페어리에도 강화 도구가 생겼다
 }
 TYPE_BOOST_MULT = 1.2
 
@@ -97,7 +142,7 @@ RESIST_BERRY = {
     "KEBIABERRY": "POISON", "SHUCABERRY": "GROUND", "COBABERRY": "FLYING",
     "PAYAPABERRY": "PSYCHIC", "TANGABERRY": "BUG", "CHARTIBERRY": "ROCK",
     "KASIBBERRY": "GHOST", "HABANBERRY": "DRAGON", "COLBURBERRY": "DARK",
-    "BABIRIBERRY": "STEEL", "CHILANBERRY": "NORMAL",
+    "BABIRIBERRY": "STEEL", "CHILANBERRY": "NORMAL", "ROSELIBERRY": "FAIRY",
 }
 
 # 상태이상에 걸리는 순간 고친다. "*" 는 무엇이든.
@@ -140,6 +185,52 @@ EVADE = {"BRIGHTPOWDER", "LAXINCENSE"}                     # 상대 명중 0.9
 EXP_ITEMS = {"LUCKYEGG": 1.5}
 HAPPINESS_ITEMS = {"SOOTHEBELL": 1.5}
 
+# ---------------------------------------------------------------- 1.13 의 분류표
+# 맞으면 그 능력이 오르는 것 (한 번): 그 타입에 맞으면
+HIT_TYPE_BOOST = {"ABSORBBULB": ("WATER", "spa"), "CELLBATTERY": ("ELECTRIC", "atk"),
+                  "LUMINOUSMOSS": ("WATER", "spd"), "SNOWBALL": ("ICE", "atk")}
+# 맞으면 그 능력이 오르는 열매 (한 번): 그 분류의 기술에 맞으면
+HIT_CAT_BERRY = {"KEEBERRY": ("physical", "def"), "MARANGABERRY": ("special", "spd")}
+# 그 필드가 깔려 있으면 그 능력이 한 단계 (한 번)
+SEED = {"ELECTRICSEED": ("electric", "def"), "GRASSYSEED": ("grassy", "def"),
+        "MISTYSEED": ("misty", "spd"), "PSYCHICSEED": ("psychic", "spd")}
+# 그 날씨를 부르면 8턴
+WEATHER_ROCK = {"ICYROCK": ("hail", "snow"), "SMOOTHROCK": ("sand",), "HEATROCK": ("sun",), "DAMPROCK": ("rain",)}
+# 주얼: 그 타입 기술을 처음 쓸 때 위력 1.3배 (한 번)
+GEM = dict((k, k[:-3]) for k in KR if k.endswith("GEM"))
+GEM_MULT = 1.3
+# 그 포켓몬이 지니면 능력치 x배: 도구 -> (종들, 능력들, 배율). 메타몽 것은 변신하지 않았을 때만.
+SPECIES_STAT = {
+    "LIGHTBALL": ({"PIKACHU"}, ("atk", "spa"), 2.0),
+    "THICKCLUB": ({"CUBONE", "MAROWAK"}, ("atk",), 2.0),
+    "DEEPSEATOOTH": ({"CLAMPERL"}, ("spa",), 2.0),
+    "DEEPSEASCALE": ({"CLAMPERL"}, ("spd",), 2.0),
+    "METALPOWDER": ({"DITTO"}, ("def",), 2.0),
+    "QUICKPOWDER": ({"DITTO"}, ("spe",), 2.0),
+}
+# 그 포켓몬이 지니면 급소 +2
+SPECIES_CRIT = {"LUCKYPUNCH": {"CHANSEY"}, "STICK": {"FARFETCHD", "SIRFETCHD"}}
+# 그 포켓몬이 지니면 그 타입 기술 1.2배 (전설의 옥·마음의물방울)
+SPECIES_POWER = {
+    "SOULDEW": ({"LATIOS", "LATIAS"}, ("DRAGON", "PSYCHIC")),
+    "ADAMANTORB": ({"DIALGA"}, ("DRAGON", "STEEL")), "ADAMANTCRYSTAL": ({"DIALGA"}, ("DRAGON", "STEEL")),
+    "LUSTROUSORB": ({"PALKIA"}, ("DRAGON", "WATER")), "LUSTROUSGLOBE": ({"PALKIA"}, ("DRAGON", "WATER")),
+    "GRISEOUSORB": ({"GIRATINA"}, ("DRAGON", "GHOST")), "GRISEOUSCORE": ({"GIRATINA"}, ("DRAGON", "GHOST")),
+}
+# 오거폰의 가면: 기술 위력 1.2배, 덩굴방망이가 그 타입 (폼은 도감 forms 가 바꾼다)
+MASK = {"WELLSPRINGMASK": "WATER", "HEARTHFLAMEMASK": "FIRE", "CORNERSTONEMASK": "ROCK"}
+MASK_MULT = 1.2
+MEMORY = dict((k, k[:-6]) for k in KR if k.endswith("MEMORY"))
+DRIVE = {"DOUSEDRIVE": "WATER", "SHOCKDRIVE": "ELECTRIC", "BURNDRIVE": "FIRE", "CHILLDRIVE": "ICE"}
+PLATES = set(k for k in KR if k.endswith("PLATE"))
+# 뺏기지도 떨어지지도 않는 것 (메가스톤·Z크리스탈 말고). 폼이 걸린 도구다.
+LOCKED = {"WELLSPRINGMASK", "HEARTHFLAMEMASK", "CORNERSTONEMASK", "GRISEOUSCORE", "ADAMANTCRYSTAL",
+          "LUSTROUSGLOBE", "RUSTEDSWORD", "RUSTEDSHIELD", "REDORB", "BLUEORB", "BOOSTERENERGY"}
+# 그 포켓몬이 지녔을 때만 잠긴다 (플레이트 = 아르세우스, 메모리 = 실버디, 카세트 = 게노세크트)
+LOCKED_FOR = dict([(k, "ARCEUS") for k in PLATES] + [(k, "SILVALLY") for k in MEMORY]
+                  + [(k, "GENESECT") for k in DRIVE])
+MENTAL_CONDS = ("attract", "taunt", "encore", "torment", "disable", "healblock")
+
 ALL = frozenset(KR)
 
 # 메가스톤 (시즌 3). 배틀 효과는 없고 메가진화의 열쇠다. 도감의 megas 에서
@@ -159,12 +250,22 @@ def is_mega_stone(item):
     return bool(item) and item in MEGA
 
 
-def stuck(item):
-    """뺏기지도 떨어지지도 않는 도구 - 메가스톤과 Z크리스탈 (본가와 같다).
+def stuck(item, f=None):
+    """뺏기지도 떨어지지도 않는 도구 - 메가스톤과 Z크리스탈 (본가와 같다), 폼이 걸린 도구 (1.13).
 
-    트릭·바꿔치기·탁쳐서떨구기·도둑질·나쁜손버릇·매지션이 이것을 본다.
+    트릭·바꿔치기·탁쳐서떨구기·도둑질·나쁜손버릇·매지션이 이것을 본다. f(그 도구를 지닌 포켓몬)를
+    주면 플레이트·메모리·카세트는 그 전용 포켓몬(아르세우스·실버디·게노세크트)이 지녔을 때만 잠근다.
     """
-    return is_mega_stone(item) or ZM.is_crystal(item)
+    if not item:
+        return False
+    if is_mega_stone(item) or ZM.is_crystal(item) or item in LOCKED:
+        return True
+    sp = LOCKED_FOR.get(item)
+    return bool(sp and f is not None and _species(f) == sp)
+
+
+def _species(f):
+    return (getattr(f, "mon", None) or {}).get("species")
 
 
 def normalize(v):
@@ -232,7 +333,20 @@ def stat_mult(f, key):
         return 1.5
     elif key == "spa" and h == "CHOICESPECS":
         return 1.5
+    elif key == "spd" and h == "ASSAULTVEST":
+        return 1.5                                 # 돌격조끼 (대신 변화기를 못 쓴다)
+    if h == "EVIOLITE" and key in ("def", "spd") and _can_evolve(f):
+        return 1.5                                 # 진화의휘석: 아직 진화할 수 있는 포켓몬
+    spec = SPECIES_STAT.get(h)
+    if spec and key in spec[1] and _species(f) in spec[0] and not (f.cond or {}).get("transformed"):
+        return spec[2]                             # 전기구슬·굵은뼈·심해의이빨 … 그 포켓몬만
     return 1.0
+
+
+def _can_evolve(f):
+    dex = getattr(f, "_dex", None)
+    sp = dex.get(_species(f)) if dex is not None else None
+    return bool(sp and sp.get("evo"))
 
 
 # ---------------------------------------------------------------- 순서
@@ -306,6 +420,8 @@ def crit_stages(f):
     s = CRIT_UP.get(f.held, 0)
     if f.held == "LANSATBERRY" and f.armed:
         s += 2
+    if f.held in SPECIES_CRIT and _species(f) in SPECIES_CRIT[f.held]:
+        s += 2                                     # 럭키펀치(럭키)·대파(파오리·창파나이트)
     return s
 
 
@@ -330,6 +446,15 @@ def damage_mult(user, move, eff):
         m *= 1.3
     elif h == "METRONOME" and user.metro:
         m *= min(2.0, 1.0 + 0.2 * user.metro)
+    elif h == "PUNCHINGGLOVE" and "punch" in (move.get("flags") or ()):
+        m *= 1.1                                   # 펀치글러브 (닿지도 않는다 - abilities.is_contact)
+    if move.get("_gem"):
+        m *= GEM_MULT                              # 주얼 (before_damage 가 붙인 표시)
+    sp = SPECIES_POWER.get(h)
+    if sp and _species(user) in sp[0] and move.get("type") in sp[1]:
+        m *= 1.2                                   # 금강옥·백옥·백금옥·마음의물방울
+    if h in MASK and _species(user) == "OGERPON":
+        m *= MASK_MULT                             # 오거폰의 가면
     return m
 
 
@@ -379,6 +504,8 @@ def after_hit(bt, user, who, target, who_t, move, eff, total, ev):
             _consume(target)
             _heal(target, who_t, target.maxhp // 4, ev,
                   "%s 은(는) 의문열매로 체력을 회복했다!" % target.name)
+        else:
+            _react(bt, user, who, target, who_t, move, eff, ev)
 
 
 def flinch(bt, user, target, move):
@@ -505,7 +632,7 @@ def on_status(bt, f, who, ev):
 
 
 def on_stat_drop(bt, f, who, ev):
-    """능력이 떨어진 직후. 하양허브."""
+    """능력이 떨어진 직후. 하양허브, 탈출팩."""
     if f.held == "WHITEHERB" and not f.used \
             and any(v < 0 for v in f.stages.values()):
         for k, v in f.stages.items():
@@ -513,10 +640,304 @@ def on_stat_drop(bt, f, who, ev):
                 f.stages[k] = 0
         _consume(f)
         _say(ev, who, "%s 은(는) 하양허브로 능력 하락을 되돌렸다!" % f.name)
+    elif f.held == "EJECTPACK" and not f.used and f.alive() and _can_leave(bt):
+        _consume(f)
+        f.cond["eject"] = "out"                    # 기술이 끝난 뒤에 물러난다 (settle)
+        _say(ev, who, "%s 은(는) 탈출팩으로 돌아가려 한다!" % f.name)
 
 
 def flee_sure(f):
     return f.held == "SMOKEBALL"
+
+
+# ---------------------------------------------------------------- 1.13 의 훅
+# 규칙 1 그대로: 도구가 없으면 아무것도 안 하고 난수도 안 쓴다. 부르는 쪽(battle·statusmoves·
+# attackfx·abilities)이 정해진 자리에서 부른다.
+
+def _stat_up(bt, f, who, stat, n, ev):
+    bt._change_stat(f, stat, n, ev, who)
+
+
+def _can_leave(bt):
+    """물러날 곳이 있는 배틀인가 (관장·유저·레이드는 교체기가 붙어 있다). 야생은 없다 - 탈출버튼·
+    레드카드·탈출팩이 야생 배틀을 끝내 버리면 안 된다."""
+    return getattr(bt, "switcher", None) is not None
+
+
+def _react(bt, user, who, target, who_t, move, eff, ev):
+    """맞은 쪽 도구의 반응 (after_hit 가 부른다 - 한 번 쓰는 것들)."""
+    ht = target.held
+    mtype, cat = move.get("type"), move.get("cat")
+    fixed = move.get("_fixed") is not None or MC.key(move) in MC.FIXED
+    if ht == "WEAKNESSPOLICY" and eff > 1 and not fixed:
+        _consume(target)
+        _say(ev, who_t, "%s 의 약점보험이 발동했다!" % target.name)
+        _stat_up(bt, target, who_t, "atk", 2, ev)
+        _stat_up(bt, target, who_t, "spa", 2, ev)
+    elif ht in HIT_TYPE_BOOST and mtype == HIT_TYPE_BOOST[ht][0]:
+        _consume(target)
+        _say(ev, who_t, _josa("%s의 %s이(가) 반응했다!" % (target.name, name(ht))))
+        _stat_up(bt, target, who_t, HIT_TYPE_BOOST[ht][1], 1, ev)
+    elif ht in HIT_CAT_BERRY and cat == HIT_CAT_BERRY[ht][0]:
+        _consume(target)
+        _say(ev, who_t, "%s 은(는) %s를 먹었다!" % (target.name, name(ht)))
+        _stat_up(bt, target, who_t, HIT_CAT_BERRY[ht][1], 1, ev)
+    elif ht == "EJECTBUTTON" and _can_leave(bt):
+        _consume(target)
+        target.cond["eject"] = "out"               # 기술이 끝난 뒤에 물러난다 (settle)
+        _say(ev, who_t, "%s 은(는) 탈출버튼으로 돌아가려 한다!" % target.name)
+    elif ht == "REDCARD" and user.alive() and _can_leave(bt):
+        _consume(target)
+        user.cond["eject"] = "drag"                # 때린 쪽이 끌려 나간다 (settle)
+        _say(ev, who_t, "%s 은(는) %s 에게 레드카드를 내밀었다!" % (target.name, user.name))
+
+
+def on_each_hit(bt, user, who, target, who_t, move, dmg, ev):
+    """한 대 맞을 때마다 (연속기면 대마다). 울퉁불퉁멧, 풍선이 터진다."""
+    ht = target.held
+    if not ht or dmg <= 0:
+        return
+    if ht == "ROCKYHELMET" and user.alive() and contact_hurts(move, user) and not _has(user, "MAGICGUARD"):
+        _chip(user, who, user.maxhp // 6, ev, "%s 은(는) 울퉁불퉁멧에 다쳤다!" % user.name)
+    elif ht == "AIRBALLOON" and not target.used:
+        target.used = True
+        _say(ev, who_t, "%s 의 풍선이 터졌다!" % target.name)
+
+
+def contact_hurts(move, user):
+    """닿아서 다치는 것(까칠한피부·울퉁불퉁멧·정전기 …)이 일어나는가. 방호패드면 안 일어난다."""
+    from . import abilities as A
+    return A.is_contact(move, user) and getattr(user, "held", None) != "PROTECTIVEPADS"
+
+
+def before_damage(bt, user, who, move, ev):
+    """주얼: 그 타입 공격기를 처음 쓸 때 위력 1.3배 (한 번). 표시를 붙인 기술을 돌려준다."""
+    t = GEM.get(user.held)
+    if not t or user.used or not MC.attacks(move) or move.get("type") != t \
+            or move.get("_fixed") is not None or MC.key(move) in MC.FIXED:
+        return move
+    _consume(user)
+    _say(ev, who, "%s로 %s의 위력이 올라갔다!" % (name(t + "GEM"), move.get("kr") or "기술"))
+    return dict(move, _gem=True)
+
+
+def on_miss(bt, user, who, ev):
+    """명중 판정에서 빗나갔다. 허탕보험: 스피드 +2 (한 번)."""
+    if user.held == "BLUNDERPOLICY" and not user.used and user.alive():
+        _consume(user)
+        _say(ev, who, "%s 의 허탕보험이 발동했다!" % user.name)
+        _stat_up(bt, user, who, "spe", 2, ev)
+
+
+def after_move(bt, user, who, move, ev):
+    """기술을 다 쓴 뒤. 목스프레이: 소리 기술을 쓰면 특수공격 +1 (한 번)."""
+    if user.held == "THROATSPRAY" and not user.used and user.alive() \
+            and "sound" in (move.get("flags") or ()):
+        _consume(user)
+        _say(ev, who, "%s 의 목스프레이가 발동했다!" % user.name)
+        _stat_up(bt, user, who, "spa", 1, ev)
+
+
+def blocks_status(f, move):
+    """돌격조끼: 변화기를 못 쓴다. 못 쓰면 까닭(문구), 아니면 None."""
+    if f.held == "ASSAULTVEST" and move and not MC.attacks(move):
+        return "%s 은(는) 돌격조끼 때문에 변화 기술을 쓸 수 없다!" % f.name
+    return None
+
+
+def floating(f):
+    """풍선을 지녀서 떠 있는가 (땅 기술이 안 맞고 압정·필드도 안 닿는다). 맞으면 터진다."""
+    return f.held == "AIRBALLOON" and not f.used
+
+
+def on_entry(bt, f, who, ev):
+    """나온 순간 (등장 특성과 같은 자리). 풍선, 시드, 룸서비스, 부스트에너지."""
+    h = f.held
+    if not h or not f.alive():
+        return
+    if h == "AIRBALLOON" and not f.used and not f.cond.get("balloonSaid"):
+        f.cond["balloonSaid"] = True
+        _say(ev, who, "%s 은(는) 풍선으로 떠 있다!" % f.name)
+    elif h in SEED:
+        _seed(bt, f, who, ev)
+    elif h == "ROOMSERVICE":
+        _room_service(bt, f, who, ev)
+    elif h == "BOOSTERENERGY" and not f.used:
+        from . import statusmoves as SM
+        sun = SM.weather(f) == "sun"
+        elec = SM.terrain(f) == "electric"
+        if (_has(f, "PROTOSYNTHESIS") and not sun) or (_has(f, "QUARKDRIVE") and not elec):
+            _consume(f)
+            f.cond["booster"] = True
+            _say(ev, who, "%s 은(는) 부스트에너지로 %s이(가) 발동했다!"
+                 % (f.name, "고대활성" if _has(f, "PROTOSYNTHESIS") else "쿼크차지"))
+
+
+def _seed(bt, f, who, ev):
+    spec = SEED.get(f.held)
+    if not spec or f.used or not f.alive() or bt.field.terrain != spec[0]:
+        return
+    _consume(f)
+    _say(ev, who, "%s 은(는) %s를 썼다!" % (f.name, name(f.held)))
+    _stat_up(bt, f, who, spec[1], 1, ev)
+
+
+def _room_service(bt, f, who, ev):
+    if f.held != "ROOMSERVICE" or f.used or not f.alive() or not bt.field.room("trickroom"):
+        return
+    _consume(f)
+    _say(ev, who, "%s 은(는) 룸서비스를 썼다!" % f.name)
+    bt._change_stat(f, "spe", -1, ev, who)
+
+
+def on_terrain(bt, ev):
+    """필드가 새로 깔렸다. 시드를 지닌 쪽이 쓴다."""
+    for who in ("me", "foe"):
+        f = bt.fighter(who)
+        if f is not None and f.held in SEED:
+            _seed(bt, f, who, ev)
+
+
+def on_room(bt, room, ev):
+    """트릭룸이 새로 깔렸다. 룸서비스."""
+    if room != "trickroom":
+        return
+    for who in ("me", "foe"):
+        f = bt.fighter(who)
+        if f is not None and f.held == "ROOMSERVICE":
+            _room_service(bt, f, who, ev)
+
+
+def weather_turns(f, w):
+    """날씨를 부른 쪽의 도구: 맞는 바위면 8턴, 아니면 5턴."""
+    return 8 if f is not None and w in WEATHER_ROCK.get(f.held, ()) else 5
+
+
+def terrain_turns(f):
+    return 8 if f is not None and f.held == "TERRAINEXTENDER" else 5
+
+
+def screen_turns(f):
+    return 8 if f is not None and f.held == "LIGHTCLAY" else 5
+
+
+def bind_turns(f, rng):
+    """조이기·김밥말이 … 를 건 쪽의 도구: 끈기갈고리손톱이면 7턴 (난수를 안 쓴다)."""
+    return 7 if f is not None and f.held == "GRIPCLAW" else rng.randint(4, 5)
+
+
+def bind_frac(f):
+    """조임 데미지: 건 쪽이 조임밴드면 1/6, 아니면 1/8."""
+    return 6.0 if f is not None and f.held == "BINDINGBAND" else 8.0
+
+
+def no_hazards(f):
+    """통굽부츠: 압정·스텔스록·독압정·끈적끈적네트를 안 밟는다."""
+    return f.held == "HEAVYDUTYBOOTS"
+
+
+def weather_safe(f):
+    """방진고글: 모래바람·싸라기눈 데미지를 안 받는다."""
+    return f.held == "SAFETYGOGGLES"
+
+
+def powder_safe(f):
+    """방진고글: 가루·포자 기술이 안 통한다."""
+    return f.held == "SAFETYGOGGLES"
+
+
+def umbrella(f):
+    """만능우산: 쾌청·비의 영향을 안 받는다 (그 포켓몬이 쓰는 기술도, 맞는 기술도)."""
+    return f is not None and f.held == "UTILITYUMBRELLA"
+
+
+def cloaked(f):
+    """은밀망토: 상대 기술의 추가 효과(풀죽음·능력 하락·상태이상 확률)를 안 받는다."""
+    return f.held == "COVERTCLOAK"
+
+
+def clear_amulet(f, source):
+    """클리어참: 상대가 떨어뜨리는 능력 하락을 막는다."""
+    return f.held == "CLEARAMULET" and source is not None and source is not f
+
+
+def ability_locked(f):
+    """특성가드: 특성이 바뀌거나 지워지지 않는다."""
+    return f.held == "ABILITYSHIELD"
+
+
+def ring_target(f):
+    """겨냥표적: 타입 상성으로 안 맞던 기술(효과 없음)이 맞는다."""
+    return f.held == "RINGTARGET"
+
+
+def shed_shell(f):
+    """아름다운허물: 붙잡혀 있어도 교체할 수 있다."""
+    return f.held == "SHEDSHELL"
+
+
+def weight_mult(f):
+    return 0.5 if f.held == "FLOATSTONE" else 1.0
+
+
+def dice_hits(f, lo, hi, rng):
+    """속임수주사위: 2~5번 치는 기술이 4~5번. 해당이 없으면 None (난수를 안 쓴다)."""
+    if f.held == "LOADEDDICE" and (lo, hi) == (2, 5):
+        return rng.choice((4, 5))
+    return None
+
+
+def on_intimidated(bt, f, who, ev):
+    """위협을 받았다. 주눅구슬: 스피드 +1 (한 번)."""
+    if f.held == "ADRENALINEORB" and not f.used and f.alive():
+        _consume(f)
+        _say(ev, who, "%s 의 주눅구슬이 발동했다!" % f.name)
+        _stat_up(bt, f, who, "spe", 1, ev)
+
+
+def on_foe_boost(bt, f, who, stat, n, ev):
+    """맞은편이 능력을 올렸다. 흉내허브: 그만큼 따라 올린다 (한 번)."""
+    if f is None or f.held != "MIRRORHERB" or f.used or not f.alive() or n <= 0:
+        return
+    _consume(f)
+    _say(ev, who, "%s 은(는) 흉내허브로 상대의 능력 변화를 따라 했다!" % f.name)
+    bt._change_stat(f, stat, n, ev, who)
+
+
+def settle(bt, ev):
+    """기술 하나가 끝날 때마다 (그리고 턴 끝에). 걸린 것을 고치는 도구와, 물러나는 도구.
+
+    멘탈허브(헤롱헤롱·도발·앵콜·트집·사슬묶기·회복봉인), 시몬열매(혼란), 빨간실(헤롱헤롱을 되돌려 준다),
+    탈출버튼·레드카드·탈출팩(물러난다 / 끌려 나간다). 걸리는 자리가 여기저기라 한 곳에서 본다 -
+    싱글 배틀에서는 걸린 쪽이 그다음에 움직이므로 본가와 같다.
+    """
+    for who in ("me", "foe"):
+        f = bt.fighter(who)
+        if f is None or not f.alive():
+            continue
+        c = f.cond
+        h = f.held
+        if h == "DESTINYKNOT" and c.get("attract") and not f.used:
+            rival = bt.fighter("foe" if who == "me" else "me")
+            if rival is not None and rival.alive() and not rival.cond.get("attract"):
+                _consume(f)
+                rival.cond["attract"] = who
+                _say(ev, who, "%s 의 빨간실이 %s 을(를) 헤롱헤롱하게 만들었다!" % (f.name, rival.name))
+        if h == "MENTALHERB" and not f.used and any(c.get(k) for k in MENTAL_CONDS):
+            _consume(f)
+            for k in MENTAL_CONDS:
+                c.pop(k, None)
+            _say(ev, who, "%s 은(는) 멘탈허브로 정신을 차렸다!" % f.name)
+        if h == "PERSIMBERRY" and not f.used and c.get("confused"):
+            _consume(f)
+            c.pop("confused", None)
+            _say(ev, who, "%s 은(는) 시몬열매로 혼란이 풀렸다!" % f.name)
+    for who in ("me", "foe"):
+        f = bt.fighter(who)
+        mode = f.cond.pop("eject", None) if f is not None else None
+        if mode and f.alive() and not bt.over:
+            # 탈출버튼·탈출팩 = 스스로 물러난다, 레드카드 = 끌려 나간다 (울부짖기와 같다)
+            bt.request_switch(who, mode, ev, None)
 
 
 # ---------------------------------------------------------------- 배틀 밖 (서버)
@@ -672,4 +1093,101 @@ def effect_note(item_id):
             return "HP가 1/4 이하가 되면 급소에 맞을 확률이 두 단계 올라간다"
         if kind == "acc":
             return "HP가 1/4 이하가 되면 다음 기술의 명중률이 20% 올라간다"
+    return _note_113(h)
+
+
+# 1.13 의 도구들. 가방·상점에 나오는 한 줄 (본가 설명이 없는 9세대 도구는 이것이 설명이다).
+NOTE_113 = {
+    "MENTALHERB": "헤롱헤롱·도발·앵콜·트집·사슬묶기·회복봉인에 걸리면 한 번 바로 풀린다",
+    "LIGHTCLAY": "리플렉터·빛의장막·오로라베일이 5턴이 아니라 8턴 간다",
+    "POWERHERB": "두 턴에 걸쳐 쓰는 기술을 한 번 바로 쓴다",
+    "DESTINYKNOT": "헤롱헤롱에 걸리면 상대도 한 번 헤롱헤롱하게 만든다",
+    "GRIPCLAW": "조이기·김밥말이 같은 기술이 7턴 간다",
+    "SHEDSHELL": "붙잡혀 있어도 교체할 수 있다",
+    "EVIOLITE": "아직 진화할 수 있는 포켓몬이 지니면 방어·특수방어가 50% 올라간다 (1.5배)",
+    "FLOATSTONE": "몸무게가 절반이 된다 (안다리걸기·풀묶기에 덜 아프다)",
+    "ROCKYHELMET": "닿는 기술에 맞으면 때린 상대의 최대 HP 1/6을 깎는다",
+    "AIRBALLOON": "떠 있어서 땅 타입 기술을 안 맞는다. 공격에 한 번 맞으면 터진다",
+    "REDCARD": "기술에 맞으면 때린 상대를 교체시킨다 (한 번, 교체할 포켓몬이 있는 배틀에서만)",
+    "RINGTARGET": "타입 상성으로 효과가 없던 기술도 맞는다",
+    "BINDINGBAND": "조이기 같은 기술의 매 턴 데미지가 최대 HP의 1/8이 아니라 1/6이 된다",
+    "EJECTBUTTON": "기술에 맞으면 교체한다 (한 번, 교체할 포켓몬이 있는 배틀에서만)",
+    "EJECTPACK": "능력이 떨어지면 교체한다 (한 번, 교체할 포켓몬이 있는 배틀에서만)",
+    "WEAKNESSPOLICY": "효과가 굉장한 기술에 맞으면 공격·특수공격이 크게 오른다 (한 번)",
+    "ASSAULTVEST": "특수방어가 50% 올라간다 (1.5배). 대신 변화 기술을 쓸 수 없다",
+    "SAFETYGOGGLES": "모래바람·싸라기눈 데미지와 가루·포자 기술을 안 받는다",
+    "ADRENALINEORB": "위협을 받으면 스피드가 오른다 (한 번)",
+    "TERRAINEXTENDER": "필드가 5턴이 아니라 8턴 간다",
+    "PROTECTIVEPADS": "닿는 기술로 때려도 까칠한피부·울퉁불퉁멧 같은 반격을 안 받는다",
+    "THROATSPRAY": "소리 기술을 쓰면 특수공격이 오른다 (한 번)",
+    "HEAVYDUTYBOOTS": "압정·스텔스록·독압정·끈적끈적네트를 안 밟는다",
+    "BLUNDERPOLICY": "기술이 빗나가면 스피드가 크게 오른다 (한 번)",
+    "ROOMSERVICE": "트릭룸이 깔리면 스피드가 떨어진다 (한 번)",
+    "UTILITYUMBRELLA": "쾌청·비가 기술의 위력에 끼어들지 않는다 (쓰는 기술도, 맞는 기술도)",
+    "BOOSTERENERGY": "고대활성·쿼크차지가 날씨·필드 없이도 한 번 발동한다",
+    "ABILITYSHIELD": "특성이 바뀌거나 지워지지 않는다 (스킬스왑·위액 …)",
+    "CLEARAMULET": "상대가 떨어뜨리는 능력 하락을 막는다",
+    "MIRRORHERB": "상대가 능력을 올리면 그만큼 따라 올린다 (한 번)",
+    "PUNCHINGGLOVE": "펀치 기술의 위력이 10% 올라가고 상대에게 닿지 않는다",
+    "COVERTCLOAK": "상대 기술의 추가 효과(풀죽음·능력 하락·상태이상 확률)를 안 받는다",
+    "LOADEDDICE": "2~5번 치는 기술이 늘 4번이나 5번 친다",
+    "PERSIMBERRY": "혼란에 걸리면 바로 고친다 (한 번)",
+    "RUSTEDSWORD": "자시안이 지니면 검왕의 모습이 된다. 아이언헤드가 거수참이 된다",
+    "RUSTEDSHIELD": "자마젠타가 지니면 방패왕의 모습이 된다. 아이언헤드가 거수탄이 된다",
+    "REDORB": "그란돈이 지니고 배틀에 나오면 원시회귀한다 (끝의대지: 강한 햇살)",
+    "BLUEORB": "가이오가가 지니고 배틀에 나오면 원시회귀한다 (시작의바다: 강한 비)",
+}
+
+
+def _note_113(h):
+    if h in NOTE_113:
+        return NOTE_113[h]
+    t = HIT_TYPE_BOOST.get(h)
+    if t:
+        return _josa("%s 타입 기술에 맞으면 %s이(가) 오른다 (한 번)" % (_TYPE_KR.get(t[0], t[0]), _STAT_KR[t[1]]))
+    t = HIT_CAT_BERRY.get(h)
+    if t:
+        return _josa("%s 기술에 맞으면 %s이(가) 오른다 (한 번)"
+                     % ("물리" if t[0] == "physical" else "특수", _STAT_KR[t[1]]))
+    t = SEED.get(h)
+    if t:
+        fk = {"electric": "일렉트릭필드", "grassy": "그래스필드", "misty": "미스트필드", "psychic": "사이코필드"}[t[0]]
+        return _josa("%s가 깔려 있으면 %s이(가) 오른다 (한 번)" % (fk, _STAT_KR[t[1]]))
+    t = WEATHER_ROCK.get(h)
+    if t:
+        wk = {"hail": "싸라기눈·설경", "sand": "모래바람", "sun": "쾌청", "rain": "비"}[t[0]]
+        return _josa("%s을(를) 부르면 5턴이 아니라 8턴 간다" % wk)
+    t = GEM.get(h)
+    if t:
+        return "%s 타입 기술을 처음 쓸 때 위력이 30%% 올라간다 (1.3배, 한 번)" % _TYPE_KR.get(t, t)
+    t = SPECIES_STAT.get(h)
+    if t:
+        who = {"LIGHTBALL": "피카츄", "THICKCLUB": "탕구리·텅구리", "DEEPSEATOOTH": "진주몽",
+               "DEEPSEASCALE": "진주몽", "METALPOWDER": "메타몽(변신 전)", "QUICKPOWDER": "메타몽(변신 전)"}.get(h, "")
+        return _josa("%s이(가) 지니면 %s이(가) 2배" % (who, "·".join(_STAT_KR[k] for k in t[1])))
+    if h in SPECIES_CRIT:
+        who = {"LUCKYPUNCH": "럭키", "STICK": "파오리·창파나이트"}[h]
+        return _josa("%s이(가) 지니면 급소에 맞을 확률이 두 단계 올라간다" % who)
+    t = SPECIES_POWER.get(h)
+    if t:
+        who = {"SOULDEW": "라티오스·라티아스", "ADAMANTORB": "디아루가", "ADAMANTCRYSTAL": "디아루가",
+               "LUSTROUSORB": "펄기아", "LUSTROUSGLOBE": "펄기아", "GRISEOUSORB": "기라티나",
+               "GRISEOUSCORE": "기라티나"}[h]
+        text = _josa("%s이(가) 지니면 %s 타입 기술의 위력이 20%% 올라간다 (1.2배)"
+                     % (who, "·".join(_TYPE_KR.get(x, x) for x in t[1])))
+        if h in ("ADAMANTCRYSTAL", "LUSTROUSGLOBE", "GRISEOUSCORE", "GRISEOUSORB"):
+            text += ". 오리진폼이 된다"
+        return text
+    t = MASK.get(h)
+    if t:
+        return ("오거폰이 지니면 그 가면을 쓴 모습(%s 타입)이 되고, 기술의 위력이 20%% 올라간다. "
+                "덩굴방망이도 %s 타입이 된다" % (_TYPE_KR.get(t, t), _TYPE_KR.get(t, t)))
+    t = MEMORY.get(h)
+    if t:
+        return "실버디가 지니면 %s 타입이 되고, 멀티어택도 %s 타입이 된다" % (_TYPE_KR.get(t, t), _TYPE_KR.get(t, t))
+    t = DRIVE.get(h)
+    if t:
+        return "게노세크트가 지니면 테크노버스터가 %s 타입이 된다" % _TYPE_KR.get(t, t)
+    if h == "PIXIEPLATE":
+        return "페어리 타입 기술의 위력이 20% 올라간다 (1.2배). 아르세우스가 지니면 페어리 타입이 된다"
     return ""

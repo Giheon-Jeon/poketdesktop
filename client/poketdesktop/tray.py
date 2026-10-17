@@ -80,6 +80,19 @@ def make_icon_image(size=64):
     return appicon.make(size)
 
 
+def random_label(app):
+    """트레이의 랜덤 배틀 줄. 오늘 몇 판 더 걸 수 있는지 괄호에 적는다 (1.13, 하루 상한은 서버가 정한다).
+
+    남은 수는 동기화(/api/me 의 fight)에 실려 온다. 아직 모르면(켜자마자·옛 서버) 숫자 없이 둔다.
+    """
+    left = getattr(app, "fight_left", None)
+    if left is None:
+        return "랜덤 배틀"
+    if left <= 0:
+        return "랜덤 배틀  (오늘은 다 함)"
+    return "랜덤 배틀  (%d판 남음)" % left
+
+
 def stealth_label(app):
     """긴급 숨기기 줄의 글자. 숨겨 둔 동안에는 '다시 보이기', 단축키를 골랐으면 옆에 적는다."""
     try:
@@ -195,7 +208,7 @@ class TrayBase(object):
             # '바로 가기' 하위 메뉴는 뺐다. 창이 하나로 합쳐진 뒤로는
             # '열기...' 로 들어가서 탭을 고르면 되는데, 메뉴에 같은 것이
             # 일곱 줄 더 있으면 길기만 하다.
-            Item("랜덤 배틀", lambda: self.call(a.pvp_random)),
+            Item(lambda: random_label(a), lambda: self.call(a.pvp_random)),
             # 관장 도전은 지도에서 고르는 것이라 탭으로 바로 연다.
             Item("관장 도전", lambda: self.call(a.open_gym)),
             # '레이드' 는 1.10.0 에서 탭과 같이 뺐다 (ui_hub.TABS 를 보라).
