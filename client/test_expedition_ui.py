@@ -694,7 +694,9 @@ def main():
     n_calls = len(api.calls)
     w.do_send()
     rest(root, 0.1)
-    chk("  눌러도 서버에 안 간다", len(api.calls) == n_calls, api.calls[-1:])
+    # 보내기만 센다. 화면이 스스로 하는 상태 조회("expedition")는 느린 CI 에서 그사이에 끼어들 수 있다.
+    chk("  눌러도 서버에 안 간다", not [c for c in api.calls[n_calls:] if isinstance(c, tuple) and c[0] == "send"],
+        api.calls[n_calls:])
     chk("  성장 단추는 열려 있다 (쉬는 동안에도 성장치는 찍을 수 있다)", w.grow_btn.enabled)
     chk("쉬는 포켓몬이 있으면 다시 칠할 예약이 걸린다", w._rest_job is not None)
     api.now += 23 * 3600
@@ -750,12 +752,15 @@ def main():
     chk("  [+] [-] 가 글자 하나 폭이다 (넓지 않다)", plus.holder.winfo_width() <= U.h(40) and minus.holder.winfo_width() <= U.h(40)
         and plus.label.winfo_width() >= plus.label.winfo_reqwidth(), plus.holder.winfo_width())
     n_calls = len(api.calls)
+    # 성장치를 보낸 것만 센다 (찍기 · 되돌리기). 돌아올 때가 된 탐험이 있으면 화면이 1.2초 뒤 상태를 다시
+    # 묻는데("expedition"), 느린 CI(맥 러너)에서는 그 조회가 여기 끼어들어 이 검사만 두 번 연달아 떨어졌다 (1.13.1).
+    sent = lambda: [c for c in api.calls[n_calls:] if isinstance(c, tuple) and c[0] in ("grow", "reset")]  # noqa: E731
     d.bump("speed", 1)
     d.bump("speed", 1)
     d.bump("luck", 1)
     rest(root, 0.1)
     lit = lambda k: [d.rows[k][0].itemcget(i, "fill") for i in d.rows[k][0].find_all()]     # noqa: E731
-    chk("**넣어 본다 (발걸음 2, 눈썰미 1)**: 서버에는 아직 안 간다", len(api.calls) == n_calls and num.cget("text") == "0 +2"
+    chk("**넣어 본다 (발걸음 2, 눈썰미 1)**: 서버에는 아직 안 간다", not sent() and num.cget("text") == "0 +2"
         and "남은 성장치 0점" in texts(d.top) and lit("speed")[:3] == [U.ACCENT_TEXT, U.ACCENT_TEXT, U.INK]
         and "탐험 시간 -5%" in effect.cget("text") and d.ok_btn.enabled and minus.enabled, (num.cget("text"), effect.cget("text")))
     chk("  점수를 다 넣으면 [+] 가 전부 잠긴다", not any(d.rows[k][4].enabled for k in X.STATS))
