@@ -30,10 +30,14 @@ def _now():
 def record(method, path, exc, detail=""):
     """오류 하나를 남긴다. 실패해도 조용히 넘어간다."""
     try:
+        # **오류 문구를 맨 앞에, 역추적은 끝쪽을** 남긴다 (1.13.1). 앞에서부터 자르면 정작 문구가 있는
+        # 마지막 줄이 잘린다 ('database is locked' 인지 'disk is full' 인지가 거기 있다).
+        head = ("%s: %s" % (type(exc).__name__, exc))[:300]
+        tail = (detail or "")[-(DETAIL_MAX - len(head) - 1):] if detail else ""
         db.run("INSERT INTO server_error (at, path, method, kind, detail)"
                " VALUES (?,?,?,?,?)",
                (_now().isoformat(), (path or "")[:200], (method or "")[:10],
-                type(exc).__name__[:60], (detail or str(exc))[:DETAIL_MAX]))
+                type(exc).__name__[:60], (head + ("\n" + tail if tail else ""))[:DETAIL_MAX]))
     except Exception:                                       # noqa: BLE001
         pass
 

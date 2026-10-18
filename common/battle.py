@@ -511,6 +511,20 @@ def typed(move, user, target):
     return dict(m, type=t2) if t2 and t2 != m.get("type") else m
 
 
+def shown_type(move, user):
+    """기술 단추에 적을 타입 (1.13.1, 게시판 #259 '화덕의가면 오거폰의 덩굴방망이가 풀 타입으로 보인다').
+
+    지금 실제로 나갈 타입이다 (typed - 가면·플레이트·메모리·카세트·날씨·필드 ...). 단추가 도감 타입을 그대로
+    적어서, 데미지는 가면 타입으로 세면서 화면에는 풀로 보였다. 특성이 바꾸는 것(스카이스킨 ...)은 넣지 않는다.
+    """
+    if not move:
+        return None
+    try:
+        return typed(move, user, None).get("type")
+    except Exception:                                       # noqa: BLE001
+        return move.get("type")
+
+
 def damage(dex, move, user, target, rng, crit=None):
     """(데미지, 급소여부, 상성배율) 을 돌려준다. 아래 _damage 를 감싼 것이다.
 
@@ -1673,7 +1687,7 @@ class Battle(object):
         # 속이기·만나자마자: 나온 턴이 아니면 실패한다
         if not called and SM.first_turn_only(user, k):
             ev.append({"t": "move", "who": who, "name": user.name,
-                       "move": shown or self.move_name(key), "moveType": MC.move_type(move, user),
+                       "move": shown or self.move_name(key), "moveType": shown_type(move, user),
                        "cat": move.get("cat"),
                        "text": "%s 의 %s!" % (user.name, shown or self.move_name(key))})
             return self._fail(who, ev)
@@ -1690,7 +1704,7 @@ class Battle(object):
                 target.cond.pop("skydrop", None)             # 둘째 턴: 놓아준다
         if not charging and not bounced:
             mev = {"t": "move", "who": who, "name": user.name,
-                   "move": shown or self.move_name(key), "moveType": MC.move_type(move, user),
+                   "move": shown or self.move_name(key), "moveType": shown_type(move, user),
                    "cat": move.get("cat"),
                    "text": "%s 의 %s!" % (user.name, shown or self.move_name(key))}
             if shown:
@@ -2088,7 +2102,7 @@ class Battle(object):
         if hide:
             user.cond["invuln"] = hide
         ev.append({"t": "move", "who": who, "name": user.name,
-                   "move": self.move_name(key), "moveType": MC.move_type(move, user),
+                   "move": self.move_name(key), "moveType": shown_type(move, user),
                    "cat": move.get("cat"),
                    "text": "%s 의 %s!" % (user.name, self.move_name(key))})
         ev.append({"t": "msg", "who": who, "text": text % user.name})

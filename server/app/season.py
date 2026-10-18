@@ -173,6 +173,21 @@ S4_REWARDS = [
     ("hyper", "s4_hyper", None, 0, None),
     ("super", "s4_super", None, 0, None),
 ]
+# 시즌 4 부터 맨 위 다섯 자리에 더 준다 (2026-10-18 사용자 결정 - 사람이 늘고 파티가 세져서 보상을 올렸다).
+# 1등(챔피언)은 타입 확정 기술머신 뽑기권 + 관장 등록, 2~5등(사천왕)은 랜덤 기술머신 뽑기권.
+# 표가 위(S4_REWARDS)와 따로인 것은 그 다섯 칸짜리 줄을 여러 곳이 풀어 쓰기 때문이다 (achievements).
+# **시즌 4 를 닫는 손질(migrations)이 S4_ITEMS 도 선물로 넣어야 한다** - ("item", 도구, 개수) 줄.
+# {자리: ((도구, 개수), ...)}
+S4_ITEMS = {
+    "champion": (("RANKTICKETTMTYPE", 1),),
+    "elite": (("RANKTICKETTM", 1),),
+}
+# 도구가 아닌 보상. 랭킹 화면의 보상 표에 글로만 적는다. **관장 등록은 운영자가 구글폼으로 따로
+# 신청받아 손으로 들어준다** - 원하는 지역에 도트를 그려 1등 파티 그대로 관장으로 (tools/build_gyms.py,
+# 나여조경석·지우 와 같은 길). 선물로 넣을 것이 없다.
+S4_PERKS = {
+    "champion": ("관장 등록",),
+}
 
 
 def _now_iso():
@@ -379,9 +394,21 @@ def rules_public():
                      "title": TITLES[title],
                      "frame": FRAMES[frame][0] if frame else None,
                      "frameColor": FRAMES[frame][1] if frame else None,
-                     "shiny": n, "egg": EGG_KR.get(egg)}
+                     "shiny": n, "egg": EGG_KR.get(egg),
+                     # 도구와 도구가 아닌 보상 (시즌 4 부터). 옛 클라이언트는 모르는 칸이라 안 그린다.
+                     "items": _reward_items(t), "perks": list(S4_PERKS.get(t, ()))}
                     for t, title, frame, n, egg in S4_REWARDS],
     }
+
+
+def _reward_items(tier):
+    """그 자리에 더 주는 도구 [{id, kr, count}] (S4_ITEMS)."""
+    from . import items                 # 늦게 부른다 - items 가 선물을 줄 때 season 을 부른다
+    out = []
+    for item_id, n in S4_ITEMS.get(tier, ()):
+        it = items.get(item_id) or {}
+        out.append({"id": item_id, "kr": it.get("kr") or item_id, "count": int(n)})
+    return out
 
 
 def hall(season, limit=10):

@@ -6506,6 +6506,35 @@
    "kr": "디아루가 알 뽑기권",
    "sell": 0
   },
+  "RANKTICKETTM": {
+   "buyable": false,
+   "cat": "misc",
+   "cost": 0,
+   "desc": "아직 없는 기술머신 가운데 하나가 무작위로 나오는 표. 포켓몬을 고르지 않아도 된다.",
+   "effect": {
+    "kind": "tmticket"
+   },
+   "en": "TM Ticket",
+   "id": "RANKTICKETTM",
+   "ident": "rank-ticket-tm",
+   "kr": "랜덤 기술머신 뽑기권",
+   "sell": 0
+  },
+  "RANKTICKETTMTYPE": {
+   "buyable": false,
+   "cat": "misc",
+   "cost": 0,
+   "desc": "쓸 때 타입을 고르면, 그 타입 기술머신 가운데 아직 없는 것 하나가 무작위로 나오는 표. 포켓몬을 고르지 않아도 된다.",
+   "effect": {
+    "kind": "tmticket",
+    "pickType": true
+   },
+   "en": "Typed TM Ticket",
+   "id": "RANKTICKETTMTYPE",
+   "ident": "rank-ticket-tm-type",
+   "kr": "타입 확정 기술머신 뽑기권",
+   "sell": 0
+  },
   "RAREBONE": {
    "cat": "misc",
    "chance": 0.004597,

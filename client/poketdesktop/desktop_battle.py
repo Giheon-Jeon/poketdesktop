@@ -220,6 +220,16 @@ class DesktopBattle(object):
         self.bars = None
 
     def abort(self, msg):
+        # **왜 접었는지 기록에 남긴다** (1.13.1, 게시판 #266-1 '세 번째 포켓몬이 나온 뒤 배틀이 사라진다').
+        # 예전에는 알림만 띄우고 사라져서, 제보가 와도 어느 길로 접혔는지 가릴 수 없었다.
+        try:
+            b = self.b or {}
+            ov = getattr(self.app, "overlay", None)
+            config.log("배틀을 접음: %s (판 %s, 내 포켓몬 %s, 화면의 도트 %s)"
+                       % (msg, b.get("id"), (b.get("me") or {}).get("id"),
+                          sorted((getattr(ov, "pets", None) or {}).keys())))
+        except Exception:                                   # noqa: BLE001
+            pass
         self.app.notify(msg)
         self.finish_cleanup()
 
@@ -517,26 +527,50 @@ class DesktopBattle(object):
                     self.mine.place()
             self.mine = self.app.overlay.pets.get(self.b["me"]["id"])
             if not self.mine:
-                return self.abort("다음 포켓몬을 화면에서 찾지 못했습니다.")
-            self.mine.battling = True
-            self.saved_home = (self.mine.x, self.mine.y)
-            # 방금 다시 보인 도트가 '항상 위' 맨 위에 놓였다. 레이어를
-            # 그 위로 올려야 새 포켓몬의 체력바가 도트 뒤로 안 숨는다.
-            if self.layer:
-                self.layer.raise_above()
-            # **체력바를 새 포켓몬 것으로 바꾼다.**
-            #
-            # 바는 쓰러진 포켓몬의 0 을 그대로 들고 있다. 여기서 안 맞춰
-            # 주면 멀쩡한 포켓몬이 체력 0 인 채로 걸어 나오고, 다음 턴이
-            # 끝나고 turn_done 의 sync_bars 가 돌 때까지 그대로다.
-            #
-            # snap 으로 곧바로 맞춘다. 스르륵 차오르게 두면 새로 나온
-            # 포켓몬이 회복하는 것처럼 보인다.
-            self.sync_bars(snap=True)
-            self.after(300, self.approach)
+                # 바탕화면에 아직 없다 (도트를 다시 만드는 중 ...). **배틀을 시작할 때처럼** 목록을 맞추고 몇 번 더
+                # 찾는다 (1.13.1, 게시판 #266-1) - 예전에는 여기서 바로 접어서 배틀이 통째로 사라졌다.
+                request = getattr(self.app, "request_sync", None)
+                if request is not None:
+                    request()
+                return self._retry_next(1)
+            self._enter_next()
         run_async(self.root,
                   lambda: self.app.api.battle_switch(self.b["id"], mon["id"]),
                   lambda r, err: self._safe(done, r, err))
+
+    def _retry_next(self, tries):
+        """교체한 포켓몬을 화면에서 다시 찾는다 (0.5초마다, 여섯 번까지)."""
+        if self.closed:
+            return
+        if tries > 6:
+            return self.abort("다음 포켓몬을 화면에서 찾지 못했습니다.")
+
+        def again():
+            pet = self.app.overlay.pets.get(self.b["me"]["id"])
+            if pet is None:
+                return self._retry_next(tries + 1)
+            self.mine = pet
+            self._enter_next()
+        self.after(500, again)
+
+    def _enter_next(self):
+        """교체한 포켓몬이 배틀에 들어선다."""
+        self.mine.battling = True
+        self.saved_home = (self.mine.x, self.mine.y)
+        # 방금 다시 보인 도트가 '항상 위' 맨 위에 놓였다. 레이어를
+        # 그 위로 올려야 새 포켓몬의 체력바가 도트 뒤로 안 숨는다.
+        if self.layer:
+            self.layer.raise_above()
+        # **체력바를 새 포켓몬 것으로 바꾼다.**
+        #
+        # 바는 쓰러진 포켓몬의 0 을 그대로 들고 있다. 여기서 안 맞춰
+        # 주면 멀쩡한 포켓몬이 체력 0 인 채로 걸어 나오고, 다음 턴이
+        # 끝나고 turn_done 의 sync_bars 가 돌 때까지 그대로다.
+        #
+        # snap 으로 곧바로 맞춘다. 스르륵 차오르게 두면 새로 나온
+        # 포켓몬이 회복하는 것처럼 보인다.
+        self.sync_bars(snap=True)
+        self.after(300, self.approach)
 
     # ---------------- 몬스터볼 ----------------
     def throw_ball(self, e=None):

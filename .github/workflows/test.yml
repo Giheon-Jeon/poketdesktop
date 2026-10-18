@@ -303,6 +303,12 @@ jobs:
       # 1.8.0: 가방 안의 [도구 | 기술머신] 과 게시판 (글·댓글·답글·굴리기)
       - name: 가방 탭 합치기 (진짜 Tk)
         run: python client/test_bag_tabs.py
+      # 1.13.1: 가방 · 기술머신의 '누구에게' 목록 찾기 · 가나다순 · 레벨순
+      - name: 가방·기술머신 포켓몬 찾기 (진짜 Tk)
+        run: python client/test_mon_find.py
+      # 1.13.1: 랭크 시즌 보상 - 기술머신 뽑기권(타입 고르기) · 랭킹 탭 보상 표(관장 등록은 글로만)
+      - name: 기술머신 뽑기권·랭크 보상 표 화면 (진짜 Tk)
+        run: python client/test_reward_tickets.py
       - name: 게시판 화면 (진짜 Tk)
         run: python client/test_board_ui.py
       # 1.9.0: 마이페이지 (설정 탭 자리) - 내 기록, 칭호 줄바꿈, 톱니바퀴 = 설정
@@ -448,6 +454,12 @@ jobs:
       # 1.8.0: 가방 안의 [도구 | 기술머신] 과 게시판 (글·댓글·답글·굴리기)
       - name: 가방 탭 합치기 (진짜 Tk)
         run: python client/test_bag_tabs.py
+      # 1.13.1: 가방 · 기술머신의 '누구에게' 목록 찾기 · 가나다순 · 레벨순
+      - name: 가방·기술머신 포켓몬 찾기 (진짜 Tk)
+        run: python client/test_mon_find.py
+      # 1.13.1: 랭크 시즌 보상 - 기술머신 뽑기권(타입 고르기) · 랭킹 탭 보상 표(관장 등록은 글로만)
+      - name: 기술머신 뽑기권·랭크 보상 표 화면 (진짜 Tk)
+        run: python client/test_reward_tickets.py
       - name: 게시판 화면 (진짜 Tk)
         run: python client/test_board_ui.py
       # 1.9.0: 마이페이지 (설정 탭 자리) - 내 기록, 칭호 줄바꿈, 톱니바퀴 = 설정
@@ -582,6 +594,8 @@ jobs:
           # 악당 출현 / 길드전
           python test_match_rp.py
           python test_forms.py           # 1.13: 폼 도구 (켜고 끄기·고르기·꽃꿀)
+          python test_errors.py          # 1.13.1: 서버 오류 기록에 문구·역추적이 남는다
+          python test_tm_ticket.py       # 1.13.1: 랭크 보상 - 기술머신 뽑기권
           python test_gimmick.py
           python test_season4.py
           python test_boss.py

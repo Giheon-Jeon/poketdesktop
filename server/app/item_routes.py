@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from common import korean
 from common import pokelogic as P
 
-from . import config, db, deps, eggs, evolution, items
+from . import config, db, deps, eggs, evolution, items, tms
 
 router = APIRouter()
 
@@ -51,6 +51,7 @@ class UseIn(BaseModel):
     stat: str = ""       # 은색병뚜껑처럼 능력을 골라야 하는 것
     hour: int = -1       # 클라이언트의 시각 (낮/밤 조건용)
     form: str = ""       # 폼 도구로 고르는 모습 (로토무카탈로그·운석, 1.13). 빈 글자 = 원래 모습
+    type: str = ""       # 타입 확정 기술머신 뽑기권으로 고른 타입 (1.13.1)
 
 
 def _now():
@@ -97,9 +98,15 @@ def shop(me=Depends(deps.current)):
     """상점에 뭐가 있고 얼마인지. 가격은 본가 프렌들리샵 값 그대로."""
     u = me["user"]
     # 돈도 볼도 사용자 행에 이미 들어 있다. 다시 읽으면 왕복이 두 번 는다.
-    return {"items": items.public_list(), "money": u["money"],
-            "bag": items.bag_get(u["id"], u["balls"]),
-            "sellRate": config.SELL_RATE}
+    bag = items.bag_get(u["id"], u["balls"])
+    out = {"items": items.public_list(), "money": u["money"], "bag": bag,
+           "sellRate": config.SELL_RATE}
+    # 기술머신 뽑기권이 있으면 타입마다 아직 없는 기술머신 수 (1.13.1). 타입 확정 뽑기권을 쓸 때 고르는
+    # 창이 '다 모은 타입' 을 빼고 남은 수를 적는다. 표가 없는 사람에게는 안 싣는다 - 묻는 값이 아니다.
+    if any(bag.get(i, 0) > 0 for i, it in items.catalog().items()
+           if (it.get("effect") or {}).get("kind") == "tmticket"):
+        out["tmLeft"] = tm_left(u["id"])
+    return out
 
 
 # ---------------------------------------------------------------- 사고팔기
@@ -234,6 +241,12 @@ def use(body: UseIn, me=Depends(deps.current)):
         out["message"] = korean.natural(out.get("message", ""))
         return out
 
+    if kind == "tmticket":
+        out = _use_tm_ticket(uid, it, eff, body.type)
+        out.update(_wallet(uid))
+        out["message"] = korean.natural(out.get("message", ""))
+        return out
+
     mon = _mon(uid, body.pokemon) if body.pokemon else None
     if mon is None:
         raise HTTPException(400, "어느 포켓몬에게 쓸지 골라 주세요.")
@@ -352,6 +365,60 @@ def _use_ticket(uid, it, eff):
     eggs.give(uid, kind, species=species, known=True)
     return {"ok": True, "won": True, "species": species, "eggKr": name,
             "message": "%s 알을 받았다!" % name}
+
+
+def tm_left(uid):
+    """아직 없는 기술머신 수, 타입마다 {타입: 개수}. 다 모은 타입은 안 적는다."""
+    have = tms.owned(uid)
+    out = {}
+    for no, t in tms.all_tms().items():
+        if no not in have:
+            out[t["type"]] = out.get(t["type"], 0) + 1
+    return out
+
+
+def _use_tm_ticket(uid, it, eff, want):
+    """기술머신 뽑기권 (1.13.1, 랭크 시즌 보상). 아직 없는 기술머신 하나를 무작위로 준다.
+
+    · 랜덤: 358개 가운데 아직 없는 것 전부에서.
+    · 타입 확정(pickType): 고른 타입 가운데 아직 없는 것에서.
+
+    **가진 것은 안 준다** - 살 수도 팔 수도 없는 물건이라 가진 것이 나오면 표만 날아간 것과 같다
+    (드랍과 같은 규칙, tms.roll_drop). 그래서 뽑을 것이 없으면 **표를 빼기 전에** 거절한다.
+    표는 먼저 빼고 준다 - 주는 데서 터지면 돌려준다 (알 뽑기권과 같은 순서).
+    """
+    typed = bool(eff.get("pickType"))
+    want = (want or "").strip().upper()
+    every = tms.all_tms()
+    if typed:
+        kinds = set(t["type"] for t in every.values())
+        if not want:
+            raise HTTPException(400, "어느 타입의 기술머신을 받을지 골라 주세요.")
+        if want not in kinds:
+            raise HTTPException(400, "그런 타입의 기술머신은 없습니다.")
+    have = tms.owned(uid)
+    pool = [no for no, t in sorted(every.items())
+            if no not in have and (not typed or t["type"] == want)]
+    if not pool:
+        if typed:
+            kr = (deps.dex().raw.get("types") or {}).get(want, {}).get("kr") or want
+            raise HTTPException(400, "%s 타입 기술머신은 이미 다 모았습니다. 다른 타입을 골라 주세요." % kr)
+        raise HTTPException(400, "기술머신을 이미 다 모아서 뽑을 것이 없습니다.")
+    if not items.bag_take(uid, it["id"], 1):
+        raise HTTPException(400, "%s이(가) 없습니다." % it["kr"])
+    try:
+        random.shuffle(pool)
+        no = next((n for n in pool if tms.give(uid, n)), None)
+    except Exception:                                       # noqa: BLE001
+        items.bag_add(uid, it["id"], 1)
+        raise
+    if no is None:                      # 그사이 다른 창에서 다 받았다 - 표를 돌려준다
+        items.bag_add(uid, it["id"], 1)
+        if typed:
+            raise HTTPException(400, "그 타입 기술머신은 이미 다 모았습니다. 다른 타입을 골라 주세요.")
+        raise HTTPException(400, "기술머신을 이미 다 모아서 뽑을 것이 없습니다.")
+    return {"ok": True, "won": True, "tm": tms.public(no), "tmNew": tms.new_count(uid),
+            "message": "%s을(를) 얻었다!" % tms.label(no)}
 
 
 def _use_ev(uid, it, eff, mon):

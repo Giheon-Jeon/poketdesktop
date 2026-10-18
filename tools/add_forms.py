@@ -156,6 +156,15 @@ def build(dex):
         with open(sp, encoding="utf-8") as f:
             showdown = json.load(f)
     old = dict((m["internal"], m) for m in dex.get("forms") or [])
+    # 폼만의 레벨업 기술 (1.13.1, 게시판 #264 '쉐이미 스카이폼은 Lv.64 에 에어슬래시를 배운다는데 떠올리기에 없다').
+    # SV 표에서 원래 종과 다른 폼(테오키스 셋 · 스카이폼 · 굴레를 벗어난 후파)만 moves 를 따로 적는다.
+    # 나머지는 지금처럼 원래 종의 표를 같이 쓴다 (Pokedex.__init__ 이 물려준다).
+    sv = next((r["id"] for r in rows("version_groups.csv") if r["identifier"] == "scarlet-violet"), "25")
+    move_ident = dict((r["id"], key(r["identifier"])) for r in rows("moves.csv"))
+    learn = {}
+    for r in rows("pokemon_moves.csv"):
+        if r["version_group_id"] == sv and r["pokemon_move_method_id"] == "1" and int(r["level"] or 0) > 0:
+            learn.setdefault(r["pokemon_id"], []).append((int(r["level"]), move_ident.get(r["move_id"])))
     out, notes = [], []
     for ident, fkey, kind, extra in FORMS:
         r = poke.get(ident)
@@ -192,6 +201,9 @@ def build(dex):
         for k in ("items", "useItem", "formMoves", "ability", "move"):
             if k in extra:
                 entry[k] = extra[k]
+        own = sorted((lv, mv) for lv, mv in learn.get(pid, []) if mv in dex["moves"])
+        if own and set(mv for _lv, mv in own) != set(mv for _lv, mv in base.get("moves") or []):
+            entry["moves"] = [[lv, mv] for lv, mv in own]
         # 바탕화면 도트
         prev = old.get(entry["internal"]) or {}
         walk, dot = prev.get("walk"), bool(prev.get("dot"))

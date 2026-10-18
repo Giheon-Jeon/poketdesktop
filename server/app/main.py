@@ -2057,7 +2057,9 @@ def any_error(request: Request, exc: Exception):
     남기고, 사람이 읽을 수 있는 말로 돌려준다.
     """
     import traceback
-    tb = traceback.format_exc()
+    # **잡힌 예외에서 바로 뽑는다.** format_exc() 는 except 블록 밖(여기)에서는 'NoneType: None' 만 돌려줘서,
+    # 지금까지 남은 오류는 전부 내용 없이 종류만 있었다 (10/18 OperationalError 38건이 잠김인지 디스크인지 몰랐다).
+    tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     print("[500] %s %s" % (request.method, request.url.path), flush=True)
     print(tb, flush=True)
     # 표에도 남긴다. 그래야 대시보드를 열지 않아도 알 수 있다.

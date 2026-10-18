@@ -409,9 +409,17 @@ class RankWindow(object):
                     bits.append(rw["frame"])
                 if rw.get("shiny"):
                     bits.append("이로치사탕 %d개" % rw["shiny"])
+                # 도구와 도구가 아닌 보상 (시즌 4 부터: 기술머신 뽑기권 · 관장 등록)
+                for it in rw.get("items") or []:
+                    n = int(it.get("count") or 1)
+                    bits.append(it.get("kr", "?") if n == 1 else "%s %d개" % (it.get("kr", "?"), n))
+                bits.extend(rw.get("perks") or [])
+                # 챔피언 줄은 길어서 한 줄에 다 안 들어간다 - 글씨를 줄이지 않고 줄을 바꾼다.
+                # 폭은 카드 안쪽에서 티어 칸(가장 긴 '마스터볼')만큼 뺀 것.
                 tk.Label(grid, text=" · ".join(bits), bg=CARD_BG,
                          fg=rw.get("frameColor") or U.FG_DIM,
-                         font=U.FONT_XS, anchor="w").grid(
+                         font=U.FONT_XS, anchor="w", justify="left",
+                         wraplength=W - 90 - U.h(110)).grid(
                     row=i, column=1, sticky="w", padx=(8, 0))
 
     def _hall(self):

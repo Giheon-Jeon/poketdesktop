@@ -100,13 +100,16 @@ def give(uid, no, now=None):
     """준다. 이미 있으면 False (같은 것을 두 번 세지 않는다).
 
     새로 받은 것은 seen=0 이다 - 가방에서 눌러 볼 때까지 '새 기술머신' 이다 (1.11.0).
+
+    **실제로 넣었는지로 답한다** (1.13.1). 전에는 has() 를 지나면 늘 True 였다 - 같은 기술머신을 두 요청이
+    거의 같이 주면(뽑기권 두 장, 뽑기권과 드랍) 둘 다 '받았다' 가 되어 뽑기권만 한 장 날아갔다.
     """
     if has(uid, no):
         return False
-    db.run("INSERT INTO tm_owned (user_id, no, got_at, seen) VALUES (?,?,?,0)"
-           " ON CONFLICT(user_id, no) DO NOTHING",
-           (uid, int(no), now or _now()))
-    return True
+    cur = db.run("INSERT INTO tm_owned (user_id, no, got_at, seen) VALUES (?,?,?,0)"
+                 " ON CONFLICT(user_id, no) DO NOTHING",
+                 (uid, int(no), now or _now()))
+    return getattr(cur, "rowcount", 1) != 0
 
 
 # ---------------------------------------------------------------- 새 기술머신 (1.11.0)

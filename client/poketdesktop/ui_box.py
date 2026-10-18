@@ -2223,8 +2223,12 @@ class BoxWindow(object):
         self._move_cells = []
         moves = info.get("moves", [])
         kr_moves = self._moves_by_kr(dex)
+        # 가면·플레이트처럼 지닌 것으로 타입이 바뀐 기술 (1.13.1, 게시판 #259). 서버가 실어 준다.
+        shown = list(m.get("moveTypes") or [])
         for i, mv in enumerate(moves[:4]):
             md = kr_moves.get(mv) if dex else None
+            if i < len(shown) and shown[i] and md:
+                md = dict(md, type=shown[i])
             col = U.TYPE_COLOR.get((md or {}).get("type"), U.BG3)
             cell = tk.Frame(self.d_moves, bg=col, highlightthickness=2,
                             highlightbackground=col, cursor="hand2")

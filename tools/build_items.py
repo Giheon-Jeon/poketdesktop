@@ -123,6 +123,27 @@ EXTRA = [
         "effect": {"kind": "ticket", "chance": 0.7,
                    "species": "DIALGA", "eggKind": "legendary"},
     },
+    # 랭크 시즌 보상 (시즌 4 부터, 2026-10-18 사용자 결정 - season.S4_ITEMS). 상점·드랍에 없다.
+    # 1등은 타입 확정 뽑기권, 2~5등(사천왕)은 랜덤 뽑기권. (1등의 관장 등록은 도구가 아니다 - 운영자가
+    # 구글폼으로 따로 신청받는다, season.S4_PERKS)
+    # **기술머신 뽑기권은 아직 없는 것에서만 뽑는다** (기술머신은 살 수도 팔 수도 없어서, 가진 것이
+    # 나오면 표만 날아간 것과 같다). 다 모았으면 쓸 수 없고 표는 남는다.
+    {
+        "id": "RANKTICKETTM", "ident": "rank-ticket-tm",
+        "kr": "랜덤 기술머신 뽑기권", "en": "TM Ticket",
+        "cat": "misc", "cost": 0, "sell": 0, "buyable": False,
+        "desc": "아직 없는 기술머신 가운데 하나가 무작위로 나오는 표."
+                " 포켓몬을 고르지 않아도 된다.",
+        "effect": {"kind": "tmticket"},
+    },
+    {
+        "id": "RANKTICKETTMTYPE", "ident": "rank-ticket-tm-type",
+        "kr": "타입 확정 기술머신 뽑기권", "en": "Typed TM Ticket",
+        "cat": "misc", "cost": 0, "sell": 0, "buyable": False,
+        "desc": "쓸 때 타입을 고르면, 그 타입 기술머신 가운데 아직 없는 것 하나가"
+                " 무작위로 나오는 표. 포켓몬을 고르지 않아도 된다.",
+        "effect": {"kind": "tmticket", "pickType": True},
+    },
 ]
 
 

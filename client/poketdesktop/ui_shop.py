@@ -119,6 +119,12 @@ def effect_text(it):
         pct = int(round(float(eff.get("chance") or 0) * 100))
         return "쓰면 %d%% 확률로 알을 받는다" % pct if pct else "쓰면 알을 받는다"
 
+    # 랭크 시즌 보상 (1.13.1)
+    if kind == "tmticket":
+        if eff.get("pickType"):
+            return "고른 타입의 기술머신 가운데 아직 없는 것 하나를 받는다"
+        return "아직 없는 기술머신 하나를 무작위로 받는다"
+
     if kind == "ev":
         stat = STAT_KR.get(eff.get("stat"), eff.get("stat", ""))
         amount = int(eff.get("amount", 0) or 0)

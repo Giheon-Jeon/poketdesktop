@@ -34,6 +34,7 @@ from . import ui_box
 from . import item_icons
 from . import ui_common as U
 from . import ui_loading
+from . import ui_monfind
 
 LIST_W = 292            # 왼쪽 도구 목록 폭
 ITEM_H = U.h(28)        # 도구 한 줄 높이 (글꼴 따라 늘어난다)
@@ -59,9 +60,10 @@ CAT_COLOR = {"megastone": "#a98bff", "zcrystal": "#ffd23c", "form": "#5fd3c6", "
 # "held" 는 use 가 아니라 /api/pokemon/{id}/hold 로 간다 - 대상을 고르는
 # 흐름은 같아서 여기서 같이 다룬다.
 # "form" (1.13) 은 폼 도구 - 고르는 도구(로토무카탈로그·운석)는 쓰기 전에 모습을 한 번 더 묻는다.
-USABLE = ("ev", "iv", "level", "stone", "noevolve", "held", "shiny", "ticket", "form")
+# "tmticket" (1.13.1) 은 랭크 시즌 보상인 기술머신 뽑기권 - 타입 확정은 쓰기 전에 타입을 묻는다.
+USABLE = ("ev", "iv", "level", "stone", "noevolve", "held", "shiny", "ticket", "form", "tmticket")
 # **대상 포켓몬이 없는 도구.** 고를 것이 없으니 목록을 띄우지 않고 바로 쓴다.
-NO_TARGET = ("ticket",)
+NO_TARGET = ("ticket", "tmticket")
 
 ROW_BG = "#10131c"      # 목록 한 줄 바탕
 SEL_BG = "#2b2417"      # 고른 줄
@@ -90,21 +92,27 @@ def fetch_shop(api):
     return api._call("GET", "/api/shop")
 
 
-def use_item(api, item_id, pid, stat, hour, form=""):
+def use_item(api, item_id, pid, stat, hour, form="", tm_type=""):
     """도구를 쓴다. 시각(hour)은 **이 PC 기준**으로 반드시 같이 보낸다.
 
     서버는 도커 안에서 UTC 로 돌기 때문에 사용자의 밤낮을 스스로 알 수 없다.
     (이브이의 밤 진화처럼 시각을 보는 조건이 있다.)
-    form 은 폼 도구(1.13)에서만 - 고른 모습.
+    form 은 폼 도구(1.13)에서만 - 고른 모습. tm_type 은 타입 확정 기술머신 뽑기권(1.13.1)에서만.
     """
     fn = getattr(api, "use_item", None)
-    if fn is not None and _takes(fn, "hour") and (_takes(fn, "form") or not form):
+    if fn is not None and _takes(fn, "hour") and (_takes(fn, "form") or not form) \
+            and (_takes(fn, "tm_type") or not tm_type):
+        kw = {"hour": hour}
         if form:
-            return fn(item_id, pid, stat or "", hour=hour, form=form)
-        return fn(item_id, pid, stat or "", hour=hour)
+            kw["form"] = form
+        if tm_type:
+            kw["tm_type"] = tm_type
+        return fn(item_id, pid, stat or "", **kw)
     body = {"item": item_id, "pokemon": pid, "stat": stat or "", "hour": hour}
     if form:
         body["form"] = form
+    if tm_type:
+        body["type"] = tm_type
     return api._call("POST", "/api/bag/use", body)
 
 
@@ -178,6 +186,10 @@ def item_desc(item):
         if pct:
             out += "\n\n당첨 확률 %d%%. 꽝이어도 표는 없어진다." % pct
         return out
+    if kind == "tmticket":
+        out = item.get("desc") or "아직 없는 기술머신 하나가 나온다."
+        return out + ("\n\n랭크 시즌 보상으로만 받는다. 가진 기술머신은 나오지 않는다 - "
+                      "뽑을 것이 없으면 쓸 수 없고 표는 남는다.")
     if kind == "ball":
         return "야생 포켓몬을 만났을 때 던지는 볼이다. 가방에서는 쓸 수 없다."
     if kind == "sell":
@@ -530,6 +542,8 @@ class BagWindow(object):
         self._wait = None        # 여는 중 표시
         self._states = {}        # {포켓몬id: (good, blocked, note, color)} — 고른 도구 기준
         self._mon_ids = set()
+        self._view = []          # 오른쪽 목록에 보이는 포켓몬 - 찾는 말로 거르고 줄 세운 것 (1.13.1)
+        self.tm_left = None      # {타입: 아직 없는 기술머신 수} - 타입 확정 뽑기권이 있을 때만 온다 (1.13.1)
 
         # parent 가 있으면 탭 안의 한 칸으로, 없으면 지금까지처럼 창으로.
         self.win = U.panel(parent, root, "포스크탑 — 가방",
@@ -635,6 +649,9 @@ class BagWindow(object):
         self.t_hint = tk.Label(lhead, text="", bg=U.BG2, fg=U.FG_FAINT,
                                font=U.FONT_XS)
         self.t_hint.pack(side="right")
+        # 찾기·줄 세우기 (1.13.1). 도구를 바꿔도 찾는 말과 순서는 그대로다.
+        self.find = ui_monfind.FindBar(p, U.BG2, self._find_changed)
+        self.find.frame.pack(fill="x", pady=(0, 6))
 
         frame = U.framed(p, bg=ROW_BG, border=U.LINE)
         frame.pack(fill="both", expand=True)
@@ -801,6 +818,7 @@ class BagWindow(object):
         self.items = shop.get("items") or []
         self.bag = shop.get("bag") or {}
         self.money = int(shop.get("money") or 0)
+        self.tm_left = shop.get("tmLeft")
         self.mons = mons or []
         self._mon_ids = set(m["id"] for m in self.mons)
         self.photos = {}
@@ -884,11 +902,26 @@ class BagWindow(object):
             entries.append(("item", it))
         self.item_vl.set(entries)
 
-    def _fill_mons(self):
-        """'누구에게 쓸까?' 목록을 새로 채운다. 줄은 화면에 걸칠 때 그 시점의 상태로 칠해진다."""
-        self.mon_vl.set([("mon", m) for m in self.mons])
+    def _fill_mons(self, keep=True):
+        """'누구에게 쓸까?' 목록을 새로 채운다. 줄은 화면에 걸칠 때 그 시점의 상태로 칠해진다.
+
+        보이는 것은 찾는 말로 거르고 고른 순서로 줄 세운 것이다 (self.find, 1.13.1).
+        """
+        self._view = self.find.view(self.mons, getattr(self.app, "dex", None))
+        self.mon_vl.set([("mon", m) for m in self._view], keep=keep)
         if not self.mons:
             self._mon_list(False, "가진 포켓몬이 없다.")
+
+    def _find_changed(self):
+        """찾는 말·순서가 바뀌었다. 목록을 다시 채우고(맨 위부터), 고른 포켓몬이 가려졌으면
+        보이는 것 중에서 다시 고른다."""
+        if not self.alive:
+            return
+        stat, mon = self.stat, self.mon_id
+        self._fill_mons(keep=False)
+        self._show_targets(self.current_item())
+        if stat and self.mon_id == mon:
+            self.pick_stat(stat)             # 병뚜껑으로 고른 능력은 그대로 (pick_mon 이 지운다)
 
     def _mon_list(self, on, note=""):
         """대상 목록을 보이거나, 그 자리에 안내 글을 놓는다."""
@@ -974,21 +1007,27 @@ class BagWindow(object):
             return
         if not self.mons:
             return self._mon_list(False, "가진 포켓몬이 없다.")
-        self._mon_list(True)
 
         # 판정은 **줄이 아니라 데이터로** 한다. 줄은 화면에 보이는 것만 있다 -
         # 나머지는 굴러서 화면에 걸칠 때 이 상태로 칠해진다.
         self._states = {}
-        first_ok = None
         for m in self.mons:
-            good, blocked, note, color = self._target_state(it, m)
-            self._states[m["id"]] = (good, blocked, note, color)
-            if not blocked and (first_ok is None or (good and not self._is_good(first_ok))):
+            self._states[m["id"]] = self._target_state(it, m)
+        if not self._view:
+            # 찾는 말에 맞는 포켓몬이 없다. 안 보이는 포켓몬에게 쓰게 두지 않는다.
+            self._mon_list(False, self.find.empty_note())
+            return self.pick_mon(None, quiet=True)
+        self._mon_list(True)
+        # 처음 골라 줄 것은 **보이는 것 중에서** 찾는다 - 찾아서 좁혔으면 그 안에서.
+        first_ok = None
+        for m in self._view:
+            if not self._states[m["id"]][1] and (
+                    first_ok is None or (self._is_good(m["id"]) and not self._is_good(first_ok))):
                 first_ok = m["id"]
         self.mon_vl.refresh()
-        # 고르고 있던 포켓몬이 이 도구로는 못 쓰는 대상이면 옮겨 준다
+        # 고르고 있던 포켓몬이 이 도구로는 못 쓰는 대상이거나 찾기에 가려졌으면 옮겨 준다
         cur = self._states.get(self.mon_id)
-        if cur is None or cur[1]:
+        if cur is None or cur[1] or not any(m["id"] == self.mon_id for m in self._view):
             self.pick_mon(first_ok, quiet=True)
         else:
             self.pick_mon(self.mon_id, quiet=True)
@@ -1362,10 +1401,38 @@ class BagWindow(object):
         return ui_box.ask_choice(self.win, it["kr"],
                                  "%s의 모습을 고르세요. (지금: %s)" % (name, now or "원래 모습"), opts)
 
+    def _ask_tm_type(self, it):
+        """타입 확정 기술머신 뽑기권: 어느 타입에서 뽑을지 (1.13.1). 고른 타입, 그만두면 None.
+
+        다 모은 타입은 빼고, 타입마다 아직 없는 기술머신 수를 적는다 (서버가 실어 보낸 tmLeft).
+        옛 서버라 그 수가 없으면 타입만 늘어놓는다 - 다 모은 타입이면 서버가 표를 빼기 전에 거절한다.
+        """
+        from .ui_tms import TYPE_KR            # ui_tms 가 이 모듈을 부르므로 여기서 늦게 부른다
+        left = self.tm_left
+        opts = []
+        for t, kr in TYPE_KR.items():
+            if left is None:
+                if t != "STELLAR":
+                    opts.append((t, kr, None))
+            elif int(left.get(t) or 0) > 0:
+                opts.append((t, kr, "아직 없는 것 %d개" % int(left[t])))
+        if not opts:
+            self.say("기술머신을 이미 다 모아서 뽑을 것이 없다.", U.ACCENT, U.FG_DIM)
+            return None
+        return ui_box.ask_choice(self.win, it["kr"],
+                                 "어느 타입을 뽑을까요? 고른 타입의 기술머신 가운데 아직 없는 것 "
+                                 "하나가 무작위로 나옵니다.", opts)
+
     def _use_no_target(self, it):
         """대상이 없는 도구(뽑기권). 포켓몬을 안 고르고 바로 쓴다."""
         api = self.app.api
         item_id = it["id"]
+        eff = it.get("effect") or {}
+        tm_type = ""
+        if eff.get("kind") == "tmticket" and eff.get("pickType"):
+            tm_type = self._ask_tm_type(it)
+            if not tm_type:
+                return                              # 창을 닫았다
         hour = datetime.datetime.now().hour
         self.use_btn.configure(state="disabled")
         self.say("%s을(를) 쓰는 중..." % it["kr"], U.FG_FAINT)
@@ -1374,16 +1441,26 @@ class BagWindow(object):
             if not self.alive:
                 return
             if err:
-                self.say(getattr(err, "message", str(err)), U.DANGER, U.DANGER)
+                msg = getattr(err, "message", str(err))
+                if tm_type and getattr(err, "status", 0):
+                    # 거절됐다 (그사이 드랍으로 그 타입을 다 모았다 등). 가방을 다시 읽어야 고르는 창의
+                    # '아직 없는 것 N개' 가 맞는 수가 된다 - 안 그러면 다 모은 타입이 계속 뜬다.
+                    self._pending = (msg, U.DANGER)
+                    return self.reload()
+                self.say(msg, U.DANGER, U.DANGER)
                 return self._refresh_button()
             r = r or {}
             color = U.GOOD if r.get("won") else U.FG_DIM
             self._pending = (r.get("message") or "도구를 썼다.", color)
             self.reload()
             self.app.request_sync()          # 알 칸이 바뀐다
+            if r.get("tmNew") is not None:   # 기술머신 뽑기권 - [기술머신] 의 노란 점과 목록
+                note = getattr(self.app, "note_tms", None)
+                if note is not None:
+                    note(r["tmNew"])
 
         U.run_async(self.root,
-                    lambda: use_item(api, item_id, 0, "", hour), done)
+                    lambda: use_item(api, item_id, 0, "", hour, tm_type=tm_type), done)
 
     # ---------------- 끝내기 ----------------
     def close(self):

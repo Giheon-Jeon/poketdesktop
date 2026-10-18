@@ -709,8 +709,9 @@ class RaidBattle(object):
         out = []
         for m in f.moves:
             md = dex.move(m) or {}
-            out.append({"key": m, "kr": dex.move_name(m), "type": md.get("type"),
-                        "typeKr": dex.type_name(md.get("type")), "cat": md.get("cat"),
+            t = B.shown_type(md, f)                # 가면·플레이트로 바뀐 타입 (게시판 #259)
+            out.append({"key": m, "kr": dex.move_name(m), "type": t,
+                        "typeKr": dex.type_name(t), "cat": md.get("cat"),
                         "power": md.get("power"), "acc": md.get("acc"),
                         "pp": f.pp.get(m, 0), "maxpp": md.get("pp", 0),
                         "desc": md.get("desc", ""),

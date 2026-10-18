@@ -123,6 +123,38 @@ def main():
     use(uid, "REDNECTAR", ori)
     chk("다홍꿀: 원래 모습(이글이글스타일)", row(ori)["form"] is None)
 
+    print("== 폼만의 레벨업 기술 (1.13.1, 게시판 #264)")
+    from app import tm_routes as TR
+    from common import pokelogic as P
+    d = deps.dex()
+    sky = mkmon(uid, "SHAYMIN", ["SEEDFLARE"], level=70)
+    db.run("UPDATE pokemon SET form='SKY' WHERE id=?", (sky,))
+    names = [mv for mv, _lv in TR.rememberable(row(sky), d.get("SHAYMIN"), d)]
+    chk("스카이폼: 떠올리기에 에어슬래시(Lv.64) · 전광석화(Lv.28)", "AIRSLASH" in names and "QUICKATTACK" in names,
+        names)
+    chk("  랜드폼에만 있는 광합성은 안 나온다", "SYNTHESIS" not in names, names)
+    land = mkmon(uid, "SHAYMIN", ["SEEDFLARE"], level=70)
+    names = [mv for mv, _lv in TR.rememberable(row(land), d.get("SHAYMIN"), d)]
+    chk("  랜드폼은 그대로 (광합성, 에어슬래시 없음)", "SYNTHESIS" in names and "AIRSLASH" not in names, names)
+    up = mkmon(uid, "SHAYMIN", ["SEEDFLARE"], level=63)
+    curve = d.get("SHAYMIN").get("growth", "medium")
+    db.run("UPDATE pokemon SET form='SKY', exp=? WHERE id=?", (P.exp_for_level(curve, 63), up))
+    deps.grant_exp(uid, up, P.exp_for_level(curve, 64) - P.exp_for_level(curve, 63))
+    mv = json.loads(row(up)["moves"])
+    chk("  스카이폼으로 Lv.64 가 되면 에어슬래시를 배운다", row(up)["level"] == 64 and "AIRSLASH" in mv, (row(up)["level"], mv))
+    hoopa = mkmon(uid, "HOOPA", ["PSYCHIC"], level=85)
+    db.run("UPDATE pokemon SET form='UNBOUND' WHERE id=?", (hoopa,))
+    names = [mv for mv, _lv in TR.rememberable(row(hoopa), d.get("HOOPA"), d)]
+    chk("굴레를 벗어난 후파: 이차원러시(Lv.85)", "HYPERSPACEFURY" in names, names)
+
+    print("== 포켓몬 관리 창의 기술 타입 (1.13.1, 게시판 #259)")
+    og = mkmon(uid, "OGERPON", ["IVYCUDGEL", "HORNLEECH"], level=50)
+    db.run("UPDATE pokemon SET held='HEARTHFLAMEMASK' WHERE id=?", (og,))
+    view = deps.decorate(db.row_to_mon(row(og)))
+    chk("화덕의가면 오거폰: 덩굴방망이는 불꽃으로 싣는다 (우드혼은 그대로)",
+        view.get("moveTypes") == ["FIRE", None], view.get("moveTypes"))
+    chk("  그런 기술이 없으면 싣지 않는다", "moveTypes" not in deps.decorate(db.row_to_mon(row(sh))))
+
     print("== 합체 도구는 없다")
     cat = items.catalog()
     chk("유전자쐐기·네크로플러스·유대의고삐는 상점에 없다",

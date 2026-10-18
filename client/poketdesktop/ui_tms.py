@@ -37,6 +37,7 @@ from common.korean import natural
 from . import sprite_cache, sprites
 from . import ui_common as U
 from . import ui_loading
+from . import ui_monfind
 from .ui_bag import _scroller, bag_title
 from .ui_learn import ask_forget
 
@@ -93,6 +94,8 @@ class TmWindow(object):
         self._show_job = None    # 새로 보일 줄을 나눠 담는 일
         self._empty = None       # '아직 하나도 없습니다'
         self._mon_job = None     # 오른쪽 줄을 나눠 만드는 일
+        self._learners = None    # 고른 기술머신을 배울 수 있는 포켓몬 (서버의 답). None = 묻는 중
+        self._mon_none = None    # '찾는 포켓몬이 없다' 안내
         self._mon_gen = 0        # 오른쪽 목록의 세대. 바뀌면 늦게 온 답은 버린다
         self.fresh = set()       # 받고 아직 안 본 기술머신 번호 (노란 점)
         self._seen_here = set()  # 여기서 눌러 본 것 - 서버에 적기 전에 다시 읽어도 점이 되살지 않게
@@ -214,6 +217,9 @@ class TmWindow(object):
         tk.Label(right, text="배울 수 있는 포켓몬", bg=U.BG2, fg=U.FG_FAINT,
                  font=U.FONT_XS, anchor="w").pack(anchor="w", padx=18,
                                                   pady=(10, 4))
+        # 찾기·줄 세우기 (1.13.1, 가방과 같은 한 줄). 기술머신을 바꿔도 그대로다.
+        self.find = ui_monfind.FindBar(right, U.BG2, self._arrange_mons)
+        self.find.frame.pack(fill="x", padx=18, pady=(0, 6))
         holder = tk.Frame(right, bg=U.BG2)
         holder.pack(fill="both", expand=True, padx=12, pady=(0, 12))
         self.mon_canvas, self.mon_inner = _scroller(holder, U.BG2)
@@ -603,6 +609,8 @@ class TmWindow(object):
         for w in self.mon_inner.winfo_children():
             w.destroy()
         self.mon_rows = {}
+        self._learners = None
+        self._mon_none = None
         t = self._cur()
         if not t:
             self.title_lbl.configure(text="기술머신을 고르세요")
@@ -645,6 +653,7 @@ class TmWindow(object):
             if err:
                 return self.say("포켓몬을 불러오지 못했습니다. %s" % err, U.RED)
             rows = (r or {}).get("learners") or []
+            self._learners = rows
             if not rows:
                 tk.Label(self.mon_inner,
                          text="이 기술머신을 배울 수 있는 포켓몬이 없습니다.",
@@ -652,11 +661,48 @@ class TmWindow(object):
                              anchor="w", padx=8, pady=12)
                 return
             self._thumbs(rows, t, gen)
-            self._mon_job = U.Chunked(
-                self.win, rows,
-                lambda m: self._mon_row(m, m.get("known"), m.get("moves") or []))
+            self._arrange_mons()
 
         U.run_async(self.root, work, done)
+
+    def _arrange_mons(self):
+        """오른쪽 줄을 찾는 말·고른 순서대로 담는다 (self.find, 1.13.1).
+
+        **줄은 마리마다 한 번만 만든다.** 찾는 말을 칠 때마다 줄을 부수고 새로 만들면 수백 마리에서
+        글자마다 멈춘다. 이미 만든 줄은 뺐다가 새 순서로 다시 담기만 하고, 아직 안 만든 줄은 담을
+        차례에 만든다 (나눠 만들기, U.Chunked). 가려진 줄을 고르고 있었으면 고름을 푼다 -
+        안 보이는 포켓몬에게 가르치지 않게.
+        """
+        if not self.alive or not self._learners:
+            return                           # 아직 묻는 중이거나 배울 포켓몬이 없다 (안내가 그 자리에)
+        if self._mon_job is not None:
+            self._mon_job.cancel()           # 옛 순서의 남은 줄이 뒤에 붙지 않게
+            self._mon_job = None
+        for got in self.mon_rows.values():
+            got[0].pack_forget()
+        if self._mon_none is not None:
+            self._mon_none.destroy()
+            self._mon_none = None
+        view = self.find.view(self._learners, getattr(self.app, "dex", None))
+        if self.mon_id is not None and not any(m["id"] == self.mon_id for m in view):
+            self.pick_mon(None)
+        try:
+            self.mon_canvas.yview_moveto(0)
+        except tk.TclError:
+            pass
+        if not view:
+            self._mon_none = tk.Label(self.mon_inner, text=self.find.empty_note(),
+                                      bg=U.BG2, fg=U.FG_FAINT, font=U.FONT_S)
+            self._mon_none.pack(anchor="w", padx=8, pady=12)
+            return
+        self._mon_job = U.Chunked(self.win, view, self._place_mon)
+
+    def _place_mon(self, m):
+        got = self.mon_rows.get(m["id"])
+        if got is None:
+            self._mon_row(m, m.get("known"), m.get("moves") or [])     # 만들면서 담는다
+        else:
+            got[0].pack(fill="x", pady=1)
 
     def _mon_row(self, mon, known, moves):
         f = tk.Frame(self.mon_inner, bg=U.BG2, height=MON_H)

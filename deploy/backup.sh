@@ -31,14 +31,17 @@ die()  { printf '   \033[31m!!\033[0m  %s\n' "$*" >&2; exit 1; }
 
 # ---------------------------------------------------------------- cron 등록
 if [ "${1:-}" = "--install" ]; then
-  line="17 3 * * * bash $HERE/backup.sh >> $OUT_DIR/backup.log 2>&1"
+  # **서버 시계는 UTC 다** (Lightsail Ubuntu). 예전 줄 '17 3 * * *' 은 한국 시각 낮 12시 17분에 돌아서,
+  # 한창 붐빌 때 1.5GB 를 뜨고 암호화하고 다시 열어 봤다 (2026-10-18 확인). 한국 시각 새벽 3시 17분 =
+  # UTC 전날 18시 17분.
+  line="17 18 * * * bash $HERE/backup.sh >> $OUT_DIR/backup.log 2>&1"
   mkdir -p "$OUT_DIR"
-  # 이미 있으면 두 번 넣지 않는다
-  if crontab -l 2>/dev/null | grep -Fq "$HERE/backup.sh"; then
+  # 이미 있으면 두 번 넣지 않는다. 시각이 다르면(옛 '17 3') 새 줄로 바꾼다.
+  if crontab -l 2>/dev/null | grep -Fxq "$line"; then
     ok "cron 에 이미 있음"
   else
-    (crontab -l 2>/dev/null; echo "$line") | crontab -
-    ok "cron 등록: 매일 새벽 3시 17분"
+    (crontab -l 2>/dev/null | grep -Fv "$HERE/backup.sh"; echo "$line") | crontab -
+    ok "cron 등록: 매일 한국 시각 새벽 3시 17분 (UTC 18:17)"
   fi
   crontab -l | grep backup.sh
   echo

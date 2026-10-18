@@ -291,6 +291,23 @@ def t_forms():
         and og.ability == "WATERABSORB" and AF.move_type(DEX.move("IVYCUDGEL"), og) == "WATER",
         (og.types(), og.ability))
     chk("  가면은 기술 위력 1.2배", abs(H.damage_mult(og, DEX.move("IVYCUDGEL"), 1.0) - 1.2) < 1e-6)
+    # 기술 단추에 적는 타입 (1.13.1, 게시판 #259 '화덕의가면 오거폰의 덩굴방망이가 풀로 보인다')
+    hearth = B.Fighter(DEX, mon("OGERPON", 50, ["IVYCUDGEL"], held="HEARTHFLAMEMASK"))
+    chk("기술 단추 타입: 화덕의가면 덩굴방망이는 불꽃 (도감 타입 풀이 아니라)",
+        B.shown_type(DEX.move("IVYCUDGEL"), hearth) == "FIRE", B.shown_type(DEX.move("IVYCUDGEL"), hearth))
+    chk("  플레이트를 지닌 아르세우스의 심판의뭉치는 플레이트 타입",
+        B.shown_type(DEX.move("JUDGMENT"), B.Fighter(DEX, mon("ARCEUS", 50, ["JUDGMENT"], held="FLAMEPLATE")))
+        == "FIRE")
+    chk("  가면이 없으면 풀 그대로", B.shown_type(DEX.move("IVYCUDGEL"),
+                                         B.Fighter(DEX, mon("OGERPON", 50, ["IVYCUDGEL"]))) == "GRASS")
+    from common import trainer_battle as TB
+    gym = {"id": "t", "name": "t", "role": "t", "sprite": None, "level": 5,
+           "team": [{"species": "MAGIKARP", "level": 5, "moves": ["SPLASH"]}]}
+    tb = TB.TrainerBattle(DEX, [mon("OGERPON", 50, ["IVYCUDGEL"], held="HEARTHFLAMEMASK")], gym, random.Random(1))
+    tb.start()
+    btn = [m for m in tb.view()["me"]["team"][0]["moves"] if m["key"] == "IVYCUDGEL"][0]
+    chk("  관장 배틀 창의 기술 단추에도 불꽃으로 간다", btn["type"] == "FIRE" and btn["typeKr"] == DEX.type_name("FIRE"),
+        btn)
     sky = mon("SHAYMIN", 50)
     sky["form"] = "SKY"
     f = B.Fighter(DEX, sky)

@@ -75,6 +75,34 @@ def current(request: Request, authorization: str = Header(default="")):
     return {"user": user, "session": sess, "token": token}
 
 
+# 지닌 도구·개체값·타입으로 타입이 바뀌는 기술 (배틀 밖에서도 정해지는 것만 - 날씨·필드는 뺀다)
+VAR_TYPE_MOVES = frozenset(("IVYCUDGEL", "JUDGMENT", "MULTIATTACK", "TECHNOBLAST", "HIDDENPOWER",
+                            "NATURALGIFT", "REVELATIONDANCE"))
+
+
+def move_types(mon, d=None):
+    """기술마다 실제 타입이 도감과 다르면 그 타입, 같으면 None - moves 와 같은 순서 (1.13.1, 게시판 #259).
+
+    포켓몬 관리 창이 기술 칸의 색과 타입을 이것으로 칠한다 (가면을 쓴 오거폰의 덩굴방망이가 풀로 보였다).
+    그런 기술을 아는 포켓몬만 배틀 판의 포켓몬을 만들어 센다 - 목록마다 수백 마리를 다 만들면 느리다.
+    """
+    moves = (mon or {}).get("moves") or []
+    if not any(m in VAR_TYPE_MOVES for m in moves):
+        return None
+    d = d or dex()
+    try:
+        from common import battle as B
+        f = B.Fighter(d, dict(mon))
+        out = []
+        for m in moves:
+            md = d.move(m)
+            t = B.shown_type(md, f) if md and m in VAR_TYPE_MOVES else None
+            out.append(t if md and t and t != md.get("type") else None)
+        return out if any(out) else None
+    except Exception:                                       # noqa: BLE001
+        return None
+
+
 def decorate(mon):
     """포켓몬 한 마리에 도감 정보를 붙여서 내려보낸다."""
     d = dex()
@@ -88,6 +116,9 @@ def decorate(mon):
         it = _items.get(held) or {}
         out["heldKr"] = it.get("kr", held)
         out["heldDesc"] = it.get("desc", "")
+    mt = move_types(mon, d)
+    if mt:
+        out["moveTypes"] = mt
     sp = d.get(mon["species"])
     if sp:
         out["num"] = sp["num"]
@@ -245,7 +276,10 @@ def grant_exp(uid, mon_id, amount, hour=None):
     pending = _pending_of(r)
     learned = []
     if lv > before:
-        moves, learned, pending = _learn(sp, moves, before, lv, pending, d)
+        # 폼만의 레벨업 기술 (1.13.1, 게시판 #264 - 스카이폼 쉐이미의 에어슬래시 …). 폼에 표가 따로 없으면
+        # 원래 종의 표를 물려받아 있다 (Pokedex.__init__).
+        lsp = (d.form_for(db.row_to_mon(r)) if hasattr(d, "form_for") else None) or sp
+        moves, learned, pending = _learn(lsp, moves, before, lv, pending, d)
     db.run("UPDATE pokemon SET exp=?, level=?, moves=?, pending=? WHERE id=?",
            (exp, lv, json.dumps(moves), json.dumps(pending), mon_id))
 

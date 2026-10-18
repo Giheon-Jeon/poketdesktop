@@ -274,6 +274,12 @@ def rememberable(r, sp, d=None):
     known = set(json.loads(r["moves"]))
     level = int(r["level"])
     best = {}
+    # 지금 폼의 표 (1.13.1, 게시판 #264 - 스카이폼 쉐이미는 Lv.64 에 에어슬래시). 폼에 표가 따로 없으면 원래
+    # 종의 것을 물려받아 있다.
+    try:
+        sp = (d.form_for(db.row_to_mon(r)) if hasattr(d, "form_for") else None) or sp
+    except Exception:                                       # noqa: BLE001
+        pass
     learn = list((sp or {}).get("moves", [])) + [(1, mv) for mv in (sp or {}).get("remind") or []]
     for lv, mv in learn:
         if lv > level or mv in known or d.move(mv) is None:

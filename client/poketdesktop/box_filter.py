@@ -15,9 +15,23 @@ def _norm(s):
     return "".join((s or "").split()).lower()
 
 
+def _species(mon, dex):
+    """그 포켓몬의 도감 자료. 종 이름(내부 이름)이 없는 줄은 도감 번호로 찾는다 -
+    기술머신의 '배울 수 있는 포켓몬' 은 번호만 싣는다 (서버 /api/tms/{no}/learners)."""
+    if not dex:
+        return {}
+    sp = dex.get(mon.get("species")) if mon.get("species") else None
+    if sp is None and mon.get("num"):
+        try:
+            sp = dex.get(int(mon.get("num")))
+        except (TypeError, ValueError):
+            sp = None
+    return sp or {}
+
+
 def matches(mon, dex, type_id=None, query=""):
     """이 포켓몬이 거름망을 통과하는가."""
-    sp = (dex.get(mon.get("species")) if dex else None) or {}
+    sp = _species(mon, dex)
     if type_id:
         if type_id not in (sp.get("types") or []):
             return False
@@ -26,7 +40,7 @@ def matches(mon, dex, type_id=None, query=""):
         return True
     info = mon.get("info") or {}
     hay = [info.get("name"), info.get("species"), sp.get("kr"),
-           mon.get("nickname"), mon.get("species")]
+           mon.get("nickname"), mon.get("species"), mon.get("name")]
     num = mon.get("num") or sp.get("num")
     if num:
         hay.append(str(num))
@@ -71,8 +85,7 @@ def bst_of(mon, dex):
     """종족값 합계 (그 종의 여섯 능력치 기본값을 더한 것). 알은 늘 맨 뒤로 가게 -1."""
     if mon.get("isEgg"):
         return -1
-    sp = dex.get(mon.get("species")) if dex else None
-    base = (sp or {}).get("base") or {}
+    base = _species(mon, dex).get("base") or {}
     try:
         return sum(int(base.get(k) or 0) for k in ("hp", "atk", "def", "spa", "spd", "spe"))
     except (TypeError, ValueError):
@@ -111,8 +124,9 @@ def _level(m):
 
 
 def name_of(m):
-    """목록에 적히는 이름 (별명이 있으면 별명)."""
-    return (m.get("info") or {}).get("name") or m.get("nickname") or m.get("species") or ""
+    """목록에 적히는 이름 (별명이 있으면 별명). 기술머신 목록의 줄은 info 없이 name 만 싣는다."""
+    return ((m.get("info") or {}).get("name") or m.get("name") or m.get("nickname")
+            or m.get("species") or "")
 
 
 def sort_by(mons, dex, key):
@@ -139,6 +153,16 @@ def sort_by(mons, dex, key):
     }
     fn = keys.get(key)
     return sorted(mons, key=fn) if fn else list(mons)
+
+
+# 가방·기술머신의 '누구에게' 목록 (1.13.1). 박스보다 적게 - 받은 순서·가나다순·레벨순.
+PICK_SORTS = (("", "기본"), ("name", "가나다순"), ("level", "레벨순"))
+
+
+def pick_view(mons, dex, query="", sort=""):
+    """찾는 말로 거르고(matches) sort 로 줄 세운(sort_by) 새 목록. sort 가 비면 받은 순서 그대로."""
+    out = apply(mons, dex, None, query)
+    return sort_by(out, dex, sort) if sort else out
 
 
 def egg_row(egg):

@@ -196,8 +196,8 @@ def _side(dex, f, reveal_pp=True):
     if reveal_pp:
         out["moves"] = [{
             "key": m, "kr": dex.move_name(m),
-            "type": (dex.move(m) or {}).get("type"),
-            "typeKr": dex.type_name((dex.move(m) or {}).get("type")),
+            "type": B.shown_type(dex.move(m) or {}, f),                 # 가면·플레이트 (게시판 #259)
+            "typeKr": dex.type_name(B.shown_type(dex.move(m) or {}, f)),
             "cat": (dex.move(m) or {}).get("cat"),
             "power": (dex.move(m) or {}).get("power"),
             "acc": (dex.move(m) or {}).get("acc"),

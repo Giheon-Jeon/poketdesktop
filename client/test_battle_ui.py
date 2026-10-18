@@ -137,6 +137,8 @@ class 가짜배틀(object):
     sync_bars = DB.DesktopBattle.sync_bars
     apply_hp = DB.DesktopBattle.apply_hp
     switch_to = DB.DesktopBattle.switch_to
+    _retry_next = DB.DesktopBattle._retry_next
+    _enter_next = DB.DesktopBattle._enter_next
     _cancel_hold_jobs = DB.DesktopBattle._cancel_hold_jobs
     holding = False
     hold_job = hint_job = None
@@ -192,6 +194,53 @@ def t_교체하면_새_포켓몬_체력으로_바뀐다():
     chk("상대 체력은 그대로", d.bars[1].ratio == 1.0)
     chk("싸울 준비가 됐다", d.mine.battling is True)
     chk("쓰러진 애는 배틀에서 빠졌다", 쓰러진애.battling is False)
+
+
+def t_교체한_포켓몬이_아직_화면에_없으면_다시_찾는다():
+    """게시판 #266-1 (레드 36세): 셋째 포켓몬이 나온 뒤 배틀이 통째로 사라졌다.
+
+    서버는 괴력몬으로 바꿔 놓았는데(PP 그대로) 화면이 판을 접었다. 바탕화면에서 그 도트를 바로 못 찾으면
+    예전에는 그 자리에서 접었다 - 배틀을 시작할 때처럼 목록을 맞추고 몇 번 더 찾는다.
+    """
+    쓰러진애, 다음애 = 가짜도트(1), 가짜도트(2)
+    pets = {1: 쓰러진애}
+    d = 가짜배틀({"me": {"id": 1, "name": "갸라도스", "hp": 0, "maxhp": 60},
+                  "foe": {"id": 9, "name": "거대코뿌리", "hp": 40, "maxhp": 40}}, pets, 쓰러진애)
+    접음 = []
+    d.abort = lambda msg: 접음.append(msg)
+    맞춤 = []
+    d.app.request_sync = lambda: 맞춤.append(1)
+    새배틀 = {"me": {"id": 2, "name": "괴력몬", "hp": 55, "maxhp": 55},
+              "foe": {"id": 9, "name": "거대코뿌리", "hp": 40, "maxhp": 40}}
+    real = DB.run_async
+    DB.run_async = lambda _root, work, done: done({"battle": 새배틀}, None)
+    try:
+        d.switch_to({"id": 2})
+    finally:
+        DB.run_async = real
+    chk("바로 접지 않는다", not 접음, 접음)
+    chk("  목록을 맞추라고 한다", 맞춤 == [1], 맞춤)
+    chk("  0.5초 뒤에 다시 찾기로 해 둔다", d.예약 and d.예약[-1][0] == 500, d.예약)
+    pets[2] = 다음애                          # 그사이 도트가 생겼다
+    ms, again = d.예약.pop()
+    again()
+    chk("찾으면 이어서 싸운다", d.mine is 다음애 and 다음애.battling and not 접음, (d.mine, 접음))
+    chk("  체력바도 새 포켓몬 것", d.bars[0].ratio == 1.0, d.bars[0].ratio)
+    # 끝내 없으면 그때 접는다 (여섯 번)
+    d2 = 가짜배틀({"me": {"id": 1, "name": "갸라도스", "hp": 0, "maxhp": 60},
+                   "foe": {"id": 9, "name": "거대코뿌리", "hp": 40, "maxhp": 40}}, {1: 쓰러진애}, 쓰러진애)
+    접음2 = []
+    d2.abort = lambda msg: 접음2.append(msg)
+    DB.run_async = lambda _root, work, done: done({"battle": 새배틀}, None)
+    try:
+        d2.switch_to({"id": 2})
+    finally:
+        DB.run_async = real
+    for _ in range(10):
+        if not d2.예약:
+            break
+        d2.예약.pop()[1]()
+    chk("끝내 못 찾으면 그때 접는다 (여섯 번 찾은 뒤)", 접음2 == ["다음 포켓몬을 화면에서 찾지 못했습니다."], 접음2)
 
 
 def t_숨은_도트의_체력바는_안_그린다():
@@ -1070,7 +1119,7 @@ def t_볼_메뉴를_열면_예약해_둔_배틀을_취소한다():
 
 
 def main():
-    for fn in (t_체력을_그대로_반영한다, t_교체하면_새_포켓몬_체력으로_바뀐다,
+    for fn in (t_체력을_그대로_반영한다, t_교체하면_새_포켓몬_체력으로_바뀐다, t_교체한_포켓몬이_아직_화면에_없으면_다시_찾는다,
                t_숨은_도트의_체력바는_안_그린다, t_맞는_순간_그_쪽만_준다,
                t_틱은_창_순서를_안_올린다, t_투기장_틱도_창_순서를_안_올린다,
                t_배틀_동안_이름표를_막고_끝나면_한_번_푼다,
