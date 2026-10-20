@@ -692,6 +692,61 @@ def main():
     chk("다시 고정하게 되더라도 쓴 횟수·나눈 횟수는 그대로", sum(r["used"] for r in GW.fighters(ga)) == used_before
         and sum(r["attacks"] for r in GW.fighters(ga)) == 30)
 
+    print("\n=== 두 요청이 겹쳐 고정할 때 (2026-10-20 운영: 9길드로 먼저 나눈 지도에 10번째가 포개졌다) ===")
+    # 요청 A 가 길드를 하나씩 고정하는 사이 요청 B 가 들어와, A 가 고정 중이라 건너뛴 길드를 빼고 지도를 나눴다
+    # (한 바퀴 27열). A 가 마지막 길드(건대취정)를 고정한 뒤 다시 나누자 이미 있는 칸은 그대로 두고 그 길드의 칸만
+    # 30열 기준 27~29열에 넣어서, 화면은 그 15칸을 0~2열(동물농장) 위에 포개 그렸다.
+    wipe()
+    (g1, p1), (g2, p2), (g3, p3) = [mkguild("겹%d길드" % k, 5) for k in (1, 2, 3)]
+    clock(at(hours=2))
+    for m_ in (p1[0], p2[0], p3[0]):
+        GW.apply(m_)
+    clock(at(days=3, minutes=5))
+    S = season.SEASON
+    GW._mark("gw:%d:locked:%d" % (S, g3), GW._iso(at(days=3, minutes=5)))   # 요청 A 가 셋째 길드를 고정하는 중
+    GW._lock()                                                              # 요청 B
+    chk("다른 요청이 아직 고정 중인 길드가 있으면 지도를 안 나눈다", GW.entry(g1)["locked"] == 1
+        and GW.entry(g2)["locked"] == 1 and GW.entry(g3)["locked"] == 0 and GW.tile_counts() == {}, GW.tile_counts())
+    GW._lock_guild(S, g3)                                                   # 요청 A 가 마저 고정했다
+    GW._lock()
+    chk("다 고정된 뒤에 세 길드로 한 번에 나눈다", GW.tile_counts() == {g1: 15, g2: 15, g3: 15}, GW.tile_counts())
+    totals = set(json.loads(r["codes"])[2] for r in GW.tiles())
+    chk("  모든 칸의 한 바퀴 열 수가 같다 (세 길드 = 9열)", totals == {9}, totals)
+    names_ = dict((e["guild_id"], e["name"]) for e in GW.entries(S))
+    geo = GW.ring_geo(GW.tiles(), names_)
+    centers = [tuple(x["center"]) for x in geo["sgg"]]
+    chk("  칸 자리가 겹치지 않는다 · 이름표 자리도", len(set(centers)) == 45
+        and len(set((lb["x"], lb["y"]) for lb in geo["labels"])) == 3)
+
+    wipe()
+    clock(at(hours=2))
+    GW.apply(p1[0])
+    GW.apply(p2[0])
+    clock(at(days=3, minutes=10))
+    GW._mark("gw:%d:locked:%d" % (S, g2), GW._iso(at(days=3, minutes=1)))   # 고정하던 서버가 죽어 표시만 남았다 (9분 전)
+    GW._lock()
+    GW._lock()
+    chk("고정하다 멈춘 지 %d초가 넘은 표시는 낡은 것으로 보고 다시 고정해서 나눈다" % GW.STALE_LOCK_SEC,
+        GW.entry(g2)["locked"] == 1 and GW.tile_counts() == {g1: 15, g2: 15}, (GW.entry(g2)["locked"], GW.tile_counts()))
+
+    print("\n=== 이미 그렇게 꼬인 지도 (한 바퀴 열 수가 섞인 칸) - 운영 데이터는 그대로, 읽을 때 바로잡는다 ===")
+    wipe()
+    cells2, owner2, _per = GW.layout([ga, gb])                              # 두 길드로 먼저 나눈 6열
+    rows_ = []
+    for i, (cell, g_) in enumerate(zip(cells2, owner2)):
+        rows_.append({"region": GW.cell_id(i), "codes": json.dumps(cell), "home_guild": g_})
+    for k in range(GW.TILES_PER_GUILD):                                     # 나중에 끼어든 셋째 길드: 9열 기준 6~8열
+        row, j = divmod(k, GW.RING_COLS)
+        rows_.append({"region": GW.cell_id(30 + k), "codes": json.dumps([row, 6 + j, 9]), "home_guild": gc})
+    geo = GW.ring_geo(rows_, {ga: "가", gb: "나", gc: "다"})
+    centers = [tuple(x["center"]) for x in geo["sgg"]]
+    chk("열 수가 섞여 있어도 가장 큰 열 수(9)로 그려 칸이 안 겹친다", len(set(centers)) == 45, len(set(centers)))
+    chk("  이름표 셋이 다른 자리", len(set((lb["x"], lb["y"]) for lb in geo["labels"])) == 3, geo["labels"])
+    adj = GW._cell_adj([json.loads(r["codes"]) for r in rows_])
+    first_c = next(i for i, r in enumerate(rows_) if r["home_guild"] == gc and json.loads(r["codes"])[:2] == [0, 8])
+    near = set(rows_[j]["home_guild"] for j in adj[first_c])
+    chk("  이웃도 9열 고리로 센다 (셋째 길드의 끝 열은 첫 길드와 맞닿는다)", ga in near, near)
+
     print("\n=== 길드 탭의 점 ===")
     wipe()
     clock(at(hours=2))

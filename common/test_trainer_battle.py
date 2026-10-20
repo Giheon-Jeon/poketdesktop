@@ -581,6 +581,36 @@ def t_길드전_방어_AI(dex, gyms):
     chk("관장 판은 그대로 (길드전 AI 가 아니다)", not gym_tb.war and not gym_tb.bt.auto_z["foe"])
 
 
+def t_턴_끝(dex):
+    """쓰러짐과 턴 끝 (1.13.3, 게시판 #295 뒤 전수 점검).
+
+    · 마지막끼리: 내 마지막(화상 · 체력 1)이 상대의 마지막을 쓰러뜨려도 턴 끝 화상 데미지로 같이 쓰러져 무승부다.
+      본가와 다르지만 **시즌 중에 판정을 바꾸지 않는다** (형평성, 2026-10-20 사용자 결정) - 바뀌면 알리려고 못 박는다.
+    · 상대에게 다음 포켓몬이 있으면 턴 끝은 온다 (화염구슬 · 먹다남은음식 …, 원래 그랬다 - 그대로인지).
+    """
+    print("-- 쓰러짐과 턴 끝")
+
+    def last_vs_last():
+        me = mon(dex, "MACHAMP", 70, "NOGUARD", ["CROSSCHOP"])
+        t = {"name": "검사", "team": [mon(dex, "CATERPIE", 2, moves=["STRINGSHOT"], seed=2)]}
+        tb = TB.TrainerBattle(dex, [me], t, random.Random(5))
+        tb.start()
+        tb.me.status = "burn"
+        tb.me.hp = 1
+        tb.act("move", "CROSSCHOP")
+        return tb
+    tb = last_vs_last()
+    chk("마지막끼리는 예전 그대로: 화상 데미지로 같이 쓰러지면 무승부 (시즌 중 판정 유지)",
+        tb.over and tb.result == "draw", (tb.result, tb.me.hp))
+    me = mon(dex, "CONKELDURR", 70, "GUTS", ["MACHPUNCH"], held="FLAMEORB")
+    t = {"name": "검사", "team": [mon(dex, "CATERPIE", 2, moves=["STRINGSHOT"], seed=2),
+                                 mon(dex, "BLISSEY", 100, moves=["SOFTBOILED"], seed=3)]}
+    tb = TB.TrainerBattle(dex, [me], t, random.Random(5))
+    tb.start()
+    tb.act("move", "MACHPUNCH")
+    chk("상대에게 다음 포켓몬이 있으면 쓰러뜨린 턴에도 턴 끝 (화염구슬)", tb.me.status == "burn", tb.me.status)
+
+
 def main():
     dex = load_dex()
     with open(os.path.join(ROOT, "server", "data", "gyms.json"), encoding="utf-8") as f:
@@ -592,6 +622,7 @@ def main():
     t_상대_AI(dex, gyms)
     t_끝까지_돈다(dex, gyms)
     t_길드전_방어_AI(dex, gyms)
+    t_턴_끝(dex)
     print()
     print("======================================================")
     print("  합계  OK %d   FAIL %d" % (OK, FAIL))

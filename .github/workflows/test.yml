@@ -312,6 +312,9 @@ jobs:
       # 듀얼 모니터 (#268): 주 화면 왼쪽 모니터에서도 체력바 · 이름표가 보인다, 실시간 배틀 무대는 그 모니터 안
       - name: 듀얼 모니터 이펙트 레이어 (진짜 Tk)
         run: python client/test_dual_monitor.py
+      # 멈춤 감지 (1.13.3): 앱이 멈추면 강제 종료를 묻는다 (맥은 Dock 에 안 떠서 '강제 종료' 창에 안 나온다)
+      - name: 멈춤 감지 (진짜로 멈춘 프로세스)
+        run: python client/test_watchdog.py
       - name: 게시판 화면 (진짜 Tk)
         run: python client/test_board_ui.py
       # 1.9.0: 마이페이지 (설정 탭 자리) - 내 기록, 칭호 줄바꿈, 톱니바퀴 = 설정
@@ -466,6 +469,9 @@ jobs:
       # 듀얼 모니터 (#268): 주 화면 왼쪽 모니터에서도 체력바 · 이름표가 보인다, 실시간 배틀 무대는 그 모니터 안
       - name: 듀얼 모니터 이펙트 레이어 (진짜 Tk)
         run: python client/test_dual_monitor.py
+      # 멈춤 감지 (1.13.3): 앱이 멈추면 강제 종료를 묻는다 (맥은 Dock 에 안 떠서 '강제 종료' 창에 안 나온다)
+      - name: 멈춤 감지 (진짜로 멈춘 프로세스)
+        run: python client/test_watchdog.py
       - name: 게시판 화면 (진짜 Tk)
         run: python client/test_board_ui.py
       # 1.9.0: 마이페이지 (설정 탭 자리) - 내 기록, 칭호 줄바꿈, 톱니바퀴 = 설정
@@ -594,6 +600,7 @@ jobs:
           python test_friendly.py
           # 끝난 야생 배틀이 '배틀 중' 으로 남지 않는다 (1.10.4, 게시판 #174 퀵볼)
           python test_stale_battle.py
+          python test_troubles.py       # 1.13.3: 야생 배틀이 앱에서 끊긴 것을 서버가 남긴다 (trouble 표, 앱 알림)
           # 탐험 파견 (1.10.4): 규칙·보내기·시간·받기(두 번 못 받는다)·나가 있는 동안의 제한·굴리기
           python test_expedition.py
           # 시즌 4 (1.12.0): 점수 매칭 / Z링·Z크리스탈 / 시즌 3 -> 4 전환 /

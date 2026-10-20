@@ -469,7 +469,7 @@ class RaidBattle(object):
             key = p.bt.usable(p.mon)[0]
         got = []
         if p.mon.held:
-            key = H.force_move(p.mon, key, got, "me")
+            key = H.force_move(p.mon, key, got, "me", p.bt)
         before = self.boss.hp
         p.bt._use("me", p.mon, self.boss, key, got)
         p.damage += self._guard(before, got, i)
@@ -541,7 +541,7 @@ class RaidBattle(object):
         key = bt.choose_for(self.boss, p.mon, "trainer")
         got = []
         if self.boss.held:
-            key = H.force_move(self.boss, key, got, "foe")
+            key = H.force_move(self.boss, key, got, "foe", bt)
         bt._use("foe", self.boss, p.mon, key, got)
         ev.extend(self._tag(got, i))
 
@@ -717,7 +717,7 @@ class RaidBattle(object):
                         "desc": md.get("desc", ""),
                         "blocked": SM.restricted(bt, f, m)})
         if not any(x["pp"] > 0 for x in out):
-            out.append({"key": B.STRUGGLE, "kr": "몸부림", "type": "NORMAL",
+            out.append({"key": B.STRUGGLE, "kr": B.STRUGGLE_MOVE["kr"], "type": "NORMAL",
                         "typeKr": "노말", "cat": "physical", "power": 50, "acc": 0,
                         "pp": 1, "maxpp": 1, "desc": "", "blocked": None})
         return out

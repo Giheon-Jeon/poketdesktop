@@ -17,6 +17,13 @@
 기술이 있어야 쓰는 것(전용 Z크리스탈 · 기술 메가진화 · 기술 폼 · 기술 진화)은 server/test_move_needs.py 가 이
 게임에서 배울 수 있는지 본다 - 못 배우는 것이 생기면 그 검사가 떨어지고, 여기에 넣으면 된다.
 
+**본가 최신작의 알 기술 · 가르침 기술 가운데 기술머신이 없는 것 (1.13.3, 사용자 결정):** 2026-10-20 전수 검사
+(tools/learn_audit.py)에서 교배가 없어 알 기술 1,619줄, 가르침 기술 69줄(기술머신이 없는 13가지)을 어디서도 못
+배웠다. 기술머신이 있는 것은 build_tms 가 기술머신 호환에 넣고(알 기술 · 최신작 가르침), 없는 것은 여기서
+떠올리기로 넣는다. **알 기술은 진화 전 단계의 것도 물려받는다** - SV 자료는 대개 진화형에도 알 기술을 적지만,
+아기 포켓몬이 있는 계열은 아기에게만 적는다 (피츄 7개 · 피카츄 0개). '최신작' 은 tools/learn_ref.py 가 고른다.
+**build_tms.py 를 먼저 돌린다** (기술머신이 있는지를 server/data/tms.json 에서 본다).
+
 레벨업 표(moves)에는 넣지 않는다 - 거기 넣으면 새로 생기는 포켓몬(알 · 레이드 · 악당 전설)의 처음 기술이
 바뀐다. 기술 떠올리기(server/app/tm_routes.rememberable)만 이 칸을 본다.
 
@@ -29,9 +36,13 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import learn_ref                                            # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, "tools", "_cache")
 DEX = os.path.join(ROOT, "server", "data", "pokedex.json")
+TMS = os.path.join(ROOT, "server", "data", "tms.json")
 SV = "scarlet-violet"
 EGG = "2"           # pokemon_move_methods: egg
 
@@ -46,6 +57,13 @@ MANUAL = {
     # 볼트태클: 본가에서는 전기구슬을 지닌 피카츄 · 라이츄로 교배한 피츄만 배우는 특별한 알 기술이다.
     # 교배도 볼트태클 기술머신도 없는 이 게임에서는 어디서도 못 배워서, 상점에서 파는 피카츄Z 를 쓸 수 없었다.
     "PIKACHU": ["VOLTTACKLE"],
+    # 본가 최신작(SV)에서는 빠졌지만 옛 작품에서 그 계열만 쓰던 전용기 (1.13.3, 사용자 결정). 기술은 게임에 있다.
+    "ETERNATUS": ["ETERNABEAM"],            # 무한다이빔 - 소드실드 Lv.88 (SV 는 그 자리에 역린)
+    "VESPIQUEN": ["HEALORDER"],             # 회복지령 - 7세대까지 Lv.29
+    "EXEGGCUTE": ["BARRAGE"],               # 구슬던지기 - 7세대까지
+    "EXEGGUTOR": ["BARRAGE", "GROWTH"],     # 성장 - SV Lv.1 (쇼다운 9L1). PokeAPI SV 자료에 빠져 있다 (#291 대조)
+    "CUBONE": ["BONECLUB"],                 # 뼈다귀치기 - 6세대까지
+    "MAROWAK": ["BONECLUB"],
 }
 
 
@@ -71,6 +89,28 @@ def build(dex):
         lst = out.setdefault(sp["internal"], [])
         if mv not in lst:
             lst.append(mv)
+    # ---- 1.13.3: 본가 최신작의 알 기술(진화 전 단계 것 포함) · 가르침 기술 가운데 기술머신이 없는 것 ----
+    with io.open(TMS, encoding="utf-8") as f:
+        tm_moves = set(t["move"] for t in json.load(f)["tms"].values())
+    ref = learn_ref.reference(_rows("pokemon_moves.csv"), _rows("version_groups.csv"))
+
+    def ref_moves(num, how):
+        return set(moves.get(str(mid)) for mid, hs in (ref.get(num) or {}).items() if how in hs)
+
+    for sp in dex["species"]:
+        want, cur, seen = ref_moves(sp["num"], learn_ref.TUTOR), sp, set()
+        while cur and cur["num"] not in seen:          # 알 기술은 진화 전 단계 것도 물려받는다
+            seen.add(cur["num"])
+            want |= ref_moves(cur["num"], learn_ref.EGG)
+            p = cur.get("prevo")
+            cur = by_num.get(p) if isinstance(p, int) else None
+        level = set(mv for _lv, mv in sp.get("moves") or [])
+        for mv in sorted(m for m in want if m):
+            if mv not in dex["moves"] or mv in tm_moves or mv in level:
+                continue
+            lst = out.setdefault(sp["internal"], [])
+            if mv not in lst:
+                lst.append(mv)
     names = set(s["internal"] for s in dex["species"])
     for sp, mvs in MANUAL.items():
         if sp not in names:

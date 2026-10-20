@@ -14,6 +14,7 @@ from common.version import VERSION             # noqa: E402
 from . import api as apimod                    # noqa: E402
 from . import autostart                     # noqa: E402
 from . import config, single, sprite_cache, ui_loading, updater, walk_cache  # noqa: E402
+from . import watchdog                         # noqa: E402
 from . import platform_os as PLAT              # noqa: E402
 from . import ui_common as U                   # noqa: E402
 from .overlay import Overlay, look_num         # noqa: E402
@@ -2858,6 +2859,8 @@ class App(object):
 
     def run(self):
         self.root.after(120, self.boot)
+        # 멈추면 알아채고 강제 종료를 묻는다 (1.13.3) - 맥은 Dock 에 안 떠서 '강제 종료' 창에 안 나온다
+        watchdog.start(self.root, self)
         self.root.mainloop()
 
 

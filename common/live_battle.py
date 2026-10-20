@@ -389,7 +389,7 @@ class LiveBattle(object):
                                           or p.mon.pp.get(key, 0) <= 0):
                     key = self.bt.usable(p.mon)[0]
                 if p.mon.held:
-                    key = H.force_move(p.mon, key, ev, self._seat(w))
+                    key = H.force_move(p.mon, key, ev, self._seat(w), self.bt)
                 moves[self._seat(w)] = key
 
         # 메가진화 (시즌 3): 둘 다 고른 뒤, 순서를 정하기 전에. 빠른 쪽부터.
@@ -499,6 +499,8 @@ class LiveBattle(object):
 
     def _end_turn(self, ev):
         """턴 끝: 독·날씨 같은 것, 쓰러진 쪽 정리, 턴 수 제한."""
+        # 마지막끼리 쓰러뜨린 턴에도 턴 끝이 돈다 - 무승부가 날 수 있다. **시즌 중에 판정을 바꾸지 않는다**
+        # (형평성, 2026-10-20 사용자 결정 - trainer_battle._end_turn 과 같다).
         if self.a.mon.alive() or self.b.mon.alive():
             self.bt._end_of_turn(ev)
         self.bt._check_faint(ev)
@@ -667,7 +669,7 @@ class LiveBattle(object):
                         "desc": md.get("desc", ""),
                         "blocked": SM.restricted(self.bt, f, m)})
         if not any(x["pp"] > 0 for x in out):
-            out.append({"key": B.STRUGGLE, "kr": "몸부림", "type": "NORMAL",
+            out.append({"key": B.STRUGGLE, "kr": B.STRUGGLE_MOVE["kr"], "type": "NORMAL",
                         "typeKr": "노말", "cat": "physical", "power": 50, "acc": 0,
                         "pp": 1, "maxpp": 1, "desc": "", "blocked": None})
         return out

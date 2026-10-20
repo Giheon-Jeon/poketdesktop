@@ -1374,6 +1374,8 @@ class BagWindow(object):
             self._pending = (r.get("message") or "도구를 썼다.", U.GOOD)
             self.reload()
             self.app.request_sync()          # 바탕화면 도트도 바뀔 수 있다
+            if not r.get("evolve"):
+                ask_new_learns(self.app, mon, r)     # 로토무카탈로그 · 이상한사탕 … (게시판 #279)
             if r.get("evolve"):
                 info = dict(r["evolve"], pokemonId=pid)
                 show = getattr(self.app, "show_evolutions", None)
@@ -1635,6 +1637,23 @@ def announce_gifts(parent, app, gifts):
 
     win.grab_set()
     parent.wait_window(win)
+
+
+def ask_new_learns(app, mon, r):
+    """도구를 쓴 뒤 '배우려고 기다리는 기술' 이 새로 생겼으면 바로 묻는다. 물었으면 True (1.13.3).
+
+    게시판 #279 (주호): 로토무카탈로그로 워시로토무가 되면 기술이 넷이라 하이드로펌프가 기다리는 기술이 되는데,
+    가방은 진화만 챙기고 이것을 안 봐서 '배우겠습니까' 가 안 떴다 - 레벨업을 해야 그제야 물었다. 이상한사탕으로
+    레벨이 올라 생긴 것도 같다. **원래 있던 기다리는 기술로는 다시 묻지 않는다** (쓰기 전의 mon 과 견준다).
+    진화하면 진화 연출이 따로 묻는다 - 부르는 쪽이 그때는 안 부른다.
+    """
+    before = set((mon or {}).get("pending") or [])
+    after = set(((r or {}).get("pokemon") or {}).get("pending") or [])
+    want = getattr(app, "want_learn", None)
+    if not (after - before) or want is None:
+        return False
+    want((mon or {}).get("id"), ((mon or {}).get("info") or {}).get("name") or "")
+    return True
 
 
 def announce_evolve(parent, app, info):

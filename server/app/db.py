@@ -662,6 +662,23 @@ CREATE TABLE IF NOT EXISTS server_error (
 );
 CREATE INDEX IF NOT EXISTS idx_error_at ON server_error(at);
 
+-- 야생 배틀이 앱에서 끊긴 기록 (1.13.3, app/troubles.py). 서버가 알아챈 것(server)과 앱이 알린 것(client).
+-- server_error 와 따로 둔다 - 거기 적으면 /api/health 의 오류 수가 튀어서 keepalive 가 실패한다. 2주 지나면 지운다.
+CREATE TABLE IF NOT EXISTS trouble (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    at       TEXT NOT NULL,
+    user_id  INTEGER,
+    source   TEXT NOT NULL,
+    kind     TEXT NOT NULL,
+    ref      INTEGER,
+    version  TEXT NOT NULL DEFAULT '',
+    os       TEXT NOT NULL DEFAULT '',
+    message  TEXT NOT NULL DEFAULT '',
+    detail   TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_trouble_at ON trouble(at);
+CREATE INDEX IF NOT EXISTS idx_trouble_user ON trouble(user_id, at);
+
 -- **진단용. 원인을 잡으면 지운다.** 랜덤 배틀 상대를 고를 때 어느 단계에서
 -- 골랐는지 남긴다 - 배치고사를 마친 사람끼리 붙이는 1차에서 골랐는지(same),
 -- 거기 아무도 없어 전체로 넓혔는지(all). server_error 에 적으면 /api/health
@@ -999,6 +1016,13 @@ SELECT
     id, path, method, kind, detail,
     datetime(at, '+9 hours') AS at_kst
 FROM server_error;
+
+DROP VIEW IF EXISTS v_trouble;
+CREATE VIEW v_trouble AS
+SELECT
+    t.*, u.username,
+    datetime(t.at, '+9 hours') AS at_kst
+FROM trouble t LEFT JOIN users u ON u.id = t.user_id;
 
 -- login_fail.at 은 REAL(유닉스 초) 이다. 다른 표들과 저장 형식부터
 -- 다르니 'unixepoch' 를 먼저 거쳐야 한다.

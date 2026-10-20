@@ -10,7 +10,8 @@
   2. 한 번도 안 쓴 번호로 가면 지금 파티를 그대로 들고 간다 (바탕화면이 비지 않는다).
   3. 번호를 오가도 잃는 것이 없다: 떠날 때 지금 파티가 그 번호에 적히고, 돌아오면 순서까지 그대로다.
   4. 박스로 돌아가는 포켓몬은 원래 박스로 간다. 박스가 꽉 차 있어도 맞바꿀 수 있다.
-  5. 알은 프리셋에 안 들어가고 자리를 지킨다. 알까지 합쳐 여섯을 넘으면 갈아타지 않는다 (아무것도 안 바뀐다).
+  5. 알도 프리셋에 든다 (1.13.3, 게시판 #289). 갈아타면 그 번호의 알을 데리고 다니고 나머지는 내려놓는다.
+     다른 번호에 있던 알이 그사이 깼으면 태어난 포켓몬이 그 자리를 잇는다. 예전 모양 번호는 알을 그대로 둔다.
   6. 놓아준 포켓몬은 조용히 빠진다. 남의 포켓몬은 섞여 들어오지 않는다.
   7. 이름: 네 자까지, 비우면 기본 이름. 이름만 붙인 번호는 여전히 '안 쓴 번호' 다.
 """
@@ -172,29 +173,67 @@ def main_():
         and per == {0: 3, 1: 3}, (desk(full), per))
     config.BOX_SIZE, config.BOX_COUNT = keep_size, keep_count
 
-    print("\n=== 알 ===")
+    print("\n=== 알도 파티의 한 자리 (1.13.3 - 알까지 프리셋에 든다) ===")
+    # 예전(1.10.3~1.13.2)에는 알이 프리셋에 안 들고 제자리를 지켰다. 알을 데리고 다니면서 관장용 파티로 바꾸려면
+    # 알을 내려놓고 갈아탄 뒤 다시 올려야 했다 (게시판 #289 Narud, 사용자 결정 '알도 자유롭게').
     egg = mkuser("알가진사람")
     ea = [mkmon(egg, slot=i) for i in range(4)]
-    eg = mkegg(egg, 5)
-    party.use(egg, 2)                                             # 2번 = 지금의 넷
-    for p in ea[2:]:
-        main.deps.to_box(egg, p)                                  # 2번 = 둘
+    e1 = mkegg(egg, 5)                                            # 1번 = 넷 + 알 하나
+    eggrow = lambda e: dict(db.q1("SELECT on_desktop, slot FROM egg WHERE id=?", (e,)))   # noqa: E731
+    r = party.use(egg, 2)                                         # 2번 = 처음 쓰는 번호: 지금의 넷 + 알을 들고 간다
+    chk("처음 쓰는 번호는 알까지 그대로 들고 간다", eggrow(e1) == {"on_desktop": 1, "slot": 5}
+        and [p for p, _s in desk(egg)] == ea, (eggrow(e1), desk(egg)))
+    chk("  화면에 주는 것: ids 는 포켓몬만, eggs 는 알, size 는 둘 다", r["presets"][1]["ids"] == ea
+        and r["presets"][1]["eggs"] == [e1] and r["presets"][1]["size"] == 5, r["presets"][1])
+    main.eggs.set_desktop(egg, e1, False)                         # 2번에서 알을 내려놓고
+    e2 = mkegg(egg, None)
+    db.run("UPDATE egg SET on_desktop=0 WHERE id=?", (e2,))
+    main.eggs.set_desktop(egg, e2, True)                          # 다른 알을 올린다 -> 2번 = 넷 + 알2
     r = party.use(egg, 1)
-    slots = desk(egg)
-    chk("알은 프리셋에 들지 않는다", all(eg not in p["ids"] for p in r["presets"]))
-    chk("갈아타도 알은 제자리(5)에 있다", db.q1("SELECT on_desktop, slot FROM egg WHERE id=?", (eg,))["slot"] == 5
-        and db.q1("SELECT on_desktop FROM egg WHERE id=?", (eg,))["on_desktop"] == 1)
-    chk("  포켓몬은 알의 자리를 피해 앉는다", [p for p, _s in slots] == ea and 5 not in [s for _p, s in slots], slots)
-    mkegg(egg, 4)
-    party.use(egg, 2)                                             # 둘 + 알 둘 = 넷: 된다
-    eb = [mkmon(egg, slot=i + 2) for i in range(2)]               # 2번 = 넷(포켓몬) + 알 둘 = 여섯
-    party.use(egg, 3)                                             # 3번 = 지금의 넷
-    mkegg(egg, None)                                              # 자리 번호 없는 옛 알 하나 더 (알 셋)
-    before = (desk(egg), party.state(egg)["active"])
-    e = err(party.use, egg, 1)                                    # 1번은 넷 + 알 셋 = 일곱
-    chk("알까지 합쳐 여섯을 넘으면 갈아타지 않는다 (까닭을 알린다)", e is not None and e[0] == 409 and "알" in e[1]
-        and "4마리" in e[1], e)
-    chk("  아무것도 안 바뀐다", (desk(egg), party.state(egg)["active"]) == before and len(eb) == 2)
+    chk("1번으로: 1번의 알(알1)을 다시 데리고 다니고 2번의 알(알2)은 내려놓는다",
+        eggrow(e1)["on_desktop"] == 1 and eggrow(e2) == {"on_desktop": 0, "slot": None}, (eggrow(e1), eggrow(e2)))
+    chk("  알을 내려놓으면 알린다 (데리고 다닐 때만 자란다)", "알" in r["message"] and "내려놓" in r["message"], r["message"])
+    r = party.use(egg, 2)
+    chk("2번으로: 알2 를 데리고 다니고 알1 은 내려놓는다", eggrow(e2)["on_desktop"] == 1 and eggrow(e1)["on_desktop"] == 0,
+        (eggrow(e1), eggrow(e2)))
+    eb = [mkmon(egg, slot=None, box=1) for _ in range(6)]
+    party.use(egg, 3)                                             # 3번 = 처음 쓰는 번호 (넷 + 알2 를 들고 간다)
+    for p in [x for x, _s in desk(egg)]:                          # 3번을 포켓몬 여섯(알 없음)으로 꾸린다
+        main.deps.to_box(egg, p)
+    main.eggs.set_desktop(egg, e2, False)
+    for i, p in enumerate(eb):
+        db.run("UPDATE pokemon SET on_desktop=1, slot=? WHERE id=?", (i, p))
+    party.use(egg, 2)                                             # 2번 = 넷 + 알2 (다섯)
+    r = party.use(egg, 3)                                         # 예전에는 '알까지 합쳐 여섯을 넘는다' 로 거절했다
+    chk("알을 데리고 다녀도 포켓몬 여섯 파티로 바로 갈아탄다 (알은 내려놓는다)",
+        r["ok"] and [p for p, _s in desk(egg)] == eb and eggrow(e2)["on_desktop"] == 0, (r.get("message"), desk(egg)))
+    chk("  자리는 0~5 를 파티 순서대로", [s for _p, s in desk(egg)] == list(range(6)), desk(egg))
+
+    print("\n=== 다른 번호에 있던 알이 그사이 깼다 ===")
+    hatch = mkuser("부화")
+    ha = [mkmon(hatch, slot=i) for i in range(3)]
+    he = mkegg(hatch, 3)                                          # 1번 = 셋 + 알
+    party.use(hatch, 2)                                           # 2번 = 처음 쓰는 번호 (같은 것)
+    born = mkmon(hatch, slot=3)                                   # 2번에서 알이 깨서 그 자리에 태어났다
+    db.run("UPDATE egg SET hatched_at='2026-10-20', pokemon_id=?, on_desktop=0, slot=NULL WHERE id=?", (born, he))
+    main.deps.to_box(hatch, ha[2])                                # 2번 = 둘 + 태어난 것
+    party.use(hatch, 1)
+    chk("1번에 적힌 알 자리는 깨어난 포켓몬이 잇는다", [p for p, _s in desk(hatch)] == ha + [born], desk(hatch))
+    chk("  깬 알은 다시 안 올라간다", db.q1("SELECT on_desktop FROM egg WHERE id=?", (he,))["on_desktop"] == 0)
+
+    print("\n=== 예전 모양으로 적힌 번호 (알이 없던 때 저장) ===")
+    old = mkuser("옛사람")
+    oa = [mkmon(old, slot=i) for i in range(3)]
+    ob = [mkmon(old, box=0) for _ in range(2)]
+    oe = mkegg(old, 4)
+    db.run("INSERT INTO party_preset (user_id, no, ids, active, saved, updated_at) VALUES (?,?,?,0,1,'')",
+           (old, 2, json.dumps(ob)))                              # 1.13.2 까지의 모양: 포켓몬 id 만
+    r = party.use(old, 2)
+    chk("예전 모양 번호로 가면 데리고 다니던 알은 그대로 둔다 (그때 규칙)", [p for p, _s in desk(old)] == ob
+        and eggrow(oe)["on_desktop"] == 1, (desk(old), eggrow(oe)))
+    party.use(old, 1)
+    chk("  떠날 때부터는 새 모양으로 적힌다 (알까지)", party.state(old)["presets"][1]["eggs"] == [oe],
+        party.state(old)["presets"][1])
 
     print("\n=== 놓아준 포켓몬·남의 포켓몬 ===")
     party.use(me, 1)

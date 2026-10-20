@@ -1070,6 +1070,67 @@ def t_볼을_기다리던_턴에_판이_끝나면_말없이_버리지_않는다(
         undo()
 
 
+def t_배틀을_접으면_서버에_알린다():
+    """1.13.3: 앱이 배틀을 접은 까닭이 사용자 PC 의 poketdesktop.log 에만 남아서, 제보가 오면 그 파일을 열어 달라고
+    해야 했다 (#266 레드 36세 · #280 니뉴). 이제 서버의 trouble 표로 보낸다 (trouble.py)."""
+    from common.version import VERSION
+    from poketdesktop import trouble
+    real_run = trouble.RUN
+    trouble.RUN = lambda fn: fn()                       # 뒤에서 보내는 것을 바로 부른다
+    trouble._sent[:] = []
+    d, _m, undo = 잡기_준비()
+    try:
+        보냄 = []
+        d.app.api.report_trouble = lambda body: 보냄.append(body)
+        d.b = {"id": 7, "over": False, "me": {"id": 1, "name": "이상해꽃"}}
+        d.pending_ball = "POKEBALL"
+        d.abort("다음 포켓몬을 화면에서 찾지 못했습니다.")
+        chk("접으면 서버에 알린다 (무엇 · 어느 판 · 까닭 · 버전)", len(보냄) == 1 and 보냄[0]["kind"] == "battle_abort"
+            and 보냄[0]["ref"] == 7 and 보냄[0]["message"] == "다음 포켓몬을 화면에서 찾지 못했습니다."
+            and 보냄[0]["version"] == VERSION and 보냄[0]["os"], 보냄)
+        chk("  그때의 상태를 같이 (내 포켓몬 · 화면의 도트 · 던질 볼 …)", 보냄 and all(
+            k in 보냄[0]["detail"] for k in ("판 7", "내 포켓몬 1", "화면의 도트", "던질 볼 POKEBALL")), 보냄 and 보냄[0]["detail"])
+        chk("  배틀은 그대로 접는다", d.closed)
+
+        d2, _m2, undo2 = 잡기_준비()
+        try:
+            d2.app.api.report_trouble = lambda body: 보냄.append(body)
+
+            def 터짐():
+                raise KeyError("me")
+            d2._safe(터짐)
+            got = 보냄[-1]
+            chk("연출이 터져 접으면 오류 내용(역추적)도 보낸다", got["message"] == "배틀을 이어가지 못해 멈췄습니다."
+                and "KeyError" in got["detail"] and "터짐" in got["detail"], got["detail"][-300:])
+            chk("  경로는 파일 이름만 (사용자 이름이 새지 않는다)", "test_battle_ui.py" in got["detail"]
+                and HERE not in got["detail"] and os.sep + "test_battle_ui.py" not in got["detail"], got["detail"][-300:])
+        finally:
+            undo2()
+
+        clean = trouble.clean
+        chk("윈도우 경로 · 한글 사용자 이름", clean('File "C:\\Users\\홍길동\\AppData\\Local\\poketdesktop\\app\\desktop_battle.py", line 3')
+            == 'File "desktop_battle.py", line 3', clean('File "C:\\Users\\홍길동\\AppData\\x.py"'))
+        chk("  띄어쓰기가 있는 경로도 (따옴표 안)", clean("No such file: 'C:\\Program Files\\홍 길동\\poket.db'")
+            == "No such file: 'poket.db'", clean("No such file: 'C:\\Program Files\\홍 길동\\poket.db'"))
+        chk("  맥 경로 (따옴표 없이)", clean("at /Users/seok/Library/poketdesktop/x.py line 2") == "at x.py line 2",
+            clean("at /Users/seok/Library/poketdesktop/x.py line 2"))
+        chk("  경로가 아닌 글은 그대로", clean("HP 3/50 · 1/2 확률") == "HP 3/50 · 1/2 확률", clean("HP 3/50 · 1/2 확률"))
+
+        trouble._sent[:] = []
+        n = len(보냄)
+        for _ in range(trouble.LIMIT_PER_HOUR + 3):
+            trouble.send(d.app, "battle_abort", 7, "같은 오류")
+        chk("한 시간에 %d개까지만 보낸다 (같은 오류가 되풀이돼도)" % trouble.LIMIT_PER_HOUR,
+            len(보냄) - n == trouble.LIMIT_PER_HOUR, len(보냄) - n)
+        trouble._sent[:] = []
+        del d.app.api.report_trouble
+        chk("알릴 길이 없는 api(옛 가짜)면 조용히 넘어간다", trouble.send(d.app, "battle_abort", 7, "x") is False)
+    finally:
+        trouble.RUN = real_run
+        trouble._sent[:] = []
+        undo()
+
+
 def t_상대_이름표는_두_줄이다():
     """랜덤 배틀의 링 위 이름표 (1.10.2). 첫 줄에 [길드명] 닉네임 · 칭호, 둘째 줄에 티어."""
     full = {"name": "bro2000", "tierKr": "챔피언", "title": "시즌 1 챔피언", "guild": "나여"}
@@ -1229,7 +1290,8 @@ def main():
                t_왼쪽_클릭하면_바로_싸운다, t_볼_메뉴가_열린_동안은_싸우지_않는다,
                t_바쁠_때_던진_볼은_턴이_끝나고_던진다, t_멈춘_채_던졌다가_놓치면_10초를_새로_센다,
                t_볼이_흔들리는_동안_왼쪽_클릭은_싸우기가_아니다, t_두_번_클릭의_두_번째_뗌은_싸우기가_아니다,
-               t_잡으면_끝낸다, t_볼을_기다리던_턴에_판이_끝나면_말없이_버리지_않는다, t_상대_이름표는_두_줄이다,
+               t_잡으면_끝낸다, t_볼을_기다리던_턴에_판이_끝나면_말없이_버리지_않는다, t_배틀을_접으면_서버에_알린다,
+               t_상대_이름표는_두_줄이다,
                t_배틀이_걸려_있으면_배틀_안에서_던진다, t_볼_메뉴를_열면_예약해_둔_배틀을_취소한다):
         print("-- %s" % fn.__name__[2:])
         fn()

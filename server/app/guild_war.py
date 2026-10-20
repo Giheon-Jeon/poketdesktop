@@ -81,6 +81,8 @@ MIN_MEMBERS = 5              # 이만큼은 있어야 신청할 수 있다
 TOTAL_ATTACKS = 30           # 길드 하나의 공격 수 합 = 길드 하나가 받는 공격 수 상한
 RING_ROWS = 5                # 원형 지도: 길드마다 부채꼴 하나 = 줄 5개(바깥 -> 안) x 칸 3개
 RING_COLS = 3
+# 명단을 고정하던 요청이 이만큼 지나도 안 끝났으면(서버가 그사이 죽었다) 그 표시는 낡은 것으로 보고 다시 고정한다
+STALE_LOCK_SEC = 120
 TILES_PER_GUILD = RING_ROWS * RING_COLS     # 15칸 - 길드가 몇 곳이든 같다
 RING_INNER = 0.38            # 고리 안쪽 반지름 (바깥이 1)
 RING_ARC = 120               # 한 바퀴를 몇 토막의 선으로 그리나 (칸이 많으면 칸마다 2토막은 쓴다)
@@ -107,6 +109,14 @@ def _now():
 
 def _iso(t=None):
     return (t or _now()).replace(microsecond=0).isoformat()
+
+
+def parse_time(v):
+    try:
+        t = datetime.datetime.fromisoformat(v)
+    except (TypeError, ValueError):
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
 
 
 def starts():
@@ -194,14 +204,28 @@ def _ring(c):
     return None
 
 
+def ring_total(cells):
+    """한 바퀴의 칸 수 = 칸들에 적힌 것 가운데 가장 큰 것 (가장 큰 열 번호 + 1 보다 작지 않게).
+
+    **칸마다 적힌 수가 섞일 수 있다** (2026-10-20 운영): 두 요청이 겹쳐 지도를 9길드(27열)로 먼저 나눈 뒤,
+    늦게 고정된 10번째 길드의 칸이 30열 기준 27~29열로 들어갔다. 첫 칸의 수(27)로 그리면 그 칸들이 한 바퀴를
+    넘어 0~2열(동물농장) 위에 포개졌다. 가장 큰 수로 보면 저장된 열 번호 그대로 10길드 지도가 된다.
+    """
+    rings = [c for c in cells if _ring(c)]
+    if not rings:
+        return 0
+    return max(max(c[2] for c in rings), max(c[1] for c in rings) + 1)
+
+
 def _cell_adj(cells):
     """칸 번호 -> 맞닿은 칸 번호들. 같은 줄의 옆 칸(고리라 끝과 처음이 맞닿는다)과 같은 차례의 위아래 줄."""
     at = dict(((c[0], c[1]), i) for i, c in enumerate(cells) if _ring(c))
     out = dict((i, set()) for i in range(len(cells)))
+    total = ring_total(cells)                       # 칸마다 적힌 수가 아니라 고리 전체의 수로 감는다
     for i, c in enumerate(cells):
         if not _ring(c):
             continue
-        row, col, total = c
+        row, col, _t = c
         for key in ((row - 1, col), (row + 1, col), (row, (col - 1) % total), (row, (col + 1) % total)):
             j = at.get(key)
             if j is not None and j != i:
@@ -229,7 +253,7 @@ def ring_geo(rows, names=None, scale=1000.0):
     cells = [(rid, c) for rid, c in cells if c]
     if not cells:
         return None
-    total = cells[0][1][2]
+    total = ring_total([c for _rid, c in cells])    # 첫 칸의 수가 아니라 가장 큰 수 (위 ring_total)
     seg = max(2, int(math.ceil(RING_ARC / float(total))))
     steps = total * seg
     thick = (1.0 - RING_INNER) / RING_ROWS
@@ -491,6 +515,21 @@ def _lock_all(s, now=None):
             errors.record("GWAR", "guild_war._lock %s" % gid, err)
             whole = False
     if not whole:
+        return True
+    # **다른 요청이 아직 고정 중인 길드가 있으면 지도를 나누지 않는다** (2026-10-20 운영). 그 길드는 위에서
+    # 표시를 보고 건너뛰었다 - 여기서 나누면 그 길드를 뺀 지도가 먼저 생기고(9길드 27열), 그 길드는 나중에
+    # 다른 열 수로 끼어들어 남의 칸 위에 포개진다. 고정을 마친 쪽이 다시 와서 나눈다.
+    # 표시가 STALE_LOCK_SEC 넘게 묵었으면 고정하던 서버가 죽은 것이다 - 지워서 다음 요청이 다시 고정하게 한다.
+    busy = False
+    for e in entries(s):
+        if e["locked"] != 0:
+            continue
+        key = "gw:%d:locked:%d" % (s, e["guild_id"])
+        when = parse_time(_meta(key))
+        if when is None or ((now or _now()) - when).total_seconds() > STALE_LOCK_SEC:
+            db.run("DELETE FROM meta WHERE k=?", (key,))
+        busy = True
+    if busy:
         return True
     try:
         _deal(s, now)                         # 명단이 다 고정됐으니 지도를 나눈다

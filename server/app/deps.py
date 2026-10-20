@@ -40,7 +40,7 @@ def in_battle(uid, pid):
 
     둘 다 여기서 닫는다 (야생이 없거나 시간이 지난 판은 이어 갈 길이 없다).
     """
-    row = db.q1("SELECT b.id, b.expires_at, w.id AS wid FROM battle b"
+    row = db.q1("SELECT b.*, w.id AS wid FROM battle b"
                 " LEFT JOIN wild w ON w.id = b.wild_id"
                 " WHERE b.user_id=? AND b.state='active' AND b.mine_id=?"
                 " ORDER BY b.id DESC LIMIT 1", (uid, pid))
@@ -49,16 +49,21 @@ def in_battle(uid, pid):
     exp = auth.parse_iso(row["expires_at"])
     now = datetime.datetime.now(datetime.timezone.utc)
     if row["wid"] is None or (exp and exp < now):
+        from . import troubles               # troubles 가 이 모듈을 불러온다 - 쓸 때 부른다
+        troubles.battle_left(row, "stale")   # 앱이 몰고 가지 않은 채 남은 판 (1.13.3)
         db.run("UPDATE battle SET state='done', result='fled' WHERE id=? AND state='active'",
                (row["id"],))
         return False
     return True
 
 
-def close_battles_of(uid, wild_id, result):
-    """야생 줄이 없어질 때 거기 걸려 있던 배틀도 닫는다 (result: caught / fled)."""
-    db.run("UPDATE battle SET state='done', result=? WHERE user_id=? AND wild_id=? AND state='active'",
-           (result, uid, wild_id))
+def close_battles_of(uid, wild_id, result, how=None):
+    """야생 줄이 없어질 때 거기 걸려 있던 배틀도 닫는다 (result: caught / fled).
+
+    닫히는 판이 있으면 앱이 그 판을 끝까지 몰고 가지 않았다는 뜻이라 남긴다 (how, 1.13.3 troubles).
+    """
+    from . import troubles                   # troubles 가 이 모듈을 불러온다 - 쓸 때 부른다
+    troubles.close_active(uid, "AND wild_id=?", (wild_id,), result, how or result)
 
 
 def current(request: Request, authorization: str = Header(default="")):

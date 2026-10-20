@@ -289,6 +289,15 @@ class PartyBattle(object):
         while not bt.over and bt.me.alive() and bt.foe.alive():
             ev = bt.take_turn(bt.choose_mine())
             self.turns += 1
+            if bt.over and self._still_on(bt):
+                # **쓰러뜨린 턴에도 턴 끝은 온다** (1.13.3, 게시판 #295 slovena '다투곰 화상이 2~3턴 뒤에'). 1:1
+                # 배틀은 누가 쓰러지면 판이 끝난 것으로 보고 턴 끝을 건너뛴다. 그래서 상대를 한 방에 쓰러뜨리는
+                # 동안 화염구슬 · 먹다남은음식 · 독 데미지 · 가속이 빠졌다. 본가처럼 턴 끝을 마친 뒤 다음 선수가
+                # 나온다 (관장 · 실시간 배틀은 원래 그렇다). 턴 끝 가운데 '판이 끝났으면 안 하는 것'(열매 ·
+                # 탈출 도구)도 돌게 잠깐 연다. 쓰러짐은 _check_faint 가 한 번만 알린다.
+                bt.over = False
+                bt._end_of_turn(ev)
+                bt.over = True
             # Battle 의 "over" 는 1:1 기준이라 라운드마다 나온다.
             # 그대로 흘리면 재생기가 판이 끝난 줄 안다.
             self.events.extend(e for e in ev if e.get("t") != "over")
@@ -306,6 +315,18 @@ class PartyBattle(object):
         # 링에 남은 채로 다음 선수와 겹친다.
         return "both"
 
+    def _still_on(self, bt):
+        """이번 턴에 한쪽만 쓰러졌고 그쪽에 다음 선수가 남아 있다 = 판이 이어진다 (턴 끝이 와야 한다).
+
+        마지막 선수가 쓰러졌으면 판이 끝나므로 턴 끝은 없다 (본가와 같다). 둘 다 살아 있는데 끝났으면 턴 상한이나
+        날려 보내기라 턴 끝은 이미 돌았다.
+        """
+        if bt.me.alive() == bt.foe.alive():
+            return False
+        team = self.a if not bt.me.alive() else self.b
+        down = bt.me if not bt.me.alive() else bt.foe
+        return any(f.alive() for f in team if f is not down)
+
     def _entry_abilities(self, bt):
         """새로 링에 오른 쪽의 '나올 때' 특성. 빠른 쪽부터 (관장 배틀과 같다)."""
         pair = [(who, f) for who, f in (("me", bt.me), ("foe", bt.foe)) if self.entered.get(who)]
@@ -316,6 +337,9 @@ class PartyBattle(object):
                 f.ab["down"] = sum(1 for x in team if not x.alive())
                 A.on_switch_in(bt, f, who, self.events)
                 SM.on_enter_abilities(bt, f, who, self.events)
+                # 라운드 시작에 나온 것(판의 첫 선수 · 쓰러진 선수 대신 나온 것)은 '이번 턴에 나온 것' 이 아니다 -
+                # 가속이 그 턴 끝에 오른다 (본가 · 관장 배틀과 같다, 1.13.3). 예전에는 라운드마다 한 턴씩 늦었다.
+                f.ab["fresh"] = False
         self.entered = {"me": False, "foe": False}
 
     def _retire(self, f):

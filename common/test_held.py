@@ -67,7 +67,12 @@ OK = FAIL = 0
 #     이제 쓰면 쓰러지므로(attackfx.SELF_KO) 그 자리에서 록블라스트를 고른다.
 #   · 3판 - 고라파덕의 **급소**. 예전에는 급소가 맞는 쪽의 방어 '하락' 을 없던 일로 했다
 #     (꼬리흔들기로 깎아 둔 방어가 급소에서만 되돌아왔다). 원작은 방어 '상승' 만 무시한다.
-PARTY_DIGEST = "69b6879877473aa1c2f6829ba66fd23600623ae981354eb1bdcebe58d54b3a3a"
+#
+# 1.13.3 에서 **발버둥의 이름만** '몸부림' -> '발버둥'(공식 이름)으로 바꿔 파티전 값이 달라졌다 (판에 발버둥이
+# 나온다). 이름을 '몸부림' 으로 되돌려 재면 옛 값(69b68798…)과 똑같다 - 엔진은 그대로다.
+# 1.13.3 에서 **쓰러뜨린 턴에도 턴 끝이 오게** 하면서 파티전 값이 또 달라졌다 (#295 - 상대를 쓰러뜨린 턴의 독 ·
+# 화상 데미지 · 가속이 이제 들어간다). party_battle._still_on 을 끄고 재면 바로 위 값(5463…)과 똑같다.
+PARTY_DIGEST = "ecf38229084cf2c95cd2f2aa776117ff68b4417cf0d78ac277c4140521a544d9"
 SOLO_DIGEST = "a702a422b1485e3aee1279753eae4d44a0c925bed1dd63d81eec15c911d6b777"
 
 
@@ -466,6 +471,146 @@ def t_구애_변화기(dex):
     chk("관장 AI 도 구애스카프면 칼춤을 안 고른다 (60판)", "SWORDSDANCE" not in got and got, got.count("SWORDSDANCE"))
 
 
+def t_구애_잠금이_막히면_발버둥(dex):
+    """구애 도구로 묶인 기술을 못 쓰게 되면 발버둥 (1.13.3, 본가 · Showdown 과 같다).
+
+    구애스카프로 지진에 묶인 채 사슬묶기를 맞으면, 고르는 쪽(lock_pool)은 잠금을 풀어 드래곤크루를 골랐는데 쓰는
+    쪽(force_move)이 다시 지진으로 되돌려 사슬묶기에 막혔다 - 풀릴 때까지 3턴을 그냥 날리는 샌드백이었다 (사람이
+    고르는 관장 배틀도 같았다). PP 가 다 떨어졌을 때도 본가는 발버둥이다 (예전에는 잠금을 풀어 줬다).
+    """
+    print("-- 구애 잠금이 막히면 발버둥 (사슬묶기 · 도발 · PP 0)")
+    from common import trainer_battle as TB
+
+    def mk(sp, moves, held=None, lv=50, seed=1):
+        m = P.make_pokemon(dex.get(sp), lv, random.Random(seed))
+        m["moves"], m["held"] = list(moves), held
+        return m
+
+    def locked_then(foe_move, my_moves=("EARTHQUAKE", "DRAGONCLAW", "STONEEDGE", "SWORDSDANCE"), first="EARTHQUAKE"):
+        me = B.Fighter(dex, mk("GARCHOMP", my_moves, "CHOICESCARF"))
+        foe = B.Fighter(dex, mk("BLISSEY", ["DISABLE", "TAUNT", "SOFTBOILED", "SEISMICTOSS"], None, 70))
+        bt = B.Battle(dex, me, foe, random.Random(3), ai="trainer")
+        bt.choose_ai = lambda: foe_move
+        bt.take_turn(first)
+        bt.choose_ai = lambda: "SOFTBOILED"
+        return bt, me
+
+    bt, me = locked_then("DISABLE")
+    chk("(검사 전제) 지진에 묶인 채 지진이 사슬묶기됐다", me.locked == "EARTHQUAKE"
+        and (me.cond.get("disable") or {}).get("move") == "EARTHQUAKE", (me.locked, me.cond.get("disable")))
+    chk("자동 배틀은 발버둥을 고른다", bt.choose_mine() == B.STRUGGLE, bt.choose_mine())
+    evs = bt.take_turn(bt.choose_mine())
+    used = [e.get("move") for e in evs if e.get("t") == "move" and e.get("who") == "me"]
+    hit = [e for e in evs if e.get("t") == "hit" and e.get("target") == "foe"]
+    chk("  실제로 발버둥이 나가 상대를 때린다 (턴을 날리지 않는다)", used == ["발버둥"] and hit, (used, texts(evs)))
+    bt2, me2 = locked_then("DISABLE")
+    evs = bt2.take_turn("DRAGONCLAW")                   # 사람이 고른 기술 (관장 배틀)
+    chk("사람이 다른 기술을 골라도 발버둥 (막힌 지진으로 되돌리지 않는다)",
+        not any("사슬묶기로 쓸 수 없다" in e.get("text", "") for e in evs) and bt2.foe.hp < bt2.foe.maxhp,
+        texts(evs))
+    chk("  왜 발버둥인지 알린다", any("구애스카프" in e.get("text", "") and "발버둥" in e.get("text", "") for e in evs),
+        texts(evs))
+    for _ in range(4):
+        if (me2.cond.get("disable") or {}).get("move"):
+            bt2.take_turn("DRAGONCLAW")
+    chk("사슬묶기가 풀리면 다시 묶인 지진", not me2.cond.get("disable") and bt2.choose_mine() == "EARTHQUAKE",
+        (me2.cond.get("disable"), bt2.choose_mine()))
+
+    bt3, me3 = locked_then("TAUNT", first="SWORDSDANCE")
+    chk("칼춤에 묶인 채 도발을 맞으면 발버둥", me3.locked == "SWORDSDANCE" and bt3.choose_mine() == B.STRUGGLE,
+        (me3.locked, me3.cond.get("taunt"), bt3.choose_mine()))
+    bt4, me4 = locked_then("SOFTBOILED")
+    me4.pp["EARTHQUAKE"] = 0
+    chk("묶인 기술의 PP 가 다 떨어지면 발버둥 (본가와 같다)", bt4.choose_mine() == B.STRUGGLE
+        and H.force_move(me4, "DRAGONCLAW", [], "me", bt4) == B.STRUGGLE, bt4.choose_mine())
+    me4.pp["EARTHQUAKE"] = 10
+    me4.held = None
+    chk("도구가 없어지면(탁쳐서떨구기 · 트릭) 잠금도 없다", bt4.choose_mine() != B.STRUGGLE
+        and H.force_move(me4, "DRAGONCLAW", [], "me", bt4) == "DRAGONCLAW")
+
+    t = {"name": "검사", "team": [{"species": "GARCHOMP", "level": 50, "held": "CHOICESCARF",
+                                  "moves": ["EARTHQUAKE", "DRAGONCLAW", "STONEEDGE", "SWORDSDANCE"]}]}
+    tb = TB.TrainerBattle(dex, [mk("BLISSEY", ["DISABLE", "SOFTBOILED", "SEISMICTOSS", "TOXIC"], lv=70)], t,
+                          random.Random(1))
+    tb.foe.locked = "EARTHQUAKE"
+    tb.foe.cond["disable"] = {"move": "EARTHQUAKE", "turns": 3}
+    chk("관장 · 악당 · 길드전 AI 도 발버둥", tb._foe_move() == B.STRUGGLE, tb._foe_move())
+
+
+def t_파티배틀_쓰러뜨린_턴에도_턴끝(dex):
+    """랭크 · 랜덤 · 친구 배틀(party_battle)에서 상대를 쓰러뜨린 턴에도 턴 끝이 온다 (1.13.3, 게시판 #295 slovena).
+
+    라운드마다 1:1 배틀을 이어 붙이는데, 1:1 배틀은 누가 쓰러지면 '판이 끝났다' 로 턴 끝 처리를 건너뛰었다. 그래서
+    화염구슬을 지닌 다투곰이 상대를 한 방에 쓰러뜨리는 동안 화상이 안 걸려 '2~3턴 뒤에 걸린다' 로 보였고 근성도
+    그만큼 늦게 켜졌다 (먹다남은음식 · 독 데미지 · 가속도 같다). 본가는 쓰러진 턴에도 턴 끝 효과가 온 뒤에 다음
+    포켓몬이 나온다. 관장 · 실시간 배틀은 원래 그렇게 했다. **마지막 포켓몬이 쓰러지면 판이 끝나므로 턴 끝은 없다.**
+    """
+    print("-- 파티 배틀: 쓰러뜨린 턴에도 턴 끝 (#295 다투곰 화염구슬)")
+
+    def mk(sp, moves, held=None, ab=None, lv=50, seed=1):
+        m = P.make_pokemon(dex.get(sp), lv, random.Random(seed))
+        m["moves"], m["held"] = list(moves), held
+        if ab:
+            m["ability"] = ab
+        return m
+
+    def first_burn(out):
+        """다투곰이 화상이 된 때: 몇 번째 라운드 안에서인가 (처음 쓰러뜨린 사건 뒤인가)."""
+        rnd, fell = 0, False
+        for e in out["events"]:
+            if e.get("t") == "round":
+                rnd += 1
+            if e.get("t") == "faint" and e.get("who") == "foe":
+                fell = True
+            if e.get("t") == "ailment" and e.get("who") == "me" and e.get("status") == "burn":
+                return rnd, fell
+        return None, fell
+
+    ursa = mk("URSALUNA", ["FACADE", "HEADLONGRUSH", "CRUNCH", "PROTECT"], "FLAMEORB", "GUTS", lv=70)
+    weak = mk("CATERPIE", ["TACKLE"], lv=5, seed=2)
+    wall = mk("BLISSEY", ["SEISMICTOSS", "SOFTBOILED", "PROTECT", "DEFENSECURL"], lv=100, seed=3)
+    out = PB.simulate(dex, [ursa], [weak, wall], seed=7)
+    got = first_burn(out)
+    chk("상대를 한 방에 쓰러뜨린 첫 턴에 화염구슬로 화상 (다음 상대가 나오기 전)", got == (1, True), got)
+    out = PB.simulate(dex, [mk("URSALUNA", ["FACADE"], "FLAMEORB", "GUTS", lv=70)], [mk("CATERPIE", ["TACKLE"], lv=5)],
+                      seed=7)
+    chk("  마지막 포켓몬을 쓰러뜨렸으면 판이 끝나 턴 끝은 없다", first_burn(out)[0] is None and out["winner"] == "me",
+        (first_burn(out), out["winner"]))
+    hurt = mk("SNORLAX", ["BODYSLAM", "REST", "CURSE", "PROTECT"], "LEFTOVERS", lv=80)
+    # 꼬렛의 전광석화(선제)에 조금 깎인 뒤 잠만보가 쓰러뜨린다 - 깎인 게 있어야 먹다남은음식이 회복한다
+    out = PB.simulate(dex, [hurt], [mk("RATTATA", ["QUICKATTACK"], lv=20), mk("METAPOD", ["HARDEN"], lv=5)], seed=3)
+    rnd, healed = 0, None
+    for e in out["events"]:
+        if e.get("t") == "round":
+            rnd += 1
+        if e.get("t") == "heal" and "먹다남은음식" in (e.get("text") or "") and healed is None:
+            healed = rnd
+    chk("  먹다남은음식도 쓰러뜨린 턴에 회복 (잠만보가 첫 상대를 쓰러뜨린 1라운드에)", healed == 1, healed)
+    blaz = mk("BLAZIKEN", ["FLAREBLITZ"], None, "SPEEDBOOST", lv=70)
+    pb = PB.PartyBattle(dex, [blaz], [mk("BLISSEY", ["SOFTBOILED"], lv=100, seed=3)], seed=7)
+    pb.run()
+    first = []
+    for e in pb.events:
+        if e.get("t") == "move" and e.get("who") == "me":
+            first.append("move")
+        if e.get("t") == "stat" and e.get("who") == "me" and "스피드" in (e.get("text") or ""):
+            first.append("boost")
+    chk("가속: 판이 시작된 첫 턴 끝에도 오른다 (라운드 시작에 나온 것은 '이번 턴에 나온 것' 이 아니다)",
+        first[:2] == ["move", "boost"], first[:4])
+    pb = PB.PartyBattle(dex, [mk("CATERPIE", ["STRINGSHOT"], lv=2, seed=5), mk("BLAZIKEN", ["FLAREBLITZ"], None,
+                                                                              "SPEEDBOOST", lv=70)],
+                        [mk("RATTATA", ["TACKLE"], lv=20, seed=6),
+                         mk("BLISSEY", ["SOFTBOILED"], lv=100, seed=3)], seed=7)
+    pb.run()
+    seq, rnd = [], 0
+    for e in pb.events:
+        if e.get("t") == "round":
+            rnd += 1
+        if rnd >= 2 and e.get("who") == "me" and (e.get("t") == "move" or "스피드" in (e.get("text") or "")):
+            seq.append("boost" if e.get("t") == "stat" else "move")
+    chk("  쓰러진 포켓몬 대신 나온 것도 그 다음 첫 턴 끝에 오른다", seq[:2] == ["move", "boost"], seq[:4])
+
+
 def main():
     dex = load_dex()
     t_도구_없으면_그대로(dex)
@@ -473,6 +618,8 @@ def main():
     t_효과(dex)
     t_설명()
     t_구애_변화기(dex)
+    t_구애_잠금이_막히면_발버둥(dex)
+    t_파티배틀_쓰러뜨린_턴에도_턴끝(dex)
     print()
     print("======================================================")
     print("  합계  OK %d   FAIL %d" % (OK, FAIL))

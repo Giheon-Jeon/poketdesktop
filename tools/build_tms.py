@@ -31,7 +31,16 @@
 게시판 #156). 알 기술은 진화해도 남으므로 **진화 전 단계의 알 기술은 진화형도 배운다**
 (자료에는 알 기술이 대개 맨 처음 단계에만 적혀 있다).
 
-기술머신이 없는 기술은 여전히 못 배운다 (기술머신을 새로 만들지 않는다). 가르침 기술도 넣지 않았다.
+기술머신이 없는 기술은 여전히 못 배운다 (기술머신을 새로 만들지 않는다) - 그런 알 기술은 1.13.3 부터
+기술 떠올리기로 배운다 (tools/add_reminder.py).
+
+## 가르침 기술 (1.13.3)
+
+**본가 최신작에서 가르치기(기술 가르침)로 배우는 기술도 그 기술의 기술머신으로 배운다.** 2026-10-20 전수 검사
+(tools/learn_audit.py)에서 최신작이 소드실드 · 울트라썬문인 132종이 그 게임의 가르침 기술 56가지를 못 배웠다
+(메테오빔 · 용성군 · 코골기 …). 기술머신이 있는 43가지는 여기서, 없는 13가지는 떠올리기로 메운다.
+**최신작 것만** 넣는다 (사용자 결정) - 전 세대 가르침을 다 합치면 722종 2,758줄이 늘어 흉내내기 · 탁쳐서떨구기
+같은 기술이 대거 풀린다. '최신작' 은 tools/learn_ref.py 가 고른다.
 
 ## 돌리는 법
 
@@ -47,6 +56,9 @@ import json
 import os
 import sys
 import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import learn_ref                                            # noqa: E402
 
 CSV_BASE = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv"
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_cache")
@@ -163,6 +175,18 @@ def build(pokedex_path):
             learn.setdefault(num, set()).update(add)
             egg_rows += len(add)
 
+    # ---- 가르침 기술 (1.13.3): 본가 최신작에서 가르치기로 배우는 것은 그 기술머신으로 ----
+    tutor_rows = 0
+    ref = learn_ref.reference(rows("pokemon_moves.csv"), rows("version_groups.csv"))
+    for num, mvs in sorted(ref.items()):
+        if not 1 <= num <= MAX_DEX:
+            continue                      # 폼은 별도 id - 기술머신은 원래 종 번호로 본다
+        for mid, how in mvs.items():
+            no = no_of_move.get(mid)
+            if learn_ref.TUTOR in how and no is not None and no not in learn.get(num, set()):
+                learn.setdefault(num, set()).add(no)
+                tutor_rows += 1
+
     out_learn = dict((str(k), sorted(v)) for k, v in sorted(learn.items()))
 
     if skipped:
@@ -170,12 +194,13 @@ def build(pokedex_path):
 
     return {
         "version": 2,
-        "source": "PokeAPI (전 세대 기술머신 합집합 + 알 기술)",
+        "source": "PokeAPI (전 세대 기술머신 합집합 + 알 기술 + 최신작 가르침 기술)",
         "counts": {
             "tms": len(tms),
             "species": len(out_learn),
             "rows": sum(len(v) for v in out_learn.values()),
             "eggRows": egg_rows,          # 그 가운데 알 기술이라서 들어간 줄
+            "tutorRows": tutor_rows,      # 그 가운데 최신작 가르침 기술이라서 들어간 줄 (1.13.3)
         },
         "tms": tms,
         "learn": out_learn,
@@ -197,8 +222,8 @@ def main():
 
     c = data["counts"]
     mb = os.path.getsize(a.out) / 1048576.0
-    print("  기술머신 %d개 · %d종 · 학습 %d줄 (그 가운데 알 기술 %d줄)  (%s, %.1fMB)"
-          % (c["tms"], c["species"], c["rows"], c["eggRows"], a.out, mb))
+    print("  기술머신 %d개 · %d종 · 학습 %d줄 (그 가운데 알 기술 %d줄 · 가르침 기술 %d줄)  (%s, %.1fMB)"
+          % (c["tms"], c["species"], c["rows"], c["eggRows"], c["tutorRows"], a.out, mb))
     sv = sum(1 for t in data["tms"].values() if t["sv"] is not None)
     print("  스칼렛/바이올렛 번호 그대로 %d개, 옛 세대에서 가져온 것 %d개"
           % (sv, c["tms"] - sv))

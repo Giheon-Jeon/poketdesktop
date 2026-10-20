@@ -151,6 +151,26 @@ def main():
     ui_bag.use_item(OldApi(), "RARECANDY", 14, "", 9)
     chk("  폼이 아닌 도구는 옛 api 그대로", sent[-1] == ("old-method", "RARECANDY"), sent[-1])
 
+    print("\n=== 모습을 바꿔 배우려는 기술이 생기면 바로 묻는다 (1.13.3, 게시판 #279 주호)")
+    # 워시로토무로 바꾸면 기술이 넷이라 하이드로펌프가 '배우려고 기다리는 기술' 이 되는데, 가방이 그걸 안 보고
+    # 진화만 챙겨서 창이 안 떴다 - 레벨업을 해야 그제야 물었다.
+    asked_learn = []
+    app = types.SimpleNamespace(want_learn=lambda pid, name="": asked_learn.append((pid, name)))
+    rotom = M(14, "ROTOM", "로토무", 30, form="HEAT")
+    rotom["pending"] = []
+    r = {"ok": True, "message": "로토무은(는) 워시로토무(으)로 모습이 바뀌었다!",
+         "pokemon": dict(rotom, form="WASH", pending=["HYDROPUMP"])}
+    chk("기다리는 기술이 새로 생기면 바로 묻는다", ui_bag.ask_new_learns(app, rotom, r) is True
+        and asked_learn == [(14, "로토무")], asked_learn)
+    asked_learn[:] = []
+    rotom["pending"] = ["HYDROPUMP"]
+    chk("  원래 있던 기다리는 기술로는 다시 안 묻는다", ui_bag.ask_new_learns(app, rotom, r) is False and not asked_learn)
+    chk("  답에 포켓몬이 없으면(옛 서버) 조용히 넘어간다", ui_bag.ask_new_learns(app, rotom, {"ok": True}) is False)
+    chk("  앱이 물을 줄 모르면 넘어간다", ui_bag.ask_new_learns(types.SimpleNamespace(), M(1, "ROTOM", "로토무"), r) is False)
+    src = open(ui_bag.__file__, encoding="utf-8").read()
+    body = src[src.index("    def do_use(self):"):src.index("    def _ask_form(self, it, mon):")]
+    chk("  가방에서 도구를 쓴 뒤(do_use) 이것을 부른다", "ask_new_learns(self.app, mon, r)" in body)
+
     print("\n=== 고르는 창")
     made = []
     real_ghost = U.ghost_button

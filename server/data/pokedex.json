@@ -39258,6 +39258,9 @@
    ],
    "num": 1,
    "prevo": null,
+   "remind": [
+    "INGRAIN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -39379,6 +39382,9 @@
    ],
    "num": 2,
    "prevo": 1,
+   "remind": [
+    "INGRAIN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -39500,6 +39506,9 @@
    ],
    "num": 3,
    "prevo": 2,
+   "remind": [
+    "INGRAIN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -39609,6 +39618,11 @@
    ],
    "num": 4,
    "prevo": null,
+   "remind": [
+    "BELLYDRUM",
+    "BITE",
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -39713,6 +39727,11 @@
    ],
    "num": 5,
    "prevo": 4,
+   "remind": [
+    "BELLYDRUM",
+    "BITE",
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -39825,6 +39844,11 @@
    ],
    "num": 6,
    "prevo": 5,
+   "remind": [
+    "BELLYDRUM",
+    "BITE",
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -39942,6 +39966,16 @@
    ],
    "num": 7,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "AQUARING",
+    "FLAIL",
+    "LIFEDEW",
+    "MIRRORCOAT",
+    "MIST",
+    "WATERSPOUT",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -40058,6 +40092,16 @@
    ],
    "num": 8,
    "prevo": 7,
+   "remind": [
+    "AQUAJET",
+    "AQUARING",
+    "FLAIL",
+    "LIFEDEW",
+    "MIRRORCOAT",
+    "MIST",
+    "WATERSPOUT",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -40170,6 +40214,16 @@
    ],
    "num": 9,
    "prevo": 8,
+   "remind": [
+    "AQUAJET",
+    "AQUARING",
+    "FLAIL",
+    "LIFEDEW",
+    "MIRRORCOAT",
+    "MIST",
+    "WATERSPOUT",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -41135,6 +41189,12 @@
    ],
    "num": 19,
    "prevo": null,
+   "remind": [
+    "FINALGAMBIT",
+    "FLAMEWHEEL",
+    "FURYSWIPES",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -41247,6 +41307,12 @@
    ],
    "num": 20,
    "prevo": 19,
+   "remind": [
+    "FINALGAMBIT",
+    "FLAMEWHEEL",
+    "FURYSWIPES",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -41354,6 +41420,10 @@
    ],
    "num": 21,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -41462,6 +41532,10 @@
    ],
    "num": 22,
    "prevo": 21,
+   "remind": [
+    "ASTONISH",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -41592,6 +41666,10 @@
    ],
    "num": 23,
    "prevo": null,
+   "remind": [
+    "SUCKERPUNCH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -41729,6 +41807,10 @@
    ],
    "num": 24,
    "prevo": 23,
+   "remind": [
+    "SUCKERPUNCH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -41870,7 +41952,11 @@
    "num": 25,
    "prevo": 172,
    "remind": [
-    "VOLTTACKLE"
+    "FLAIL",
+    "PRESENT",
+    "TICKLE",
+    "VOLTTACKLE",
+    "WISH"
    ],
    "spawnable": true,
    "stage": 1,
@@ -42008,6 +42094,12 @@
    ],
    "num": 26,
    "prevo": 25,
+   "remind": [
+    "FLAIL",
+    "PRESENT",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -42135,6 +42227,9 @@
    ],
    "num": 27,
    "prevo": null,
+   "remind": [
+    "FLAIL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -42258,6 +42353,9 @@
    ],
    "num": 28,
    "prevo": 27,
+   "remind": [
+    "FLAIL"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -42371,6 +42469,10 @@
    ],
    "num": 29,
    "prevo": null,
+   "remind": [
+    "DISABLE",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -42483,6 +42585,10 @@
    ],
    "num": 30,
    "prevo": 29,
+   "remind": [
+    "DISABLE",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -42595,6 +42701,10 @@
    ],
    "num": 31,
    "prevo": 30,
+   "remind": [
+    "DISABLE",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -42709,6 +42819,14 @@
    ],
    "num": 32,
    "prevo": null,
+   "remind": [
+    "CONFUSION",
+    "DISABLE",
+    "HEADSMASH",
+    "SUCKERPUNCH",
+    "SUPERSONIC",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -42822,6 +42940,14 @@
    ],
    "num": 33,
    "prevo": 32,
+   "remind": [
+    "CONFUSION",
+    "DISABLE",
+    "HEADSMASH",
+    "SUCKERPUNCH",
+    "SUPERSONIC",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -42935,6 +43061,14 @@
    ],
    "num": 34,
    "prevo": 33,
+   "remind": [
+    "CONFUSION",
+    "DISABLE",
+    "HEADSMASH",
+    "SUCKERPUNCH",
+    "SUPERSONIC",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -43080,6 +43214,12 @@
    ],
    "num": 35,
    "prevo": 173,
+   "remind": [
+    "HEALPULSE",
+    "PRESENT",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -43148,6 +43288,21 @@
    ],
    "num": 36,
    "prevo": 35,
+   "remind": [
+    "AFTERYOU",
+    "COPYCAT",
+    "FOLLOWME",
+    "GROWL",
+    "HEALINGWISH",
+    "HEALPULSE",
+    "MOONLIGHT",
+    "POUND",
+    "PRESENT",
+    "SPLASH",
+    "SWEETKISS",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -43267,6 +43422,14 @@
    ],
    "num": 37,
    "prevo": null,
+   "remind": [
+    "BABYDOLLEYES",
+    "FLAIL",
+    "HEALINGWISH",
+    "HOWL",
+    "HYPNOSIS",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -43330,6 +43493,14 @@
    ],
    "num": 38,
    "prevo": 37,
+   "remind": [
+    "BABYDOLLEYES",
+    "FLAIL",
+    "HEALINGWISH",
+    "HOWL",
+    "HYPNOSIS",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -43470,6 +43641,13 @@
    ],
    "num": 39,
    "prevo": 174,
+   "remind": [
+    "HEALPULSE",
+    "LASTRESORT",
+    "PERISHSONG",
+    "PRESENT",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -43607,6 +43785,13 @@
    ],
    "num": 40,
    "prevo": 39,
+   "remind": [
+    "HEALPULSE",
+    "LASTRESORT",
+    "PERISHSONG",
+    "PRESENT",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -43731,6 +43916,10 @@
    ],
    "num": 41,
    "prevo": null,
+   "remind": [
+    "QUICKATTACK",
+    "WINGATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -43863,6 +44052,10 @@
    ],
    "num": 42,
    "prevo": 41,
+   "remind": [
+    "QUICKATTACK",
+    "WINGATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -43979,6 +44172,17 @@
    ],
    "num": 43,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "FLAIL",
+    "INGRAIN",
+    "LEECHSEED",
+    "RAZORLEAF",
+    "STRENGTHSAP",
+    "SYNTHESIS",
+    "TEETERDANCE",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -44102,6 +44306,17 @@
    ],
    "num": 44,
    "prevo": 43,
+   "remind": [
+    "AFTERYOU",
+    "FLAIL",
+    "INGRAIN",
+    "LEECHSEED",
+    "RAZORLEAF",
+    "STRENGTHSAP",
+    "SYNTHESIS",
+    "TEETERDANCE",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -44214,6 +44429,17 @@
    ],
    "num": 45,
    "prevo": 44,
+   "remind": [
+    "AFTERYOU",
+    "FLAIL",
+    "INGRAIN",
+    "LEECHSEED",
+    "RAZORLEAF",
+    "STRENGTHSAP",
+    "SYNTHESIS",
+    "TEETERDANCE",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -44332,6 +44558,12 @@
    ],
    "num": 46,
    "prevo": null,
+   "remind": [
+    "FELLSTINGER",
+    "FLAIL",
+    "LEECHSEED",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -44446,6 +44678,12 @@
    ],
    "num": 47,
    "prevo": 46,
+   "remind": [
+    "FELLSTINGER",
+    "FLAIL",
+    "LEECHSEED",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -44559,6 +44797,10 @@
    ],
    "num": 48,
    "prevo": null,
+   "remind": [
+    "MORNINGSUN",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -44672,6 +44914,10 @@
    ],
    "num": 49,
    "prevo": 48,
+   "remind": [
+    "MORNINGSUN",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -44785,6 +45031,10 @@
    ],
    "num": 50,
    "prevo": null,
+   "remind": [
+    "FINALGAMBIT",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -44901,6 +45151,10 @@
    ],
    "num": 51,
    "prevo": 50,
+   "remind": [
+    "FINALGAMBIT",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -45013,6 +45267,13 @@
    ],
    "num": 52,
    "prevo": null,
+   "remind": [
+    "COVET",
+    "FLAIL",
+    "HYPNOSIS",
+    "LASTRESORT",
+    "TAILWHIP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -45125,6 +45386,13 @@
    ],
    "num": 53,
    "prevo": 52,
+   "remind": [
+    "COVET",
+    "FLAIL",
+    "HYPNOSIS",
+    "LASTRESORT",
+    "TAILWHIP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -45242,6 +45510,13 @@
    ],
    "num": 54,
    "prevo": null,
+   "remind": [
+    "CLEARSMOG",
+    "CROSSCHOP",
+    "HYPNOSIS",
+    "SIMPLEBEAM",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -45359,6 +45634,13 @@
    ],
    "num": 55,
    "prevo": 54,
+   "remind": [
+    "CLEARSMOG",
+    "CROSSCHOP",
+    "HYPNOSIS",
+    "SIMPLEBEAM",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -45740,6 +46022,13 @@
    ],
    "num": 58,
    "prevo": null,
+   "remind": [
+    "COVET",
+    "DOUBLEKICK",
+    "MORNINGSUN",
+    "RAGINGFURY",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -45860,6 +46149,13 @@
    ],
    "num": 59,
    "prevo": 58,
+   "remind": [
+    "COVET",
+    "DOUBLEKICK",
+    "MORNINGSUN",
+    "RAGINGFURY",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -45964,6 +46260,10 @@
    ],
    "num": 60,
    "prevo": null,
+   "remind": [
+    "MIST",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -46076,6 +46376,10 @@
    ],
    "num": 61,
    "prevo": 60,
+   "remind": [
+    "MIST",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -46144,6 +46448,12 @@
    ],
    "num": 62,
    "prevo": 61,
+   "remind": [
+    "BELLYDRUM",
+    "MIST",
+    "POUND",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -46209,6 +46519,13 @@
    ],
    "num": 63,
    "prevo": null,
+   "remind": [
+    "CONFUSION",
+    "GUARDSPLIT",
+    "MAGICCOAT",
+    "POWERTRICK",
+    "PSYCHOSHIFT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -46334,6 +46651,12 @@
    ],
    "num": 64,
    "prevo": 63,
+   "remind": [
+    "GUARDSPLIT",
+    "MAGICCOAT",
+    "POWERTRICK",
+    "PSYCHOSHIFT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -46450,6 +46773,12 @@
    ],
    "num": 65,
    "prevo": 64,
+   "remind": [
+    "GUARDSPLIT",
+    "MAGICCOAT",
+    "POWERTRICK",
+    "PSYCHOSHIFT"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -46594,6 +46923,11 @@
    ],
    "num": 66,
    "prevo": null,
+   "remind": [
+    "POWERTRICK",
+    "QUICKGUARD",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -46739,6 +47073,11 @@
    ],
    "num": 67,
    "prevo": 66,
+   "remind": [
+    "POWERTRICK",
+    "QUICKGUARD",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -46883,6 +47222,11 @@
    ],
    "num": 68,
    "prevo": 67,
+   "remind": [
+    "POWERTRICK",
+    "QUICKGUARD",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -46998,6 +47342,15 @@
    ],
    "num": 69,
    "prevo": null,
+   "remind": [
+    "CLEARSMOG",
+    "INGRAIN",
+    "STRENGTHSAP",
+    "SUCKERPUNCH",
+    "SYNTHESIS",
+    "TICKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -47114,6 +47467,15 @@
    ],
    "num": 70,
    "prevo": 69,
+   "remind": [
+    "CLEARSMOG",
+    "INGRAIN",
+    "STRENGTHSAP",
+    "SUCKERPUNCH",
+    "SYNTHESIS",
+    "TICKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -47190,6 +47552,19 @@
    ],
    "num": 71,
    "prevo": 70,
+   "remind": [
+    "CLEARSMOG",
+    "GASTROACID",
+    "INGRAIN",
+    "SPITUP",
+    "STOCKPILE",
+    "STRENGTHSAP",
+    "SUCKERPUNCH",
+    "SWALLOW",
+    "SYNTHESIS",
+    "TICKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -47307,6 +47682,14 @@
    ],
    "num": 72,
    "prevo": null,
+   "remind": [
+    "ACUPRESSURE",
+    "AQUARING",
+    "AURORABEAM",
+    "MIRRORCOAT",
+    "RAPIDSPIN",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -47420,6 +47803,14 @@
    ],
    "num": 73,
    "prevo": 72,
+   "remind": [
+    "ACUPRESSURE",
+    "AQUARING",
+    "AURORABEAM",
+    "MIRRORCOAT",
+    "RAPIDSPIN",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -47537,6 +47928,12 @@
    ],
    "num": 74,
    "prevo": null,
+   "remind": [
+    "BLOCK",
+    "FLAIL",
+    "HAMMERARM",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -47655,6 +48052,12 @@
    ],
    "num": 75,
    "prevo": 74,
+   "remind": [
+    "BLOCK",
+    "FLAIL",
+    "HAMMERARM",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -47764,6 +48167,12 @@
    ],
    "num": 76,
    "prevo": 75,
+   "remind": [
+    "BLOCK",
+    "FLAIL",
+    "HAMMERARM",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -47889,6 +48298,11 @@
    ],
    "num": 77,
    "prevo": null,
+   "remind": [
+    "DOUBLEKICK",
+    "MORNINGSUN",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -48021,6 +48435,11 @@
    ],
    "num": 78,
    "prevo": 77,
+   "remind": [
+    "DOUBLEKICK",
+    "MORNINGSUN",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -48158,6 +48577,12 @@
    ],
    "num": 79,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "BELLYDRUM",
+    "BLOCK",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -48284,6 +48709,12 @@
    ],
    "num": 80,
    "prevo": 79,
+   "remind": [
+    "BELCH",
+    "BELLYDRUM",
+    "BLOCK",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -48648,6 +49079,15 @@
    ],
    "num": 83,
    "prevo": null,
+   "remind": [
+    "COVET",
+    "FEINT",
+    "FINALGAMBIT",
+    "FLAIL",
+    "GUST",
+    "QUICKATTACK",
+    "SIMPLEBEAM"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -48761,6 +49201,9 @@
    ],
    "num": 84,
    "prevo": null,
+   "remind": [
+    "FLAIL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -48870,6 +49313,9 @@
    ],
    "num": 85,
    "prevo": 84,
+   "remind": [
+    "FLAIL"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -49000,6 +49446,16 @@
    ],
    "num": 86,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "DISABLE",
+    "ENTRAINMENT",
+    "LICK",
+    "PERISHSONG",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -49121,6 +49577,16 @@
    ],
    "num": 87,
    "prevo": 86,
+   "remind": [
+    "BELCH",
+    "DISABLE",
+    "ENTRAINMENT",
+    "LICK",
+    "PERISHSONG",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -49246,6 +49712,13 @@
    ],
    "num": 88,
    "prevo": null,
+   "remind": [
+    "MEANLOOK",
+    "SHADOWSNEAK",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -49366,6 +49839,13 @@
    ],
    "num": 89,
    "prevo": 88,
+   "remind": [
+    "MEANLOOK",
+    "SHADOWSNEAK",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -49482,6 +49962,10 @@
    ],
    "num": 90,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "LIFEDEW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -49606,6 +50090,10 @@
    ],
    "num": 91,
    "prevo": 90,
+   "remind": [
+    "AQUARING",
+    "LIFEDEW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -49722,6 +50210,14 @@
    ],
    "num": 92,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "CLEARSMOG",
+    "DISABLE",
+    "PERISHSONG",
+    "REFLECTTYPE",
+    "SMOG"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -49843,6 +50339,14 @@
    ],
    "num": 93,
    "prevo": 92,
+   "remind": [
+    "ASTONISH",
+    "CLEARSMOG",
+    "DISABLE",
+    "PERISHSONG",
+    "REFLECTTYPE",
+    "SMOG"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -49963,6 +50467,12 @@
    ],
    "num": 94,
    "prevo": 93,
+   "remind": [
+    "ASTONISH",
+    "CLEARSMOG",
+    "DISABLE",
+    "SMOG"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -50109,6 +50619,12 @@
    ],
    "num": 95,
    "prevo": null,
+   "remind": [
+    "BLOCK",
+    "FLAIL",
+    "HEADSMASH",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -50226,6 +50742,11 @@
    ],
    "num": 96,
    "prevo": null,
+   "remind": [
+    "FLATTER",
+    "POWERSPLIT",
+    "ROLEPLAY"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -50338,6 +50859,11 @@
    ],
    "num": 97,
    "prevo": 96,
+   "remind": [
+    "FLATTER",
+    "POWERSPLIT",
+    "ROLEPLAY"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -50454,6 +50980,11 @@
    ],
    "num": 98,
    "prevo": null,
+   "remind": [
+    "HAMMERARM",
+    "SLASH",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -50570,6 +51101,10 @@
    ],
    "num": 99,
    "prevo": 98,
+   "remind": [
+    "SLASH",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -50933,6 +51468,15 @@
    ],
    "num": 102,
    "prevo": null,
+   "remind": [
+    "BARRAGE",
+    "BLOCK",
+    "INGRAIN",
+    "MOONLIGHT",
+    "POISONPOWDER",
+    "SLEEPPOWDER",
+    "STUNSPORE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -51057,6 +51601,16 @@
    ],
    "num": 103,
    "prevo": 102,
+   "remind": [
+    "BARRAGE",
+    "BLOCK",
+    "GROWTH",
+    "INGRAIN",
+    "MOONLIGHT",
+    "POISONPOWDER",
+    "SLEEPPOWDER",
+    "STUNSPORE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -51174,6 +51728,13 @@
    ],
    "num": 104,
    "prevo": null,
+   "remind": [
+    "BELLYDRUM",
+    "BONECLUB",
+    "DOUBLEKICK",
+    "LEER",
+    "PERISHSONG"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -51286,6 +51847,13 @@
    ],
    "num": 105,
    "prevo": 104,
+   "remind": [
+    "BELLYDRUM",
+    "BONECLUB",
+    "DOUBLEKICK",
+    "LEER",
+    "PERISHSONG"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -51410,6 +51978,11 @@
    ],
    "num": 106,
    "prevo": 236,
+   "remind": [
+    "BULLETPUNCH",
+    "MACHPUNCH",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -51538,6 +52111,10 @@
    ],
    "num": 107,
    "prevo": 236,
+   "remind": [
+    "HIGHJUMPKICK",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -51671,6 +52248,11 @@
    ],
    "num": 108,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "HAMMERARM",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -51791,6 +52373,11 @@
    ],
    "num": 109,
    "prevo": null,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -51911,6 +52498,11 @@
    ],
    "num": 110,
    "prevo": 109,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -52028,6 +52620,11 @@
    ],
    "num": 111,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH",
+    "GUARDSPLIT",
+    "METALBURST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -52151,6 +52748,11 @@
    ],
    "num": 112,
    "prevo": 111,
+   "remind": [
+    "DRAGONRUSH",
+    "GUARDSPLIT",
+    "METALBURST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -52292,6 +52894,10 @@
    ],
    "num": 113,
    "prevo": 440,
+   "remind": [
+    "HEALBELL",
+    "PRESENT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -52429,6 +53035,12 @@
    ],
    "num": 114,
    "prevo": null,
+   "remind": [
+    "CONFUSION",
+    "FLAIL",
+    "LEECHSEED",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -52541,6 +53153,11 @@
    ],
    "num": 115,
    "prevo": null,
+   "remind": [
+    "CRUSHCLAW",
+    "DISABLE",
+    "HAMMERARM"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -52654,6 +53271,13 @@
    ],
    "num": 116,
    "prevo": null,
+   "remind": [
+    "AURORABEAM",
+    "CLEARSMOG",
+    "DISABLE",
+    "FLAIL",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -52768,6 +53392,13 @@
    ],
    "num": 117,
    "prevo": 116,
+   "remind": [
+    "AURORABEAM",
+    "CLEARSMOG",
+    "DISABLE",
+    "FLAIL",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -52876,6 +53507,10 @@
    ],
    "num": 118,
    "prevo": null,
+   "remind": [
+    "ACUPRESSURE",
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -52976,6 +53611,10 @@
    ],
    "num": 119,
    "prevo": 118,
+   "remind": [
+    "ACUPRESSURE",
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -53369,6 +54008,11 @@
    ],
    "num": 122,
    "prevo": 439,
+   "remind": [
+    "HEALINGWISH",
+    "POWERSPLIT",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -53490,6 +54134,10 @@
    ],
    "num": 123,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -53603,6 +54251,10 @@
    ],
    "num": 124,
    "prevo": 238,
+   "remind": [
+    "ROLEPLAY",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -53724,6 +54376,12 @@
    ],
    "num": 125,
    "prevo": 239,
+   "remind": [
+    "CROSSCHOP",
+    "FEINT",
+    "FOLLOWME",
+    "HAMMERARM"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -53844,6 +54502,13 @@
    ],
    "num": 126,
    "prevo": 240,
+   "remind": [
+    "BELCH",
+    "BELLYDRUM",
+    "CROSSCHOP",
+    "FOLLOWME",
+    "MACHPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -53956,6 +54621,13 @@
    ],
    "num": 127,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "FLAIL",
+    "FURYATTACK",
+    "QUICKATTACK",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -54378,6 +55050,11 @@
    ],
    "num": 131,
    "prevo": null,
+   "remind": [
+    "FREEZEDRY",
+    "SPARKLINGARIA",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -54610,6 +55287,13 @@
    ],
    "num": 133,
    "prevo": null,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -54757,6 +55441,13 @@
    ],
    "num": 134,
    "prevo": 133,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -54904,6 +55595,12 @@
    ],
    "num": 135,
    "prevo": 133,
+   "remind": [
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -55047,6 +55744,13 @@
    ],
    "num": 136,
    "prevo": 133,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -55281,6 +55985,14 @@
    ],
    "num": 138,
    "prevo": null,
+   "remind": [
+    "AURORABEAM",
+    "BITE",
+    "REFLECTTYPE",
+    "SLAM",
+    "SUPERSONIC",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -55395,6 +56107,14 @@
    ],
    "num": 139,
    "prevo": 138,
+   "remind": [
+    "AURORABEAM",
+    "BITE",
+    "REFLECTTYPE",
+    "SLAM",
+    "SUPERSONIC",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -55513,6 +56233,11 @@
    ],
    "num": 140,
    "prevo": null,
+   "remind": [
+    "AURORABEAM",
+    "FLAIL",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -55635,6 +56360,11 @@
    ],
    "num": 141,
    "prevo": 140,
+   "remind": [
+    "AURORABEAM",
+    "FLAIL",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -55744,6 +56474,9 @@
    ],
    "num": 142,
    "prevo": null,
+   "remind": [
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -56369,6 +57102,12 @@
    ],
    "num": 147,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "EXTREMESPEED",
+    "MIST",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -56485,6 +57224,12 @@
    ],
    "num": 148,
    "prevo": 147,
+   "remind": [
+    "AQUAJET",
+    "EXTREMESPEED",
+    "MIST",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -56617,6 +57362,11 @@
    ],
    "num": 149,
    "prevo": 148,
+   "remind": [
+    "AQUAJET",
+    "MIST",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -56948,6 +57698,12 @@
    ],
    "num": 152,
    "prevo": null,
+   "remind": [
+    "FLAIL",
+    "HEALPULSE",
+    "INGRAIN",
+    "VINEWHIP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -57064,6 +57820,12 @@
    ],
    "num": 153,
    "prevo": 152,
+   "remind": [
+    "FLAIL",
+    "HEALPULSE",
+    "INGRAIN",
+    "VINEWHIP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -57180,6 +57942,12 @@
    ],
    "num": 154,
    "prevo": 153,
+   "remind": [
+    "FLAIL",
+    "HEALPULSE",
+    "INGRAIN",
+    "VINEWHIP"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -57303,6 +58071,12 @@
    ],
    "num": 155,
    "prevo": null,
+   "remind": [
+    "COVET",
+    "DOUBLEKICK",
+    "EXTRASENSORY",
+    "HOWL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -57426,6 +58200,12 @@
    ],
    "num": 156,
    "prevo": 155,
+   "remind": [
+    "COVET",
+    "DOUBLEKICK",
+    "EXTRASENSORY",
+    "HOWL"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -57545,6 +58325,12 @@
    ],
    "num": 157,
    "prevo": 156,
+   "remind": [
+    "COVET",
+    "DOUBLEKICK",
+    "EXTRASENSORY",
+    "HOWL"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -57661,6 +58447,11 @@
    ],
    "num": 158,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "BLOCK",
+    "FLATTER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -57777,6 +58568,11 @@
    ],
    "num": 159,
    "prevo": 158,
+   "remind": [
+    "AQUAJET",
+    "BLOCK",
+    "FLATTER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -57889,6 +58685,11 @@
    ],
    "num": 160,
    "prevo": 159,
+   "remind": [
+    "AQUAJET",
+    "BLOCK",
+    "FLATTER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -58001,6 +58802,12 @@
    ],
    "num": 161,
    "prevo": null,
+   "remind": [
+    "BABYDOLLEYES",
+    "LASTRESORT",
+    "SLASH",
+    "TIDYUP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -58113,6 +58920,12 @@
    ],
    "num": 162,
    "prevo": 161,
+   "remind": [
+    "BABYDOLLEYES",
+    "LASTRESORT",
+    "SLASH",
+    "TIDYUP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -58233,6 +59046,10 @@
    ],
    "num": 163,
    "prevo": null,
+   "remind": [
+    "SUPERSONIC",
+    "WINGATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -58346,6 +59163,10 @@
    ],
    "num": 164,
    "prevo": 163,
+   "remind": [
+    "SUPERSONIC",
+    "WINGATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -58697,6 +59518,10 @@
    ],
    "num": 167,
    "prevo": null,
+   "remind": [
+    "DISABLE",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -58830,6 +59655,10 @@
    ],
    "num": 168,
    "prevo": 167,
+   "remind": [
+    "DISABLE",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -58958,6 +59787,10 @@
    ],
    "num": 169,
    "prevo": 42,
+   "remind": [
+    "QUICKATTACK",
+    "WINGATTACK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -59071,6 +59904,11 @@
    ],
    "num": 170,
    "prevo": null,
+   "remind": [
+    "MIST",
+    "SOAK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -59192,6 +60030,11 @@
    ],
    "num": 171,
    "prevo": 170,
+   "remind": [
+    "MIST",
+    "SOAK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -59280,6 +60123,12 @@
    ],
    "num": 172,
    "prevo": null,
+   "remind": [
+    "FLAIL",
+    "PRESENT",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -59372,6 +60221,12 @@
    ],
    "num": 173,
    "prevo": null,
+   "remind": [
+    "HEALPULSE",
+    "PRESENT",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -59464,6 +60319,14 @@
    ],
    "num": 174,
    "prevo": null,
+   "remind": [
+    "COVET",
+    "HEALPULSE",
+    "LASTRESORT",
+    "PERISHSONG",
+    "PRESENT",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -59613,6 +60476,12 @@
    ],
    "num": 175,
    "prevo": null,
+   "remind": [
+    "MORNINGSUN",
+    "PECK",
+    "PRESENT",
+    "PSYCHOSHIFT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -59770,6 +60639,12 @@
    ],
    "num": 176,
    "prevo": 175,
+   "remind": [
+    "MORNINGSUN",
+    "PECK",
+    "PRESENT",
+    "PSYCHOSHIFT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -59879,6 +60754,12 @@
    ],
    "num": 177,
    "prevo": null,
+   "remind": [
+    "DRILLPECK",
+    "QUICKATTACK",
+    "SIMPLEBEAM",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -59988,6 +60869,12 @@
    ],
    "num": 178,
    "prevo": 177,
+   "remind": [
+    "DRILLPECK",
+    "QUICKATTACK",
+    "SIMPLEBEAM",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -60109,6 +60996,10 @@
    ],
    "num": 179,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "FLATTER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -60229,6 +61120,10 @@
    ],
    "num": 180,
    "prevo": 179,
+   "remind": [
+    "AFTERYOU",
+    "FLATTER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -60361,6 +61256,10 @@
    ],
    "num": 181,
    "prevo": 180,
+   "remind": [
+    "AFTERYOU",
+    "FLATTER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -60476,6 +61375,17 @@
    ],
    "num": 182,
    "prevo": 44,
+   "remind": [
+    "AFTERYOU",
+    "FLAIL",
+    "INGRAIN",
+    "LEECHSEED",
+    "RAZORLEAF",
+    "STRENGTHSAP",
+    "SYNTHESIS",
+    "TEETERDANCE",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -60605,6 +61515,16 @@
    ],
    "num": 183,
    "prevo": 298,
+   "remind": [
+    "AQUAJET",
+    "BELLYDRUM",
+    "COPYCAT",
+    "PERISHSONG",
+    "PRESENT",
+    "SOAK",
+    "SUPERSONIC",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -60727,6 +61647,16 @@
    ],
    "num": 184,
    "prevo": 183,
+   "remind": [
+    "AQUAJET",
+    "BELLYDRUM",
+    "COPYCAT",
+    "PERISHSONG",
+    "PRESENT",
+    "SOAK",
+    "SUPERSONIC",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -60852,6 +61782,9 @@
    ],
    "num": 185,
    "prevo": 438,
+   "remind": [
+    "HARDEN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -60924,6 +61857,12 @@
    ],
    "num": 186,
    "prevo": 61,
+   "remind": [
+    "HYPNOSIS",
+    "MIST",
+    "PERISHSONG",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -61057,6 +61996,13 @@
    ],
    "num": 187,
    "prevo": null,
+   "remind": [
+    "COTTONGUARD",
+    "RAGEPOWDER",
+    "STRENGTHSAP",
+    "SWITCHEROO",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -61191,6 +62137,13 @@
    ],
    "num": 188,
    "prevo": 187,
+   "remind": [
+    "COTTONGUARD",
+    "RAGEPOWDER",
+    "STRENGTHSAP",
+    "SWITCHEROO",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -61317,6 +62270,13 @@
    ],
    "num": 189,
    "prevo": 188,
+   "remind": [
+    "COTTONGUARD",
+    "RAGEPOWDER",
+    "STRENGTHSAP",
+    "SWITCHEROO",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -61435,6 +62395,12 @@
    ],
    "num": 190,
    "prevo": null,
+   "remind": [
+    "COVET",
+    "QUICKGUARD",
+    "SLAM",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -61547,6 +62513,11 @@
    ],
    "num": 191,
    "prevo": null,
+   "remind": [
+    "INGRAIN",
+    "LEECHSEED",
+    "MORNINGSUN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -61667,6 +62638,9 @@
    ],
    "num": 192,
    "prevo": 191,
+   "remind": [
+    "MORNINGSUN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -61788,6 +62762,9 @@
    ],
    "num": 193,
    "prevo": null,
+   "remind": [
+    "FEINT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -61902,6 +62879,14 @@
    ],
    "num": 194,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "DOUBLEKICK",
+    "RECOVER",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -62008,6 +62993,14 @@
    ],
    "num": 195,
    "prevo": 194,
+   "remind": [
+    "AFTERYOU",
+    "DOUBLEKICK",
+    "RECOVER",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -62152,6 +63145,13 @@
    ],
    "num": 196,
    "prevo": 133,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -62299,6 +63299,13 @@
    ],
    "num": 197,
    "prevo": 133,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -62411,6 +63418,11 @@
    ],
    "num": 198,
    "prevo": null,
+   "remind": [
+    "DRILLPECK",
+    "FLATTER",
+    "PERISHSONG"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -62541,6 +63553,13 @@
    ],
    "num": 199,
    "prevo": 79,
+   "remind": [
+    "BELCH",
+    "BELLYDRUM",
+    "BLOCK",
+    "CHILLYRECEPTION",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -62649,6 +63668,12 @@
    ],
    "num": 200,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "MEMENTO",
+    "SHADOWSNEAK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -62912,6 +63937,12 @@
    ],
    "num": 203,
    "prevo": null,
+   "remind": [
+    "DOUBLEKICK",
+    "MEANLOOK",
+    "MIRRORCOAT",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -63028,6 +64059,10 @@
    ],
    "num": 204,
    "prevo": null,
+   "remind": [
+    "FLAIL",
+    "POWERTRICK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -63151,6 +64186,10 @@
    ],
    "num": 205,
    "prevo": 204,
+   "remind": [
+    "FLAIL",
+    "POWERTRICK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -63273,6 +64312,12 @@
    ],
    "num": 206,
    "prevo": null,
+   "remind": [
+    "AQUATAIL",
+    "ASTONISH",
+    "BITE",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -63392,6 +64437,10 @@
    ],
    "num": 207,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "WINGATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -63553,6 +64602,12 @@
    ],
    "num": 208,
    "prevo": 95,
+   "remind": [
+    "BLOCK",
+    "FLAIL",
+    "HEADSMASH",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -63679,6 +64734,9 @@
    ],
    "num": 209,
    "prevo": null,
+   "remind": [
+    "PRESENT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -63800,6 +64858,9 @@
    ],
    "num": 210,
    "prevo": 209,
+   "remind": [
+    "PRESENT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -63920,6 +64981,13 @@
    ],
    "num": 211,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "ASTONISH",
+    "BARBBARRAGE",
+    "FLAIL",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -64041,6 +65109,10 @@
    ],
    "num": 212,
    "prevo": 123,
+   "remind": [
+    "FEINT",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -64158,6 +65230,12 @@
    ],
    "num": 213,
    "prevo": null,
+   "remind": [
+    "ACID",
+    "ACUPRESSURE",
+    "COVET",
+    "FINALGAMBIT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -64271,6 +65349,11 @@
    ],
    "num": 214,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "FLAIL",
+    "HARDEN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -64383,6 +65466,12 @@
    ],
    "num": 215,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "FEINT",
+    "ICESHARD",
+    "ICICLECRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -64504,6 +65593,11 @@
    ],
    "num": 216,
    "prevo": null,
+   "remind": [
+    "BELLYDRUM",
+    "CROSSCHOP",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -64633,6 +65727,11 @@
    ],
    "num": 217,
    "prevo": 216,
+   "remind": [
+    "BELLYDRUM",
+    "CROSSCHOP",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -64753,6 +65852,13 @@
    ],
    "num": 218,
    "prevo": null,
+   "remind": [
+    "ACIDARMOR",
+    "INFERNO",
+    "MEMENTO",
+    "SMOKESCREEN",
+    "STOCKPILE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -64869,6 +65975,13 @@
    ],
    "num": 219,
    "prevo": 218,
+   "remind": [
+    "ACIDARMOR",
+    "INFERNO",
+    "MEMENTO",
+    "SMOKESCREEN",
+    "STOCKPILE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -64978,6 +66091,11 @@
    ],
    "num": 220,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "FREEZEDRY",
+    "ICICLECRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -65100,6 +66218,11 @@
    ],
    "num": 221,
    "prevo": 220,
+   "remind": [
+    "BITE",
+    "FREEZEDRY",
+    "ICICLECRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -65206,6 +66329,11 @@
    ],
    "num": 222,
    "prevo": null,
+   "remind": [
+    "HEADSMASH",
+    "INGRAIN",
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -65332,6 +66460,13 @@
    ],
    "num": 223,
    "prevo": null,
+   "remind": [
+    "ENTRAINMENT",
+    "FLAIL",
+    "OCTAZOOKA",
+    "SUPERSONIC",
+    "WATERSPOUT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -65465,6 +66600,12 @@
    ],
    "num": 224,
    "prevo": 223,
+   "remind": [
+    "ENTRAINMENT",
+    "FLAIL",
+    "SUPERSONIC",
+    "WATERSPOUT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -65526,6 +66667,16 @@
    ],
    "num": 225,
    "prevo": null,
+   "remind": [
+    "AURORABEAM",
+    "DESTINYBOND",
+    "FREEZEDRY",
+    "ICESHARD",
+    "MEMENTO",
+    "QUICKATTACK",
+    "RAPIDSPIN",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -65659,6 +66810,12 @@
    ],
    "num": 226,
    "prevo": 458,
+   "remind": [
+    "MIRRORCOAT",
+    "SLAM",
+    "SPLASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -65772,6 +66929,9 @@
    ],
    "num": 227,
    "prevo": null,
+   "remind": [
+    "FEINT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -65897,6 +67057,11 @@
    ],
    "num": 228,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "FEINT",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -66018,6 +67183,11 @@
    ],
    "num": 229,
    "prevo": 228,
+   "remind": [
+    "DESTINYBOND",
+    "FEINT",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -66136,6 +67306,13 @@
    ],
    "num": 230,
    "prevo": 117,
+   "remind": [
+    "AURORABEAM",
+    "CLEARSMOG",
+    "DISABLE",
+    "FLAIL",
+    "SPLASH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -66244,6 +67421,10 @@
    ],
    "num": 231,
    "prevo": null,
+   "remind": [
+    "HEADSMASH",
+    "ICESHARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -66359,6 +67540,10 @@
    ],
    "num": 232,
    "prevo": 231,
+   "remind": [
+    "HEADSMASH",
+    "ICESHARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -66593,6 +67778,14 @@
    ],
    "num": 234,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "DISABLE",
+    "DOUBLEKICK",
+    "EXTRASENSORY",
+    "PSYSHIELDBASH",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -66742,6 +67935,13 @@
    ],
    "num": 236,
    "prevo": null,
+   "remind": [
+    "BULLETPUNCH",
+    "FEINT",
+    "HIGHJUMPKICK",
+    "MACHPUNCH",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -66866,6 +68066,11 @@
    ],
    "num": 237,
    "prevo": 236,
+   "remind": [
+    "BULLETPUNCH",
+    "HIGHJUMPKICK",
+    "MACHPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -66982,6 +68187,10 @@
    ],
    "num": 238,
    "prevo": null,
+   "remind": [
+    "ROLEPLAY",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -67098,6 +68307,12 @@
    ],
    "num": 239,
    "prevo": null,
+   "remind": [
+    "CROSSCHOP",
+    "FEINT",
+    "FOLLOWME",
+    "HAMMERARM"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -67213,6 +68428,13 @@
    ],
    "num": 240,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "BELLYDRUM",
+    "CROSSCHOP",
+    "FOLLOWME",
+    "MACHPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -67317,6 +68539,11 @@
    ],
    "num": 241,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "HAMMERARM",
+    "PRESENT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -67449,6 +68676,10 @@
    ],
    "num": 242,
    "prevo": 113,
+   "remind": [
+    "HEALBELL",
+    "PRESENT"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -67941,6 +69172,9 @@
    ],
    "num": 246,
    "prevo": null,
+   "remind": [
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -68069,6 +69303,9 @@
    ],
    "num": 247,
    "prevo": 246,
+   "remind": [
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -68209,6 +69446,9 @@
    ],
    "num": 248,
    "prevo": 247,
+   "remind": [
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -68653,6 +69893,14 @@
    ],
    "num": 252,
    "prevo": null,
+   "remind": [
+    "ABSORB",
+    "DOUBLEKICK",
+    "LEECHSEED",
+    "SLASH",
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -68777,6 +70025,14 @@
    ],
    "num": 253,
    "prevo": 252,
+   "remind": [
+    "ABSORB",
+    "DOUBLEKICK",
+    "LEECHSEED",
+    "SLASH",
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -68889,6 +70145,15 @@
    ],
    "num": 254,
    "prevo": 253,
+   "remind": [
+    "ABSORB",
+    "DOUBLEKICK",
+    "LEECHSEED",
+    "SHEDTAIL",
+    "SLASH",
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -69008,6 +70273,12 @@
    ],
    "num": 255,
    "prevo": null,
+   "remind": [
+    "CRUSHCLAW",
+    "FEINT",
+    "LASTRESORT",
+    "PECK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -69131,6 +70402,12 @@
    ],
    "num": 256,
    "prevo": 255,
+   "remind": [
+    "CRUSHCLAW",
+    "FEINT",
+    "LASTRESORT",
+    "PECK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -69247,6 +70524,13 @@
    ],
    "num": 257,
    "prevo": 256,
+   "remind": [
+    "CRUSHCLAW",
+    "EMBER",
+    "FEINT",
+    "LASTRESORT",
+    "PECK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -69368,6 +70652,14 @@
    ],
    "num": 258,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "MIRRORCOAT",
+    "SLUDGE",
+    "STOMP",
+    "WIDEGUARD",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -69488,6 +70780,14 @@
    ],
    "num": 259,
    "prevo": 258,
+   "remind": [
+    "BITE",
+    "MIRRORCOAT",
+    "SLUDGE",
+    "STOMP",
+    "WIDEGUARD",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -69605,6 +70905,15 @@
    ],
    "num": 260,
    "prevo": 259,
+   "remind": [
+    "BITE",
+    "HAMMERARM",
+    "MIRRORCOAT",
+    "SLUDGE",
+    "STOMP",
+    "WIDEGUARD",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -69726,6 +71035,10 @@
    ],
    "num": 261,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "COVET"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -69858,6 +71171,10 @@
    ],
    "num": 262,
    "prevo": 261,
+   "remind": [
+    "ASTONISH",
+    "COVET"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -69974,6 +71291,11 @@
    ],
    "num": 263,
    "prevo": null,
+   "remind": [
+    "EXTREMESPEED",
+    "SIMPLEBEAM",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -70098,6 +71420,11 @@
    ],
    "num": 264,
    "prevo": 263,
+   "remind": [
+    "EXTREMESPEED",
+    "SIMPLEBEAM",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -70719,6 +72046,12 @@
    ],
    "num": 270,
    "prevo": null,
+   "remind": [
+    "RAZORLEAF",
+    "SYNTHESIS",
+    "TEETERDANCE",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -70849,6 +72182,11 @@
    ],
    "num": 271,
    "prevo": 270,
+   "remind": [
+    "RAZORLEAF",
+    "SYNTHESIS",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -70915,6 +72253,18 @@
    ],
    "num": 272,
    "prevo": 271,
+   "remind": [
+    "ABSORB",
+    "ASTONISH",
+    "FLAIL",
+    "FURYSWIPES",
+    "GROWL",
+    "MIST",
+    "RAZORLEAF",
+    "SYNTHESIS",
+    "TEETERDANCE",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -71029,6 +72379,11 @@
    ],
    "num": 273,
    "prevo": null,
+   "remind": [
+    "LEECHSEED",
+    "QUICKATTACK",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -71166,6 +72521,11 @@
    ],
    "num": 274,
    "prevo": 273,
+   "remind": [
+    "LEECHSEED",
+    "QUICKATTACK",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -71240,6 +72600,20 @@
    ],
    "num": 275,
    "prevo": 274,
+   "remind": [
+    "ABSORB",
+    "ASTONISH",
+    "EXTRASENSORY",
+    "GROWTH",
+    "HARDEN",
+    "LEECHSEED",
+    "QUICKATTACK",
+    "RAZORLEAF",
+    "SUCKERPUNCH",
+    "SYNTHESIS",
+    "TACKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -71352,6 +72726,10 @@
    ],
    "num": 276,
    "prevo": null,
+   "remind": [
+    "BOOMBURST",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -71460,6 +72838,10 @@
    ],
    "num": 277,
    "prevo": 276,
+   "remind": [
+    "BOOMBURST",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -71566,6 +72948,13 @@
    ],
    "num": 278,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "GUST",
+    "SOAK",
+    "TWISTER",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -71696,6 +73085,12 @@
    ],
    "num": 279,
    "prevo": 278,
+   "remind": [
+    "AQUARING",
+    "GUST",
+    "TWISTER",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -71818,6 +73213,13 @@
    ],
    "num": 280,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "MEANLOOK",
+    "MEMENTO",
+    "SHADOWSNEAK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -71948,6 +73350,13 @@
    ],
    "num": 281,
    "prevo": 280,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "MEANLOOK",
+    "MEMENTO",
+    "SHADOWSNEAK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -72086,6 +73495,13 @@
    ],
    "num": 282,
    "prevo": 281,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "MEANLOOK",
+    "MEMENTO",
+    "SHADOWSNEAK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -72187,6 +73603,11 @@
    ],
    "num": 283,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "FELLSTINGER",
+    "POWERSPLIT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -72292,6 +73713,11 @@
    ],
    "num": 284,
    "prevo": 283,
+   "remind": [
+    "AQUAJET",
+    "FELLSTINGER",
+    "POWERSPLIT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -72402,6 +73828,9 @@
    ],
    "num": 285,
    "prevo": null,
+   "remind": [
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -72631,6 +74060,13 @@
    ],
    "num": 287,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "CRUSHCLAW",
+    "HAMMERARM",
+    "SLASH",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -72734,6 +74170,12 @@
    ],
    "num": 288,
    "prevo": 287,
+   "remind": [
+    "AFTERYOU",
+    "CRUSHCLAW",
+    "HAMMERARM",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -72841,6 +74283,12 @@
    ],
    "num": 289,
    "prevo": 288,
+   "remind": [
+    "AFTERYOU",
+    "CRUSHCLAW",
+    "SLASH",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -72948,6 +74396,11 @@
    ],
    "num": 290,
    "prevo": null,
+   "remind": [
+    "FINALGAMBIT",
+    "FLAIL",
+    "GUST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -73080,6 +74533,11 @@
    ],
    "num": 291,
    "prevo": 290,
+   "remind": [
+    "FINALGAMBIT",
+    "FLAIL",
+    "GUST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -73200,6 +74658,11 @@
    ],
    "num": 292,
    "prevo": 290,
+   "remind": [
+    "FINALGAMBIT",
+    "FLAIL",
+    "GUST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -73309,6 +74772,11 @@
    ],
    "num": 293,
    "prevo": null,
+   "remind": [
+    "EXTRASENSORY",
+    "HAMMERARM",
+    "SMOKESCREEN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -73421,6 +74889,11 @@
    ],
    "num": 294,
    "prevo": 293,
+   "remind": [
+    "EXTRASENSORY",
+    "HAMMERARM",
+    "SMOKESCREEN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -73549,6 +75022,11 @@
    ],
    "num": 295,
    "prevo": 294,
+   "remind": [
+    "EXTRASENSORY",
+    "HAMMERARM",
+    "SMOKESCREEN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -73677,6 +75155,12 @@
    ],
    "num": 296,
    "prevo": null,
+   "remind": [
+    "BULLETPUNCH",
+    "CROSSCHOP",
+    "FEINT",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -73805,6 +75289,12 @@
    ],
    "num": 297,
    "prevo": 296,
+   "remind": [
+    "BULLETPUNCH",
+    "CROSSCHOP",
+    "FEINT",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -73897,6 +75387,16 @@
    ],
    "num": 298,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "BELLYDRUM",
+    "COPYCAT",
+    "PERISHSONG",
+    "PRESENT",
+    "SOAK",
+    "SUPERSONIC",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -74022,6 +75522,10 @@
    ],
    "num": 299,
    "prevo": null,
+   "remind": [
+    "HEADSMASH",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -74151,6 +75655,13 @@
    ],
    "num": 300,
    "prevo": null,
+   "remind": [
+    "LASTRESORT",
+    "SIMPLEBEAM",
+    "SUCKERPUNCH",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -74272,6 +75783,13 @@
    ],
    "num": 301,
    "prevo": 300,
+   "remind": [
+    "LASTRESORT",
+    "SIMPLEBEAM",
+    "SUCKERPUNCH",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -74392,6 +75910,13 @@
    ],
    "num": 302,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "FLATTER",
+    "METALBURST",
+    "RECOVER",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -74510,6 +76035,11 @@
    ],
    "num": 303,
    "prevo": null,
+   "remind": [
+    "METALBURST",
+    "SLAM",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -74639,6 +76169,11 @@
    ],
    "num": 304,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH",
+    "HEADSMASH",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -74768,6 +76303,11 @@
    ],
    "num": 305,
    "prevo": 304,
+   "remind": [
+    "DRAGONRUSH",
+    "HEADSMASH",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -74889,6 +76429,11 @@
    ],
    "num": 306,
    "prevo": 305,
+   "remind": [
+    "DRAGONRUSH",
+    "HEADSMASH",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -75013,6 +76558,10 @@
    ],
    "num": 307,
    "prevo": null,
+   "remind": [
+    "BULLETPUNCH",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -75141,6 +76690,10 @@
    ],
    "num": 308,
    "prevo": 307,
+   "remind": [
+    "BULLETPUNCH",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -75254,6 +76807,10 @@
    ],
    "num": 309,
    "prevo": null,
+   "remind": [
+    "SPARK",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -75366,6 +76923,10 @@
    ],
    "num": 310,
    "prevo": 309,
+   "remind": [
+    "SPARK",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -75493,6 +77054,11 @@
    ],
    "num": 311,
    "prevo": null,
+   "remind": [
+    "NUZZLE",
+    "SWEETKISS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -75620,6 +77186,11 @@
    ],
    "num": 312,
    "prevo": null,
+   "remind": [
+    "NUZZLE",
+    "SWEETKISS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -75842,6 +77413,9 @@
    ],
    "num": 314,
    "prevo": null,
+   "remind": [
+    "GROWTH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -75987,6 +77561,14 @@
    ],
    "num": 315,
    "prevo": 406,
+   "remind": [
+    "COTTONSPORE",
+    "EXTRASENSORY",
+    "LIFEDEW",
+    "MINDREADER",
+    "RAZORLEAF",
+    "SLEEPPOWDER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -76112,6 +77694,13 @@
    ],
    "num": 316,
    "prevo": null,
+   "remind": [
+    "ACIDARMOR",
+    "CLEARSMOG",
+    "DESTINYBOND",
+    "SMOG",
+    "STUFFCHEEKS"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -76228,6 +77817,13 @@
    ],
    "num": 317,
    "prevo": 316,
+   "remind": [
+    "ACIDARMOR",
+    "CLEARSMOG",
+    "DESTINYBOND",
+    "SMOG",
+    "STUFFCHEEKS"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -76339,6 +77935,10 @@
    ],
    "num": 318,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -76451,6 +78051,10 @@
    ],
    "num": 319,
    "prevo": 318,
+   "remind": [
+    "DESTINYBOND",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -76577,6 +78181,13 @@
    ],
    "num": 320,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "CLEARSMOG",
+    "SOAK",
+    "THRASH",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -76702,6 +78313,12 @@
    ],
    "num": 321,
    "prevo": 320,
+   "remind": [
+    "AQUARING",
+    "CLEARSMOG",
+    "THRASH",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -76818,6 +78435,15 @@
    ],
    "num": 322,
    "prevo": null,
+   "remind": [
+    "GROWTH",
+    "HOWL",
+    "SPITUP",
+    "STOCKPILE",
+    "STOMP",
+    "SWALLOW",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -76935,6 +78561,14 @@
    ],
    "num": 323,
    "prevo": 322,
+   "remind": [
+    "GROWTH",
+    "HOWL",
+    "SPITUP",
+    "STOCKPILE",
+    "STOMP",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -77060,6 +78694,10 @@
    ],
    "num": 324,
    "prevo": null,
+   "remind": [
+    "FLAIL",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -77172,6 +78810,11 @@
    ],
    "num": 325,
    "prevo": null,
+   "remind": [
+    "EXTRASENSORY",
+    "MIRRORCOAT",
+    "SIMPLEBEAM"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -77284,6 +78927,11 @@
    ],
    "num": 326,
    "prevo": 325,
+   "remind": [
+    "EXTRASENSORY",
+    "MIRRORCOAT",
+    "SIMPLEBEAM"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -77385,6 +79033,14 @@
    ],
    "num": 327,
    "prevo": null,
+   "remind": [
+    "DISABLE",
+    "GUARDSPLIT",
+    "PSYCHOSHIFT",
+    "RAPIDSPIN",
+    "ROLEPLAY",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -77498,6 +79154,12 @@
    ],
    "num": 328,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "FLAIL",
+    "GUST",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -77618,6 +79280,14 @@
    ],
    "num": 329,
    "prevo": 328,
+   "remind": [
+    "ASTONISH",
+    "FEINT",
+    "FLAIL",
+    "GUST",
+    "QUICKATTACK",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -77735,6 +79405,14 @@
    ],
    "num": 330,
    "prevo": 329,
+   "remind": [
+    "ASTONISH",
+    "BITE",
+    "FEINT",
+    "FLAIL",
+    "GUST",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -77864,6 +79542,15 @@
    ],
    "num": 331,
    "prevo": null,
+   "remind": [
+    "ACID",
+    "BELCH",
+    "BLOCK",
+    "DISABLE",
+    "FELLSTINGER",
+    "SWITCHEROO",
+    "TEETERDANCE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -77988,6 +79675,15 @@
    ],
    "num": 332,
    "prevo": 331,
+   "remind": [
+    "ACID",
+    "BELCH",
+    "BLOCK",
+    "DISABLE",
+    "FELLSTINGER",
+    "SWITCHEROO",
+    "TEETERDANCE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -78101,6 +79797,10 @@
    ],
    "num": 333,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -78218,6 +79918,10 @@
    ],
    "num": 334,
    "prevo": 333,
+   "remind": [
+    "ASTONISH",
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -78334,6 +80038,16 @@
    ],
    "num": 335,
    "prevo": null,
+   "remind": [
+    "BELLYDRUM",
+    "DISABLE",
+    "DOUBLEKICK",
+    "FEINT",
+    "FINALGAMBIT",
+    "FLAIL",
+    "FURYSWIPES",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -78454,6 +80168,13 @@
    ],
    "num": 336,
    "prevo": null,
+   "remind": [
+    "FINALGAMBIT",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -78790,6 +80511,11 @@
    ],
    "num": 339,
    "prevo": null,
+   "remind": [
+    "FLAIL",
+    "SPARK",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -78903,6 +80629,10 @@
    ],
    "num": 340,
    "prevo": 339,
+   "remind": [
+    "FLAIL",
+    "SPARK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -79025,6 +80755,11 @@
    ],
    "num": 341,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "SLASH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -79142,6 +80877,11 @@
    ],
    "num": 342,
    "prevo": 341,
+   "remind": [
+    "AQUAJET",
+    "SLASH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -79518,6 +81258,12 @@
    ],
    "num": 345,
    "prevo": null,
+   "remind": [
+    "BIND",
+    "MIRRORCOAT",
+    "RECOVER",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -79634,6 +81380,12 @@
    ],
    "num": 346,
    "prevo": 345,
+   "remind": [
+    "BIND",
+    "MIRRORCOAT",
+    "RECOVER",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -79746,6 +81498,11 @@
    ],
    "num": 347,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "RAPIDSPIN",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -79850,6 +81607,11 @@
    ],
    "num": 348,
    "prevo": 347,
+   "remind": [
+    "AQUAJET",
+    "RAPIDSPIN",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -79925,6 +81687,12 @@
    ],
    "num": 349,
    "prevo": null,
+   "remind": [
+    "HYPNOSIS",
+    "MIRRORCOAT",
+    "MIST",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -80054,6 +81822,12 @@
    ],
    "num": 350,
    "prevo": 349,
+   "remind": [
+    "HYPNOSIS",
+    "MIRRORCOAT",
+    "MIST",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -80158,6 +81932,11 @@
    ],
    "num": 351,
    "prevo": null,
+   "remind": [
+    "CLEARSMOG",
+    "DISABLE",
+    "REFLECTTYPE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -80285,6 +82064,10 @@
    ],
    "num": 352,
    "prevo": null,
+   "remind": [
+    "MAGICCOAT",
+    "RECOVER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -80397,6 +82180,10 @@
    ],
    "num": 353,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -80501,6 +82288,10 @@
    ],
    "num": 354,
    "prevo": 353,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -80612,6 +82403,9 @@
    ],
    "num": 355,
    "prevo": null,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -80748,6 +82542,9 @@
    ],
    "num": 356,
    "prevo": 355,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -80861,6 +82658,10 @@
    ],
    "num": 357,
    "prevo": null,
+   "remind": [
+    "LEECHSEED",
+    "SLAM"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -80969,6 +82770,12 @@
    ],
    "num": 358,
    "prevo": 433,
+   "remind": [
+    "DISABLE",
+    "HYPNOSIS",
+    "RECOVER",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -81073,6 +82880,12 @@
    ],
    "num": 359,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "FEINT",
+    "MAGICCOAT",
+    "MEANLOOK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -81293,6 +83106,12 @@
    ],
    "num": 361,
    "prevo": null,
+   "remind": [
+    "BLOCK",
+    "DISABLE",
+    "ICICLECRASH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -81414,6 +83233,12 @@
    ],
    "num": 362,
    "prevo": 361,
+   "remind": [
+    "BLOCK",
+    "DISABLE",
+    "ICICLECRASH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -81547,6 +83372,14 @@
    ],
    "num": 363,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "BELLYDRUM",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -81685,6 +83518,14 @@
    ],
    "num": 364,
    "prevo": 363,
+   "remind": [
+    "AQUARING",
+    "BELLYDRUM",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -81823,6 +83664,14 @@
    ],
    "num": 365,
    "prevo": 364,
+   "remind": [
+    "AQUARING",
+    "BELLYDRUM",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -81908,6 +83757,10 @@
    ],
    "num": 366,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -82031,6 +83884,10 @@
    ],
    "num": 367,
    "prevo": 366,
+   "remind": [
+    "AQUARING",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -82154,6 +84011,9 @@
    ],
    "num": 368,
    "prevo": 366,
+   "remind": [
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -82375,6 +84235,12 @@
    ],
    "num": 370,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "ENTRAINMENT",
+    "SPLASH",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -82486,6 +84352,11 @@
    ],
    "num": 371,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH",
+    "THRASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -82601,6 +84472,11 @@
    ],
    "num": 372,
    "prevo": 371,
+   "remind": [
+    "DRAGONRUSH",
+    "THRASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -82720,6 +84596,11 @@
    ],
    "num": 373,
    "prevo": 372,
+   "remind": [
+    "DRAGONRUSH",
+    "THRASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -84243,6 +86124,17 @@
    ],
    "num": 387,
    "prevo": null,
+   "remind": [
+    "GROWTH",
+    "SHELLSMASH",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "THRASH",
+    "TICKLE",
+    "WIDEGUARD",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -84351,6 +86243,17 @@
    ],
    "num": 388,
    "prevo": 387,
+   "remind": [
+    "GROWTH",
+    "SHELLSMASH",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "THRASH",
+    "TICKLE",
+    "WIDEGUARD",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -84463,6 +86366,17 @@
    ],
    "num": 389,
    "prevo": 388,
+   "remind": [
+    "GROWTH",
+    "SHELLSMASH",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "THRASH",
+    "TICKLE",
+    "WIDEGUARD",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -84576,6 +86490,10 @@
    ],
    "num": 390,
    "prevo": null,
+   "remind": [
+    "DOUBLEKICK",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -84692,6 +86610,10 @@
    ],
    "num": 391,
    "prevo": 390,
+   "remind": [
+    "DOUBLEKICK",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -84801,6 +86723,11 @@
    ],
    "num": 392,
    "prevo": 391,
+   "remind": [
+    "DOUBLEKICK",
+    "SLACKOFF",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -84914,6 +86841,12 @@
    ],
    "num": 393,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "POWERTRIP",
+    "SUPERSONIC",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -85026,6 +86959,12 @@
    ],
    "num": 394,
    "prevo": 393,
+   "remind": [
+    "AQUARING",
+    "POWERTRIP",
+    "SUPERSONIC",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -85142,6 +87081,12 @@
    ],
    "num": 395,
    "prevo": 394,
+   "remind": [
+    "AQUARING",
+    "POWERTRIP",
+    "SUPERSONIC",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -85250,6 +87195,11 @@
    ],
    "num": 396,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "FURYATTACK",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -85358,6 +87308,11 @@
    ],
    "num": 397,
    "prevo": 396,
+   "remind": [
+    "ASTONISH",
+    "FURYATTACK",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -85462,6 +87417,11 @@
    ],
    "num": 398,
    "prevo": 397,
+   "remind": [
+    "ASTONISH",
+    "FURYATTACK",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -85592,6 +87552,11 @@
    ],
    "num": 399,
    "prevo": null,
+   "remind": [
+    "AQUATAIL",
+    "FURYSWIPES",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -85729,6 +87694,10 @@
    ],
    "num": 400,
    "prevo": 399,
+   "remind": [
+    "FURYSWIPES",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -86032,6 +88001,12 @@
    ],
    "num": 403,
    "prevo": null,
+   "remind": [
+    "BABYDOLLEYES",
+    "DOUBLEKICK",
+    "HOWL",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -86148,6 +88123,12 @@
    ],
    "num": 404,
    "prevo": 403,
+   "remind": [
+    "BABYDOLLEYES",
+    "DOUBLEKICK",
+    "HOWL",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -86260,6 +88241,12 @@
    ],
    "num": 405,
    "prevo": 404,
+   "remind": [
+    "BABYDOLLEYES",
+    "DOUBLEKICK",
+    "HOWL",
+    "QUICKATTACK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -86361,6 +88348,15 @@
    ],
    "num": 406,
    "prevo": null,
+   "remind": [
+    "COTTONSPORE",
+    "EXTRASENSORY",
+    "LIFEDEW",
+    "MINDREADER",
+    "RAZORLEAF",
+    "SLEEPPOWDER",
+    "SYNTHESIS"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -86507,6 +88503,14 @@
    ],
    "num": 407,
    "prevo": 315,
+   "remind": [
+    "COTTONSPORE",
+    "EXTRASENSORY",
+    "LIFEDEW",
+    "MINDREADER",
+    "RAZORLEAF",
+    "SLEEPPOWDER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -86615,6 +88619,11 @@
    ],
    "num": 408,
    "prevo": null,
+   "remind": [
+    "HAMMERARM",
+    "STOMP",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -86718,6 +88727,11 @@
    ],
    "num": 409,
    "prevo": 408,
+   "remind": [
+    "HAMMERARM",
+    "STOMP",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -86825,6 +88839,9 @@
    ],
    "num": 410,
    "prevo": null,
+   "remind": [
+    "GUARDSPLIT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -86929,6 +88946,10 @@
    ],
    "num": 411,
    "prevo": 410,
+   "remind": [
+    "GUARDSPLIT",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -87470,6 +89491,9 @@
    ],
    "num": 416,
    "prevo": 415,
+   "remind": [
+    "HEALORDER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -87584,6 +89608,15 @@
    ],
    "num": 417,
    "prevo": null,
+   "remind": [
+    "BABYDOLLEYES",
+    "BITE",
+    "COVET",
+    "FLAIL",
+    "FLATTER",
+    "FOLLOWME",
+    "TAILWHIP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -87704,6 +89737,11 @@
    ],
    "num": 418,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "FURYSWIPES",
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -87820,6 +89858,11 @@
    ],
    "num": 419,
    "prevo": 418,
+   "remind": [
+    "AQUARING",
+    "FURYSWIPES",
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -87952,6 +89995,14 @@
    ],
    "num": 420,
    "prevo": null,
+   "remind": [
+    "AROMATHERAPY",
+    "FLOWERSHIELD",
+    "HEALINGWISH",
+    "HEALPULSE",
+    "RAZORLEAF",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -88084,6 +90135,13 @@
    ],
    "num": 421,
    "prevo": 420,
+   "remind": [
+    "AROMATHERAPY",
+    "HEALINGWISH",
+    "HEALPULSE",
+    "RAZORLEAF",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -88189,6 +90247,17 @@
    ],
    "num": 422,
    "prevo": null,
+   "remind": [
+    "ACIDARMOR",
+    "CLEARSMOG",
+    "MIRRORCOAT",
+    "MIST",
+    "SLUDGE",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -88286,6 +90355,17 @@
    ],
    "num": 423,
    "prevo": 422,
+   "remind": [
+    "ACIDARMOR",
+    "CLEARSMOG",
+    "MIRRORCOAT",
+    "MIST",
+    "SLUDGE",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -88395,6 +90475,12 @@
    ],
    "num": 424,
    "prevo": 190,
+   "remind": [
+    "COVET",
+    "QUICKGUARD",
+    "SLAM",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -88515,6 +90601,12 @@
    ],
    "num": 425,
    "prevo": null,
+   "remind": [
+    "CLEARSMOG",
+    "DISABLE",
+    "HYPNOSIS",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -88636,6 +90728,12 @@
    ],
    "num": 426,
    "prevo": 425,
+   "remind": [
+    "CLEARSMOG",
+    "DISABLE",
+    "HYPNOSIS",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -88778,6 +90876,13 @@
    ],
    "num": 427,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "FLAIL",
+    "SWEETKISS",
+    "SWITCHEROO",
+    "TEETERDANCE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -88935,6 +91040,13 @@
    ],
    "num": 428,
    "prevo": 427,
+   "remind": [
+    "COPYCAT",
+    "FLAIL",
+    "SWEETKISS",
+    "SWITCHEROO",
+    "TEETERDANCE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -89014,6 +91126,12 @@
    ],
    "num": 429,
    "prevo": 200,
+   "remind": [
+    "DESTINYBOND",
+    "MEMENTO",
+    "SHADOWSNEAK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -89110,6 +91228,11 @@
    ],
    "num": 430,
    "prevo": 198,
+   "remind": [
+    "DRILLPECK",
+    "FLATTER",
+    "PERISHSONG"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -89243,6 +91366,14 @@
    ],
    "num": 431,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "FLAIL",
+    "LASTRESORT",
+    "QUICKATTACK",
+    "SANDATTACK",
+    "TAILWHIP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -89375,6 +91506,14 @@
    ],
    "num": 432,
    "prevo": 431,
+   "remind": [
+    "BITE",
+    "FLAIL",
+    "LASTRESORT",
+    "QUICKATTACK",
+    "SANDATTACK",
+    "TAILWHIP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -89467,6 +91606,12 @@
    ],
    "num": 433,
    "prevo": null,
+   "remind": [
+    "DISABLE",
+    "HYPNOSIS",
+    "RECOVER",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -89591,6 +91736,12 @@
    ],
    "num": 434,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "LEER",
+    "SLASH",
+    "SMOG"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -89708,6 +91859,12 @@
    ],
    "num": 435,
    "prevo": 434,
+   "remind": [
+    "ASTONISH",
+    "LEER",
+    "SLASH",
+    "SMOG"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -90056,6 +92213,9 @@
    ],
    "num": 438,
    "prevo": null,
+   "remind": [
+    "HARDEN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -90201,6 +92361,11 @@
    ],
    "num": 439,
    "prevo": null,
+   "remind": [
+    "HEALINGWISH",
+    "POWERSPLIT",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -90293,6 +92458,10 @@
    ],
    "num": 440,
    "prevo": null,
+   "remind": [
+    "HEALBELL",
+    "PRESENT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -90433,6 +92602,10 @@
    ],
    "num": 441,
    "prevo": null,
+   "remind": [
+    "BOOMBURST",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -90541,6 +92714,11 @@
    ],
    "num": 442,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "SMOKESCREEN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -90650,6 +92828,10 @@
    ],
    "num": 443,
    "prevo": null,
+   "remind": [
+    "THRASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -90763,6 +92945,10 @@
    ],
    "num": 444,
    "prevo": 443,
+   "remind": [
+    "THRASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -90868,6 +93054,10 @@
    ],
    "num": 445,
    "prevo": 444,
+   "remind": [
+    "THRASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -90993,6 +93183,9 @@
    ],
    "num": 446,
    "prevo": null,
+   "remind": [
+    "BELCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -91118,6 +93311,13 @@
    ],
    "num": 447,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "BULLETPUNCH",
+    "CROSSCHOP",
+    "HIGHJUMPKICK",
+    "HOWL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -91275,6 +93475,13 @@
    ],
    "num": 448,
    "prevo": 447,
+   "remind": [
+    "BITE",
+    "BULLETPUNCH",
+    "CROSSCHOP",
+    "HIGHJUMPKICK",
+    "HOWL"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -91395,6 +93602,11 @@
    ],
    "num": 449,
    "prevo": null,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -91518,6 +93730,11 @@
    ],
    "num": 450,
    "prevo": 449,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -91655,6 +93872,10 @@
    ],
    "num": 451,
    "prevo": null,
+   "remind": [
+    "SANDATTACK",
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -91797,6 +94018,10 @@
    ],
    "num": 452,
    "prevo": 451,
+   "remind": [
+    "SANDATTACK",
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -91914,6 +94139,12 @@
    ],
    "num": 453,
    "prevo": null,
+   "remind": [
+    "BULLETPUNCH",
+    "CROSSCHOP",
+    "FEINT",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -92023,6 +94254,12 @@
    ],
    "num": 454,
    "prevo": 453,
+   "remind": [
+    "BULLETPUNCH",
+    "CROSSCHOP",
+    "FEINT",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -92151,6 +94388,14 @@
    ],
    "num": 455,
    "prevo": null,
+   "remind": [
+    "LEECHSEED",
+    "RAGEPOWDER",
+    "RAZORLEAF",
+    "SLAM",
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -92263,6 +94508,13 @@
    ],
    "num": 456,
    "prevo": null,
+   "remind": [
+    "AQUATAIL",
+    "AURORABEAM",
+    "FLAIL",
+    "SWEETKISS",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -92367,6 +94619,13 @@
    ],
    "num": 457,
    "prevo": 456,
+   "remind": [
+    "AQUATAIL",
+    "AURORABEAM",
+    "FLAIL",
+    "SWEETKISS",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -92500,6 +94759,12 @@
    ],
    "num": 458,
    "prevo": null,
+   "remind": [
+    "MIRRORCOAT",
+    "SLAM",
+    "SPLASH",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -92609,6 +94874,11 @@
    ],
    "num": 459,
    "prevo": null,
+   "remind": [
+    "GROWTH",
+    "LEECHSEED",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -92718,6 +94988,11 @@
    ],
    "num": 460,
    "prevo": 459,
+   "remind": [
+    "GROWTH",
+    "LEECHSEED",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -92842,6 +95117,11 @@
    ],
    "num": 461,
    "prevo": 215,
+   "remind": [
+    "BITE",
+    "FEINT",
+    "ICICLECRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -93096,6 +95376,11 @@
    ],
    "num": 463,
    "prevo": 108,
+   "remind": [
+    "BELCH",
+    "HAMMERARM",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -93213,6 +95498,11 @@
    ],
    "num": 464,
    "prevo": 112,
+   "remind": [
+    "DRAGONRUSH",
+    "GUARDSPLIT",
+    "METALBURST"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -93350,6 +95640,12 @@
    ],
    "num": 465,
    "prevo": 114,
+   "remind": [
+    "CONFUSION",
+    "FLAIL",
+    "LEECHSEED",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -93461,6 +95757,12 @@
    ],
    "num": 466,
    "prevo": 125,
+   "remind": [
+    "CROSSCHOP",
+    "FEINT",
+    "FOLLOWME",
+    "HAMMERARM"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -93572,6 +95874,13 @@
    ],
    "num": 467,
    "prevo": 126,
+   "remind": [
+    "BELCH",
+    "BELLYDRUM",
+    "CROSSCHOP",
+    "FOLLOWME",
+    "MACHPUNCH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -93737,6 +96046,12 @@
    ],
    "num": 468,
    "prevo": 176,
+   "remind": [
+    "MORNINGSUN",
+    "PECK",
+    "PRESENT",
+    "PSYCHOSHIFT"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -93998,6 +96313,13 @@
    ],
    "num": 470,
    "prevo": 133,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -94141,6 +96463,13 @@
    ],
    "num": 471,
    "prevo": 133,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -94257,6 +96586,10 @@
    ],
    "num": 472,
    "prevo": 207,
+   "remind": [
+    "FEINT",
+    "WINGATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -94374,6 +96707,11 @@
    ],
    "num": 473,
    "prevo": 221,
+   "remind": [
+    "BITE",
+    "FREEZEDRY",
+    "ICICLECRASH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -94684,6 +97022,13 @@
    ],
    "num": 475,
    "prevo": 281,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "MEANLOOK",
+    "MEMENTO",
+    "SHADOWSNEAK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -94817,6 +97162,9 @@
    ],
    "num": 476,
    "prevo": 299,
+   "remind": [
+    "HEADSMASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -94949,6 +97297,9 @@
    ],
    "num": 477,
    "prevo": 356,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -95085,6 +97436,12 @@
    ],
    "num": 478,
    "prevo": 361,
+   "remind": [
+    "BLOCK",
+    "DISABLE",
+    "ICICLECRASH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -96886,6 +99243,13 @@
    ],
    "num": 495,
    "prevo": null,
+   "remind": [
+    "GLARE",
+    "MEANLOOK",
+    "MIRRORCOAT",
+    "SYNTHESIS",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -97002,6 +99366,13 @@
    ],
    "num": 496,
    "prevo": 495,
+   "remind": [
+    "GLARE",
+    "MEANLOOK",
+    "MIRRORCOAT",
+    "SYNTHESIS",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -97110,6 +99481,13 @@
    ],
    "num": 497,
    "prevo": 496,
+   "remind": [
+    "GLARE",
+    "MEANLOOK",
+    "MIRRORCOAT",
+    "SYNTHESIS",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -97229,6 +99607,11 @@
    ],
    "num": 498,
    "prevo": null,
+   "remind": [
+    "SUCKERPUNCH",
+    "THRASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -97352,6 +99735,11 @@
    ],
    "num": 499,
    "prevo": 498,
+   "remind": [
+    "SUCKERPUNCH",
+    "THRASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -97464,6 +99852,12 @@
    ],
    "num": 500,
    "prevo": 499,
+   "remind": [
+    "HAMMERARM",
+    "SUCKERPUNCH",
+    "THRASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -97584,6 +99978,11 @@
    ],
    "num": 501,
    "prevo": null,
+   "remind": [
+    "AQUACUTTER",
+    "COPYCAT",
+    "SACREDSWORD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -97703,6 +100102,11 @@
    ],
    "num": 502,
    "prevo": 501,
+   "remind": [
+    "AQUACUTTER",
+    "COPYCAT",
+    "SACREDSWORD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -97822,6 +100226,11 @@
    ],
    "num": 503,
    "prevo": 502,
+   "remind": [
+    "AQUACUTTER",
+    "COPYCAT",
+    "SACREDSWORD"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -97950,6 +100359,16 @@
    ],
    "num": 504,
    "prevo": null,
+   "remind": [
+    "AQUATAIL",
+    "COVET",
+    "FLAIL",
+    "FORESIGHT",
+    "LASERFOCUS",
+    "LASTRESORT",
+    "PURSUIT",
+    "TEARFULLOOK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -98082,6 +100501,17 @@
    ],
    "num": 505,
    "prevo": 504,
+   "remind": [
+    "AQUATAIL",
+    "COVET",
+    "FLAIL",
+    "FORESIGHT",
+    "LASERFOCUS",
+    "LASTRESORT",
+    "PURSUIT",
+    "SIGNALBEAM",
+    "TEARFULLOOK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -98198,6 +100628,13 @@
    ],
    "num": 506,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "COVET",
+    "HOWL",
+    "LICK",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -98314,6 +100751,13 @@
    ],
    "num": 507,
    "prevo": 506,
+   "remind": [
+    "AFTERYOU",
+    "COVET",
+    "HOWL",
+    "LICK",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -98434,6 +100878,13 @@
    ],
    "num": 508,
    "prevo": 507,
+   "remind": [
+    "AFTERYOU",
+    "COVET",
+    "HOWL",
+    "LICK",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -98542,6 +100993,13 @@
    ],
    "num": 509,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "COVET",
+    "QUICKATTACK",
+    "SLASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -98642,6 +101100,13 @@
    ],
    "num": 510,
    "prevo": 509,
+   "remind": [
+    "COPYCAT",
+    "COVET",
+    "QUICKATTACK",
+    "SLASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -98765,6 +101230,17 @@
    ],
    "num": 511,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "COVET",
+    "GASTROACID",
+    "GRASSWHISTLE",
+    "ROLEPLAY",
+    "SPIKYSHIELD",
+    "SYNTHESIS",
+    "TICKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -98832,6 +101308,17 @@
    ],
    "num": 512,
    "prevo": 511,
+   "remind": [
+    "ASTONISH",
+    "COVET",
+    "GASTROACID",
+    "GRASSWHISTLE",
+    "ROLEPLAY",
+    "SPIKYSHIELD",
+    "SYNTHESIS",
+    "TICKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -98955,6 +101442,14 @@
    ],
    "num": 513,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "BELCH",
+    "COVET",
+    "GASTROACID",
+    "ROLEPLAY",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -99022,6 +101517,14 @@
    ],
    "num": 514,
    "prevo": 513,
+   "remind": [
+    "ASTONISH",
+    "BELCH",
+    "COVET",
+    "GASTROACID",
+    "ROLEPLAY",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -99145,6 +101648,16 @@
    ],
    "num": 515,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "AQUATAIL",
+    "ASTONISH",
+    "COVET",
+    "GASTROACID",
+    "MUDSPORT",
+    "ROLEPLAY",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -99212,6 +101725,16 @@
    ],
    "num": 516,
    "prevo": 515,
+   "remind": [
+    "AQUARING",
+    "AQUATAIL",
+    "ASTONISH",
+    "COVET",
+    "GASTROACID",
+    "MUDSPORT",
+    "ROLEPLAY",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -99332,6 +101855,9 @@
    ],
    "num": 517,
    "prevo": null,
+   "remind": [
+    "HEALINGWISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -99448,6 +101974,9 @@
    ],
    "num": 518,
    "prevo": 517,
+   "remind": [
+    "HEALINGWISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -99560,6 +102089,11 @@
    ],
    "num": 519,
    "prevo": null,
+   "remind": [
+    "HYPNOSIS",
+    "MORNINGSUN",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -99673,6 +102207,11 @@
    ],
    "num": 520,
    "prevo": 519,
+   "remind": [
+    "HYPNOSIS",
+    "MORNINGSUN",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -99778,6 +102317,11 @@
    ],
    "num": 521,
    "prevo": 520,
+   "remind": [
+    "HYPNOSIS",
+    "MORNINGSUN",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -99887,6 +102431,11 @@
    ],
    "num": 522,
    "prevo": null,
+   "remind": [
+    "DOUBLEKICK",
+    "FEINT",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -99987,6 +102536,11 @@
    ],
    "num": 523,
    "prevo": 522,
+   "remind": [
+    "DOUBLEKICK",
+    "FEINT",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -100099,6 +102653,10 @@
    ],
    "num": 524,
    "prevo": null,
+   "remind": [
+    "AUTOTOMIZE",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -100216,6 +102774,10 @@
    ],
    "num": 525,
    "prevo": 524,
+   "remind": [
+    "AUTOTOMIZE",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -100324,6 +102886,10 @@
    ],
    "num": 526,
    "prevo": 525,
+   "remind": [
+    "AUTOTOMIZE",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -100437,6 +103003,11 @@
    ],
    "num": 527,
    "prevo": null,
+   "remind": [
+    "FLATTER",
+    "PSYCHOSHIFT",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -100543,6 +103114,11 @@
    ],
    "num": 528,
    "prevo": 527,
+   "remind": [
+    "FLATTER",
+    "PSYCHOSHIFT",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -100660,6 +103236,9 @@
    ],
    "num": 529,
    "prevo": null,
+   "remind": [
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -100772,6 +103351,9 @@
    ],
    "num": 530,
    "prevo": 529,
+   "remind": [
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -100893,6 +103475,12 @@
    ],
    "num": 531,
    "prevo": null,
+   "remind": [
+    "HEALINGWISH",
+    "SWEETKISS",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -101009,6 +103597,10 @@
    ],
    "num": 532,
    "prevo": null,
+   "remind": [
+    "MACHPUNCH",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -101126,6 +103718,10 @@
    ],
    "num": 533,
    "prevo": 532,
+   "remind": [
+    "MACHPUNCH",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -101234,6 +103830,10 @@
    ],
    "num": 534,
    "prevo": 533,
+   "remind": [
+    "MACHPUNCH",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -101350,6 +103950,9 @@
    ],
    "num": 535,
    "prevo": null,
+   "remind": [
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -101466,6 +104069,9 @@
    ],
    "num": 536,
    "prevo": 535,
+   "remind": [
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -101583,6 +104189,9 @@
    ],
    "num": 537,
    "prevo": 536,
+   "remind": [
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -101888,6 +104497,11 @@
    ],
    "num": 540,
    "prevo": null,
+   "remind": [
+    "SWITCHEROO",
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -101989,6 +104603,11 @@
    ],
    "num": 541,
    "prevo": 540,
+   "remind": [
+    "SWITCHEROO",
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -102094,6 +104713,11 @@
    ],
    "num": 542,
    "prevo": 541,
+   "remind": [
+    "SWITCHEROO",
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -102207,6 +104831,10 @@
    ],
    "num": 543,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -102324,6 +104952,10 @@
    ],
    "num": 544,
    "prevo": 543,
+   "remind": [
+    "BITE",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -102441,6 +105073,10 @@
    ],
    "num": 545,
    "prevo": 544,
+   "remind": [
+    "BITE",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -102571,6 +105207,12 @@
    ],
    "num": 546,
    "prevo": null,
+   "remind": [
+    "MEMENTO",
+    "SWITCHEROO",
+    "TICKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -102713,6 +105355,11 @@
    ],
    "num": 547,
    "prevo": 546,
+   "remind": [
+    "SWITCHEROO",
+    "TICKLE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -102838,6 +105485,11 @@
    ],
    "num": 548,
    "prevo": null,
+   "remind": [
+    "HEALINGWISH",
+    "INGRAIN",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -102970,6 +105622,11 @@
    ],
    "num": 549,
    "prevo": 548,
+   "remind": [
+    "HEALINGWISH",
+    "INGRAIN",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -103206,6 +105863,9 @@
    ],
    "num": 551,
    "prevo": null,
+   "remind": [
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -103327,6 +105987,9 @@
    ],
    "num": 552,
    "prevo": 551,
+   "remind": [
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -103444,6 +106107,9 @@
    ],
    "num": 553,
    "prevo": 552,
+   "remind": [
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -103560,6 +106226,12 @@
    ],
    "num": 554,
    "prevo": null,
+   "remind": [
+    "EXTRASENSORY",
+    "FLAMEWHEEL",
+    "HAMMERARM",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -103671,6 +106343,11 @@
    ],
    "num": 555,
    "prevo": 554,
+   "remind": [
+    "EXTRASENSORY",
+    "FLAMEWHEEL",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -103803,6 +106480,10 @@
    ],
    "num": 556,
    "prevo": null,
+   "remind": [
+    "WOODHAMMER",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -103920,6 +106601,10 @@
    ],
    "num": 557,
    "prevo": null,
+   "remind": [
+    "BLOCK",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -104030,6 +106715,10 @@
    ],
    "num": 558,
    "prevo": 557,
+   "remind": [
+    "BLOCK",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -104152,6 +106841,9 @@
    ],
    "num": 559,
    "prevo": null,
+   "remind": [
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -104266,6 +106958,9 @@
    ],
    "num": 560,
    "prevo": 559,
+   "remind": [
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -104379,6 +107074,9 @@
    ],
    "num": 561,
    "prevo": null,
+   "remind": [
+    "PSYCHOSHIFT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -104504,6 +107202,9 @@
    ],
    "num": 562,
    "prevo": null,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -104628,6 +107329,9 @@
    ],
    "num": 563,
    "prevo": 562,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -104757,6 +107461,11 @@
    ],
    "num": 564,
    "prevo": null,
+   "remind": [
+    "BLOCK",
+    "ROCKTHROW",
+    "SLAM"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -104879,6 +107588,11 @@
    ],
    "num": 565,
    "prevo": 564,
+   "remind": [
+    "BLOCK",
+    "ROCKTHROW",
+    "SLAM"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -105008,6 +107722,11 @@
    ],
    "num": 566,
    "prevo": null,
+   "remind": [
+    "BITE",
+    "HEADSMASH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -105129,6 +107848,11 @@
    ],
    "num": 567,
    "prevo": 566,
+   "remind": [
+    "BITE",
+    "HEADSMASH",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -105258,6 +107982,11 @@
    ],
    "num": 568,
    "prevo": null,
+   "remind": [
+    "AUTOTOMIZE",
+    "CORROSIVEGAS",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -105386,6 +108115,11 @@
    ],
    "num": 569,
    "prevo": 568,
+   "remind": [
+    "AUTOTOMIZE",
+    "CORROSIVEGAS",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -105501,6 +108235,12 @@
    ],
    "num": 570,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "EXTRASENSORY",
+    "MEMENTO",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -105612,6 +108352,12 @@
    ],
    "num": 571,
    "prevo": 570,
+   "remind": [
+    "COPYCAT",
+    "EXTRASENSORY",
+    "MEMENTO",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -105728,6 +108474,12 @@
    ],
    "num": 572,
    "prevo": null,
+   "remind": [
+    "AQUATAIL",
+    "FLAIL",
+    "TAILWHIP",
+    "TIDYUP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -105800,6 +108552,17 @@
    ],
    "num": 573,
    "prevo": 572,
+   "remind": [
+    "AFTERYOU",
+    "AQUATAIL",
+    "BABYDOLLEYES",
+    "FLAIL",
+    "LASTRESORT",
+    "SLAM",
+    "TAILWHIP",
+    "TICKLE",
+    "TIDYUP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -105916,6 +108679,11 @@
    ],
    "num": 574,
    "prevo": null,
+   "remind": [
+    "HEALPULSE",
+    "MEANLOOK",
+    "MIRRORCOAT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -106028,6 +108796,11 @@
    ],
    "num": 575,
    "prevo": 574,
+   "remind": [
+    "HEALPULSE",
+    "MEANLOOK",
+    "MIRRORCOAT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -106136,6 +108909,11 @@
    ],
    "num": 576,
    "prevo": 575,
+   "remind": [
+    "HEALPULSE",
+    "MEANLOOK",
+    "MIRRORCOAT"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -106256,6 +109034,10 @@
    ],
    "num": 577,
    "prevo": null,
+   "remind": [
+    "ACIDARMOR",
+    "ASTONISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -106376,6 +109158,10 @@
    ],
    "num": 578,
    "prevo": 577,
+   "remind": [
+    "ACIDARMOR",
+    "ASTONISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -106492,6 +109278,10 @@
    ],
    "num": 579,
    "prevo": 578,
+   "remind": [
+    "ACIDARMOR",
+    "ASTONISH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -106609,6 +109399,10 @@
    ],
    "num": 580,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "GUST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -106719,6 +109513,10 @@
    ],
    "num": 581,
    "prevo": 580,
+   "remind": [
+    "AQUAJET",
+    "GUST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -106836,6 +109634,12 @@
    ],
    "num": 582,
    "prevo": null,
+   "remind": [
+    "AUTOTOMIZE",
+    "ICESHARD",
+    "ICICLECRASH",
+    "MAGNETRISE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -106952,6 +109756,12 @@
    ],
    "num": 583,
    "prevo": 582,
+   "remind": [
+    "AUTOTOMIZE",
+    "ICESHARD",
+    "ICICLECRASH",
+    "MAGNETRISE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -107072,6 +109882,11 @@
    ],
    "num": 584,
    "prevo": 583,
+   "remind": [
+    "AUTOTOMIZE",
+    "ICESHARD",
+    "MAGNETRISE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -107180,6 +109995,10 @@
    ],
    "num": 585,
    "prevo": null,
+   "remind": [
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -107289,6 +110108,10 @@
    ],
    "num": 586,
    "prevo": 585,
+   "remind": [
+    "SYNTHESIS",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -107393,6 +110216,12 @@
    ],
    "num": 587,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "COVET",
+    "RISINGVOLTAGE",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -107511,6 +110340,9 @@
    ],
    "num": 588,
    "prevo": null,
+   "remind": [
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -107647,6 +110479,9 @@
    ],
    "num": 589,
    "prevo": 588,
+   "remind": [
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -107763,6 +110598,10 @@
    ],
    "num": 590,
    "prevo": null,
+   "remind": [
+    "POISONPOWDER",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -107871,6 +110710,10 @@
    ],
    "num": 591,
    "prevo": 590,
+   "remind": [
+    "POISONPOWDER",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -107988,6 +110831,11 @@
    ],
    "num": 592,
    "prevo": null,
+   "remind": [
+    "ACIDARMOR",
+    "MIST",
+    "STRENGTHSAP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -108101,6 +110949,10 @@
    ],
    "num": 593,
    "prevo": 592,
+   "remind": [
+    "MIST",
+    "STRENGTHSAP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -108215,6 +111067,11 @@
    ],
    "num": 594,
    "prevo": null,
+   "remind": [
+    "MIRRORCOAT",
+    "MIST",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -108331,6 +111188,9 @@
    ],
    "num": 595,
    "prevo": null,
+   "remind": [
+    "POISONSTING"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -108444,6 +111304,9 @@
    ],
    "num": 596,
    "prevo": 595,
+   "remind": [
+    "POISONSTING"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -108553,6 +111416,10 @@
    ],
    "num": 597,
    "prevo": null,
+   "remind": [
+    "LEECHSEED",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -108658,6 +111525,10 @@
    ],
    "num": 598,
    "prevo": 597,
+   "remind": [
+    "LEECHSEED",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -108775,6 +111646,10 @@
    ],
    "num": 599,
    "prevo": null,
+   "remind": [
+    "RISINGVOLTAGE",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -108891,6 +111766,10 @@
    ],
    "num": 600,
    "prevo": 599,
+   "remind": [
+    "RISINGVOLTAGE",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -109011,6 +111890,10 @@
    ],
    "num": 601,
    "prevo": 600,
+   "remind": [
+    "RISINGVOLTAGE",
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -109408,6 +112291,11 @@
    ],
    "num": 605,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -109516,6 +112404,11 @@
    ],
    "num": 606,
    "prevo": 605,
+   "remind": [
+    "ASTONISH",
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -109640,6 +112533,11 @@
    ],
    "num": 607,
    "prevo": null,
+   "remind": [
+    "ACIDARMOR",
+    "CLEARSMOG",
+    "POWERSPLIT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -109765,6 +112663,11 @@
    ],
    "num": 608,
    "prevo": 607,
+   "remind": [
+    "ACIDARMOR",
+    "CLEARSMOG",
+    "POWERSPLIT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -109882,6 +112785,11 @@
    ],
    "num": 609,
    "prevo": 608,
+   "remind": [
+    "ACIDARMOR",
+    "CLEARSMOG",
+    "POWERSPLIT"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -110016,6 +112924,9 @@
    ],
    "num": 610,
    "prevo": null,
+   "remind": [
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -110149,6 +113060,9 @@
    ],
    "num": 611,
    "prevo": 610,
+   "remind": [
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -110274,6 +113188,9 @@
    ],
    "num": 612,
    "prevo": 611,
+   "remind": [
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -110398,6 +113315,9 @@
    ],
    "num": 613,
    "prevo": null,
+   "remind": [
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -110530,6 +113450,9 @@
    ],
    "num": 614,
    "prevo": 613,
+   "remind": [
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -110774,6 +113697,11 @@
    ],
    "num": 616,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "GUARDSPLIT",
+    "MINDREADER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -110914,6 +113842,11 @@
    ],
    "num": 617,
    "prevo": 616,
+   "remind": [
+    "FEINT",
+    "GUARDSPLIT",
+    "MINDREADER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -111027,6 +113960,12 @@
    ],
    "num": 618,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "REFLECTTYPE",
+    "SPARK",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -111145,6 +114084,9 @@
    ],
    "num": 619,
    "prevo": null,
+   "remind": [
+    "FEINT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -111258,6 +114200,9 @@
    ],
    "num": 620,
    "prevo": 619,
+   "remind": [
+    "FEINT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -111363,6 +114308,10 @@
    ],
    "num": 621,
    "prevo": null,
+   "remind": [
+    "GLARE",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -111725,6 +114674,11 @@
    ],
    "num": 624,
    "prevo": null,
+   "remind": [
+    "MEANLOOK",
+    "QUICKGUARD",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -111851,6 +114805,11 @@
    ],
    "num": 625,
    "prevo": 624,
+   "remind": [
+    "MEANLOOK",
+    "QUICKGUARD",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -111956,6 +114915,11 @@
    ],
    "num": 626,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "COTTONGUARD",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -112302,6 +115266,9 @@
    ],
    "num": 629,
    "prevo": null,
+   "remind": [
+    "MEANLOOK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -112423,6 +115390,9 @@
    ],
    "num": 630,
    "prevo": 629,
+   "remind": [
+    "MEANLOOK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -112540,6 +115510,11 @@
    ],
    "num": 631,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "SUCKERPUNCH",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -112656,6 +115631,10 @@
    ],
    "num": 632,
    "prevo": null,
+   "remind": [
+    "FLAIL",
+    "METALBURST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -112784,6 +115763,11 @@
    ],
    "num": 633,
    "prevo": null,
+   "remind": [
+    "ASTONISH",
+    "BELCH",
+    "HEADSMASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -112916,6 +115900,11 @@
    ],
    "num": 634,
    "prevo": 633,
+   "remind": [
+    "ASTONISH",
+    "BELCH",
+    "HEADSMASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -113048,6 +116037,11 @@
    ],
    "num": 635,
    "prevo": 634,
+   "remind": [
+    "ASTONISH",
+    "BELCH",
+    "HEADSMASH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -113160,6 +116154,12 @@
    ],
    "num": 636,
    "prevo": null,
+   "remind": [
+    "ABSORB",
+    "HARDEN",
+    "MORNINGSUN",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -113300,6 +116300,12 @@
    ],
    "num": 637,
    "prevo": 636,
+   "remind": [
+    "ABSORB",
+    "HARDEN",
+    "MORNINGSUN",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -114766,6 +117772,12 @@
    ],
    "num": 650,
    "prevo": null,
+   "remind": [
+    "BELLYDRUM",
+    "QUICKGUARD",
+    "SYNTHESIS",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -114881,6 +117893,12 @@
    ],
    "num": 651,
    "prevo": 650,
+   "remind": [
+    "BELLYDRUM",
+    "QUICKGUARD",
+    "SYNTHESIS",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -115004,6 +118022,12 @@
    ],
    "num": 652,
    "prevo": 651,
+   "remind": [
+    "BELLYDRUM",
+    "QUICKGUARD",
+    "SYNTHESIS",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -115120,6 +118144,11 @@
    ],
    "num": 653,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "HYPNOSIS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -115239,6 +118268,11 @@
    ],
    "num": 654,
    "prevo": 653,
+   "remind": [
+    "COPYCAT",
+    "HYPNOSIS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -115370,6 +118404,11 @@
    ],
    "num": 655,
    "prevo": 654,
+   "remind": [
+    "COPYCAT",
+    "HYPNOSIS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -115486,6 +118525,9 @@
    ],
    "num": 656,
    "prevo": null,
+   "remind": [
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -115601,6 +118643,9 @@
    ],
    "num": 657,
    "prevo": 656,
+   "remind": [
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -115724,6 +118769,9 @@
    ],
    "num": 658,
    "prevo": 657,
+   "remind": [
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -116069,6 +119117,9 @@
    ],
    "num": 661,
    "prevo": null,
+   "remind": [
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -116185,6 +119236,9 @@
    ],
    "num": 662,
    "prevo": 661,
+   "remind": [
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -116301,6 +119355,9 @@
    ],
    "num": 663,
    "prevo": 662,
+   "remind": [
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -116378,6 +119435,10 @@
    ],
    "num": 664,
    "prevo": null,
+   "remind": [
+    "POISONPOWDER",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -116445,6 +119506,10 @@
    ],
    "num": 665,
    "prevo": 664,
+   "remind": [
+    "POISONPOWDER",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -116549,6 +119614,9 @@
    ],
    "num": 666,
    "prevo": 665,
+   "remind": [
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -116670,6 +119738,10 @@
    ],
    "num": 667,
    "prevo": null,
+   "remind": [
+    "ENTRAINMENT",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -116787,6 +119859,10 @@
    ],
    "num": 668,
    "prevo": 667,
+   "remind": [
+    "ENTRAINMENT",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -116903,6 +119979,10 @@
    ],
    "num": 669,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "TEARFULLOOK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -117018,6 +120098,10 @@
    ],
    "num": 670,
    "prevo": 669,
+   "remind": [
+    "COPYCAT",
+    "TEARFULLOOK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -117117,6 +120201,10 @@
    ],
    "num": 671,
    "prevo": 670,
+   "remind": [
+    "COPYCAT",
+    "TEARFULLOOK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -117236,6 +120324,9 @@
    ],
    "num": 672,
    "prevo": null,
+   "remind": [
+    "MILKDRINK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -117472,6 +120563,10 @@
    ],
    "num": 674,
    "prevo": null,
+   "remind": [
+    "POWERTRIP",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -117589,6 +120684,10 @@
    ],
    "num": 675,
    "prevo": 674,
+   "remind": [
+    "POWERTRIP",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -117693,6 +120792,11 @@
    ],
    "num": 676,
    "prevo": null,
+   "remind": [
+    "LASTRESORT",
+    "REFRESH",
+    "ROLEPLAY"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -117793,6 +120897,10 @@
    ],
    "num": 677,
    "prevo": null,
+   "remind": [
+    "TICKLE",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -117921,6 +121029,10 @@
    ],
    "num": 678,
    "prevo": 677,
+   "remind": [
+    "TICKLE",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -118036,6 +121148,11 @@
    ],
    "num": 679,
    "prevo": null,
+   "remind": [
+    "BLOCK",
+    "DESTINYBOND",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -118152,6 +121269,11 @@
    ],
    "num": 680,
    "prevo": 679,
+   "remind": [
+    "BLOCK",
+    "DESTINYBOND",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -118268,6 +121390,11 @@
    ],
    "num": 681,
    "prevo": 680,
+   "remind": [
+    "BLOCK",
+    "DESTINYBOND",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -118385,6 +121512,11 @@
    ],
    "num": 682,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "DISABLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -118508,6 +121640,11 @@
    ],
    "num": 683,
    "prevo": 682,
+   "remind": [
+    "AFTERYOU",
+    "DISABLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -118628,6 +121765,12 @@
    ],
    "num": 684,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "COPYCAT",
+    "STICKYWEB",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -118743,6 +121886,11 @@
    ],
    "num": 685,
    "prevo": 684,
+   "remind": [
+    "AFTERYOU",
+    "COPYCAT",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -118864,6 +122012,11 @@
    ],
    "num": 686,
    "prevo": null,
+   "remind": [
+    "ACUPRESSURE",
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -118982,6 +122135,11 @@
    ],
    "num": 687,
    "prevo": 686,
+   "remind": [
+    "ACUPRESSURE",
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -119095,6 +122253,10 @@
    ],
    "num": 688,
    "prevo": null,
+   "remind": [
+    "SANDATTACK",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -119208,6 +122370,10 @@
    ],
    "num": 689,
    "prevo": 688,
+   "remind": [
+    "SANDATTACK",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -119322,6 +122488,10 @@
    ],
    "num": 690,
    "prevo": null,
+   "remind": [
+    "ACIDARMOR",
+    "TWISTER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -119436,6 +122606,9 @@
    ],
    "num": 691,
    "prevo": 690,
+   "remind": [
+    "ACIDARMOR"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -119545,6 +122718,10 @@
    ],
    "num": 692,
    "prevo": null,
+   "remind": [
+    "AQUATAIL",
+    "ENTRAINMENT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -119657,6 +122834,10 @@
    ],
    "num": 693,
    "prevo": 692,
+   "remind": [
+    "AQUATAIL",
+    "ENTRAINMENT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -119770,6 +122951,11 @@
    ],
    "num": 694,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH",
+    "GLARE",
+    "RISINGVOLTAGE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -119884,6 +123070,11 @@
    ],
    "num": 695,
    "prevo": 694,
+   "remind": [
+    "DRAGONRUSH",
+    "GLARE",
+    "RISINGVOLTAGE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -120002,6 +123193,9 @@
    ],
    "num": 696,
    "prevo": null,
+   "remind": [
+    "ROCKTHROW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -120119,6 +123313,9 @@
    ],
    "num": 697,
    "prevo": 696,
+   "remind": [
+    "ROCKTHROW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -120244,6 +123441,10 @@
    ],
    "num": 698,
    "prevo": null,
+   "remind": [
+    "MIRRORCOAT",
+    "ROCKTHROW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -120360,6 +123561,10 @@
    ],
    "num": 699,
    "prevo": 698,
+   "remind": [
+    "MIRRORCOAT",
+    "ROCKTHROW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -120504,6 +123709,13 @@
    ],
    "num": 700,
    "prevo": 133,
+   "remind": [
+    "DOUBLEKICK",
+    "FLAIL",
+    "TICKLE",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -120621,6 +123833,13 @@
    ],
    "num": 701,
    "prevo": null,
+   "remind": [
+    "CROSSCHOP",
+    "ENTRAINMENT",
+    "FEINT",
+    "MEANLOOK",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -120735,6 +123954,11 @@
    ],
    "num": 702,
    "prevo": null,
+   "remind": [
+    "COVET",
+    "MAGNETRISE",
+    "TEARFULLOOK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -120953,6 +124177,9 @@
    ],
    "num": 704,
    "prevo": null,
+   "remind": [
+    "LIFEDEW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -121069,6 +124296,9 @@
    ],
    "num": 705,
    "prevo": 704,
+   "remind": [
+    "LIFEDEW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -121189,6 +124419,9 @@
    ],
    "num": 706,
    "prevo": 705,
+   "remind": [
+    "LIFEDEW"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -121296,6 +124529,10 @@
    ],
    "num": 707,
    "prevo": null,
+   "remind": [
+    "MAGNETRISE",
+    "SWITCHEROO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -121419,6 +124656,10 @@
    ],
    "num": 708,
    "prevo": null,
+   "remind": [
+    "DISABLE",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -121537,6 +124778,10 @@
    ],
    "num": 709,
    "prevo": 708,
+   "remind": [
+    "DISABLE",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -121651,6 +124896,10 @@
    ],
    "num": 710,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -121768,6 +125017,10 @@
    ],
    "num": 711,
    "prevo": 710,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -121894,6 +125147,10 @@
    ],
    "num": 712,
    "prevo": null,
+   "remind": [
+    "MIRRORCOAT",
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -122023,6 +125280,10 @@
    ],
    "num": 713,
    "prevo": 712,
+   "remind": [
+    "MIRRORCOAT",
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -122144,6 +125405,9 @@
    ],
    "num": 714,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -122270,6 +125534,9 @@
    ],
    "num": 715,
    "prevo": 714,
+   "remind": [
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -122398,6 +125665,9 @@
    ],
    "num": 716,
    "prevo": null,
+   "remind": [
+    "TERRAINPULSE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -123485,6 +126755,10 @@
    ],
    "num": 725,
    "prevo": null,
+   "remind": [
+    "PARTINGSHOT",
+    "POWERTRIP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -123600,6 +126874,10 @@
    ],
    "num": 726,
    "prevo": 725,
+   "remind": [
+    "PARTINGSHOT",
+    "POWERTRIP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -123711,6 +126989,12 @@
    ],
    "num": 727,
    "prevo": 726,
+   "remind": [
+    "GROWL",
+    "PARTINGSHOT",
+    "POWERTRIP",
+    "SCRATCH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -123828,6 +127112,11 @@
    ],
    "num": 728,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "LIFEDEW",
+    "PERISHSONG"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -123944,6 +127233,11 @@
    ],
    "num": 729,
    "prevo": 728,
+   "remind": [
+    "AQUARING",
+    "LIFEDEW",
+    "PERISHSONG"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -124056,6 +127350,11 @@
    ],
    "num": 730,
    "prevo": 729,
+   "remind": [
+    "AQUARING",
+    "LIFEDEW",
+    "PERISHSONG"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -124169,6 +127468,9 @@
    ],
    "num": 731,
    "prevo": null,
+   "remind": [
+    "BOOMBURST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -124282,6 +127584,9 @@
    ],
    "num": 732,
    "prevo": 731,
+   "remind": [
+    "BOOMBURST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -124395,6 +127700,9 @@
    ],
    "num": 733,
    "prevo": 732,
+   "remind": [
+    "BOOMBURST"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -124513,6 +127821,9 @@
    ],
    "num": 734,
    "prevo": null,
+   "remind": [
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -124621,6 +127932,9 @@
    ],
    "num": 735,
    "prevo": 734,
+   "remind": [
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -124720,6 +128034,9 @@
    ],
    "num": 736,
    "prevo": null,
+   "remind": [
+    "HARDEN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -124831,6 +128148,9 @@
    ],
    "num": 737,
    "prevo": 736,
+   "remind": [
+    "HARDEN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -124935,6 +128255,10 @@
    ],
    "num": 738,
    "prevo": 737,
+   "remind": [
+    "HARDEN",
+    "VICEGRIP"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -125044,6 +128368,9 @@
    ],
    "num": 739,
    "prevo": null,
+   "remind": [
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -125148,6 +128475,9 @@
    ],
    "num": 740,
    "prevo": 739,
+   "remind": [
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -125260,6 +128590,9 @@
    ],
    "num": 741,
    "prevo": null,
+   "remind": [
+    "QUIVERDANCE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -125366,6 +128699,11 @@
    ],
    "num": 742,
    "prevo": null,
+   "remind": [
+    "AROMATICMIST",
+    "MOONBLAST",
+    "STICKYWEB"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -125468,6 +128806,11 @@
    ],
    "num": 743,
    "prevo": 742,
+   "remind": [
+    "AROMATICMIST",
+    "MOONBLAST",
+    "STICKYWEB"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -125586,6 +128929,10 @@
    ],
    "num": 744,
    "prevo": null,
+   "remind": [
+    "LASTRESORT",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -125710,6 +129057,10 @@
    ],
    "num": 745,
    "prevo": 744,
+   "remind": [
+    "LASTRESORT",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -125817,6 +129168,9 @@
    ],
    "num": 746,
    "prevo": null,
+   "remind": [
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -125925,6 +129279,11 @@
    ],
    "num": 747,
    "prevo": null,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -126030,6 +129389,11 @@
    ],
    "num": 748,
    "prevo": 747,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -126363,6 +129727,12 @@
    ],
    "num": 751,
    "prevo": null,
+   "remind": [
+    "POWERSPLIT",
+    "SPITUP",
+    "STICKYWEB",
+    "STOCKPILE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -126476,6 +129846,12 @@
    ],
    "num": 752,
    "prevo": 751,
+   "remind": [
+    "POWERSPLIT",
+    "SPITUP",
+    "STICKYWEB",
+    "STOCKPILE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -126585,6 +129961,9 @@
    ],
    "num": 753,
    "prevo": null,
+   "remind": [
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -126696,6 +130075,9 @@
    ],
    "num": 754,
    "prevo": 753,
+   "remind": [
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -126808,6 +130190,12 @@
    ],
    "num": 755,
    "prevo": null,
+   "remind": [
+    "GROWTH",
+    "LEECHSEED",
+    "POISONPOWDER",
+    "STUNSPORE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -126913,6 +130301,12 @@
    ],
    "num": 756,
    "prevo": 755,
+   "remind": [
+    "GROWTH",
+    "LEECHSEED",
+    "POISONPOWDER",
+    "STUNSPORE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -127027,6 +130421,10 @@
    ],
    "num": 757,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -127160,6 +130558,10 @@
    ],
    "num": 758,
    "prevo": 757,
+   "remind": [
+    "BELCH",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -127277,6 +130679,10 @@
    ],
    "num": 759,
    "prevo": null,
+   "remind": [
+    "FORCEPALM",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -127390,6 +130796,10 @@
    ],
    "num": 760,
    "prevo": 759,
+   "remind": [
+    "FORCEPALM",
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -127487,6 +130897,10 @@
    ],
    "num": 761,
    "prevo": null,
+   "remind": [
+    "ACUPRESSURE",
+    "SYNTHESIS"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -127596,6 +131010,10 @@
    ],
    "num": 762,
    "prevo": 761,
+   "remind": [
+    "ACUPRESSURE",
+    "SYNTHESIS"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -127708,6 +131126,10 @@
    ],
    "num": 763,
    "prevo": 762,
+   "remind": [
+    "ACUPRESSURE",
+    "SYNTHESIS"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -127832,6 +131254,10 @@
    ],
    "num": 764,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -127940,6 +131366,11 @@
    ],
    "num": 765,
    "prevo": null,
+   "remind": [
+    "EXTRASENSORY",
+    "LASTRESORT",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -128048,6 +131479,11 @@
    ],
    "num": 766,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "QUICKATTACK",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -128120,6 +131556,11 @@
    ],
    "num": 767,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "HARDEN",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -128237,6 +131678,11 @@
    ],
    "num": 768,
    "prevo": 767,
+   "remind": [
+    "AQUAJET",
+    "HARDEN",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -128353,6 +131799,12 @@
    ],
    "num": 769,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -128461,6 +131913,12 @@
    ],
    "num": 770,
    "prevo": 769,
+   "remind": [
+    "DESTINYBOND",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -128569,6 +132027,10 @@
    ],
    "num": 771,
    "prevo": null,
+   "remind": [
+    "MIRRORCOAT",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -128680,6 +132142,9 @@
    ],
    "num": 772,
    "prevo": null,
+   "remind": [
+    "TERRAINPULSE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -128819,6 +132284,9 @@
    ],
    "num": 773,
    "prevo": 772,
+   "remind": [
+    "TERRAINPULSE"
+   ],
    "spawnable": false,
    "stage": 1,
    "types": [
@@ -129034,6 +132502,9 @@
    ],
    "num": 775,
    "prevo": null,
+   "remind": [
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -129146,6 +132617,11 @@
    ],
    "num": 776,
    "prevo": null,
+   "remind": [
+    "HEADSMASH",
+    "RAPIDSPIN",
+    "WIDEGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -129256,6 +132732,14 @@
    ],
    "num": 777,
    "prevo": null,
+   "remind": [
+    "FLAIL",
+    "PRESENT",
+    "RISINGVOLTAGE",
+    "STEELROLLER",
+    "TICKLE",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -129368,6 +132852,9 @@
    ],
    "num": 778,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -129575,6 +133062,11 @@
    ],
    "num": 780,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH",
+    "MIST",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -129699,6 +133191,9 @@
    ],
    "num": 781,
    "prevo": null,
+   "remind": [
+    "STEELROLLER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -130053,6 +133548,9 @@
    ],
    "num": 784,
    "prevo": 783,
+   "remind": [
+    "BELLYDRUM"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -131034,6 +134532,9 @@
    ],
    "num": 793,
    "prevo": null,
+   "remind": [
+    "CORROSIVEGAS"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -131382,6 +134883,9 @@
    ],
    "num": 796,
    "prevo": null,
+   "remind": [
+    "RISINGVOLTAGE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -131497,6 +135001,9 @@
    ],
    "num": 797,
    "prevo": null,
+   "remind": [
+    "STEELROLLER"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -131733,6 +135240,10 @@
    ],
    "num": 799,
    "prevo": null,
+   "remind": [
+    "CORROSIVEGAS",
+    "STEELROLLER"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -132444,6 +135955,9 @@
    ],
    "num": 805,
    "prevo": null,
+   "remind": [
+    "STEELROLLER"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -132684,6 +136198,9 @@
    ],
    "num": 807,
    "prevo": null,
+   "remind": [
+    "RISINGVOLTAGE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -132874,6 +136391,9 @@
    ],
    "num": 809,
    "prevo": 808,
+   "remind": [
+    "STEELROLLER"
+   ],
    "spawnable": false,
    "stage": 1,
    "types": [
@@ -132978,6 +136498,12 @@
    ],
    "num": 810,
    "prevo": null,
+   "remind": [
+    "GROWTH",
+    "HAMMERARM",
+    "LEECHSEED",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -133086,6 +136612,12 @@
    ],
    "num": 811,
    "prevo": 810,
+   "remind": [
+    "GROWTH",
+    "HAMMERARM",
+    "LEECHSEED",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -133202,6 +136734,12 @@
    ],
    "num": 812,
    "prevo": 811,
+   "remind": [
+    "GROWTH",
+    "HAMMERARM",
+    "LEECHSEED",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -133306,6 +136844,11 @@
    ],
    "num": 813,
    "prevo": null,
+   "remind": [
+    "HIGHJUMPKICK",
+    "SANDATTACK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -133410,6 +136953,11 @@
    ],
    "num": 814,
    "prevo": 813,
+   "remind": [
+    "HIGHJUMPKICK",
+    "SANDATTACK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -133518,6 +137066,11 @@
    ],
    "num": 815,
    "prevo": 814,
+   "remind": [
+    "HIGHJUMPKICK",
+    "SANDATTACK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -133622,6 +137175,13 @@
    ],
    "num": 816,
    "prevo": null,
+   "remind": [
+    "AQUAJET",
+    "AQUARING",
+    "FELLSTINGER",
+    "ICESHARD",
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -133726,6 +137286,13 @@
    ],
    "num": 817,
    "prevo": 816,
+   "remind": [
+    "AQUAJET",
+    "AQUARING",
+    "FELLSTINGER",
+    "ICESHARD",
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -133834,6 +137401,13 @@
    ],
    "num": 818,
    "prevo": 817,
+   "remind": [
+    "AQUAJET",
+    "AQUARING",
+    "FELLSTINGER",
+    "ICESHARD",
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -133945,6 +137519,10 @@
    ],
    "num": 819,
    "prevo": null,
+   "remind": [
+    "BELLYDRUM",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -134052,6 +137630,10 @@
    ],
    "num": 820,
    "prevo": 819,
+   "remind": [
+    "BELLYDRUM",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -134156,6 +137738,9 @@
    ],
    "num": 821,
    "prevo": null,
+   "remind": [
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -134260,6 +137845,9 @@
    ],
    "num": 822,
    "prevo": 821,
+   "remind": [
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -134372,6 +137960,9 @@
    ],
    "num": 823,
    "prevo": 822,
+   "remind": [
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -134437,6 +138028,11 @@
    ],
    "num": 824,
    "prevo": null,
+   "remind": [
+    "RECOVER",
+    "STICKYWEB",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -134513,6 +138109,11 @@
    ],
    "num": 825,
    "prevo": 824,
+   "remind": [
+    "RECOVER",
+    "STICKYWEB",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -134630,6 +138231,11 @@
    ],
    "num": 826,
    "prevo": 825,
+   "remind": [
+    "RECOVER",
+    "STICKYWEB",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -134735,6 +138341,10 @@
    ],
    "num": 827,
    "prevo": null,
+   "remind": [
+    "HOWL",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -134839,6 +138449,10 @@
    ],
    "num": 828,
    "prevo": 827,
+   "remind": [
+    "HOWL",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -134943,6 +138557,14 @@
    ],
    "num": 829,
    "prevo": null,
+   "remind": [
+    "GROWTH",
+    "LEECHSEED",
+    "POISONPOWDER",
+    "SLEEPPOWDER",
+    "STUNSPORE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -135047,6 +138669,14 @@
    ],
    "num": 830,
    "prevo": 829,
+   "remind": [
+    "GROWTH",
+    "LEECHSEED",
+    "POISONPOWDER",
+    "SLEEPPOWDER",
+    "STUNSPORE",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -135155,6 +138785,9 @@
    ],
    "num": 831,
    "prevo": null,
+   "remind": [
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -135259,6 +138892,9 @@
    ],
    "num": 832,
    "prevo": 831,
+   "remind": [
+    "STOMP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -135356,6 +138992,10 @@
    ],
    "num": 833,
    "prevo": null,
+   "remind": [
+    "GASTROACID",
+    "SHELLSMASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -135465,6 +139105,10 @@
    ],
    "num": 834,
    "prevo": 833,
+   "remind": [
+    "GASTROACID",
+    "SHELLSMASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -135569,6 +139213,11 @@
    ],
    "num": 835,
    "prevo": null,
+   "remind": [
+    "HOWL",
+    "RISINGVOLTAGE",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -135672,6 +139321,11 @@
    ],
    "num": 836,
    "prevo": 835,
+   "remind": [
+    "HOWL",
+    "RISINGVOLTAGE",
+    "SANDATTACK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -135772,6 +139426,9 @@
    ],
    "num": 837,
    "prevo": null,
+   "remind": [
+    "BLOCK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -135880,6 +139537,9 @@
    ],
    "num": 838,
    "prevo": 837,
+   "remind": [
+    "BLOCK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -135985,6 +139645,9 @@
    ],
    "num": 839,
    "prevo": 838,
+   "remind": [
+    "BLOCK"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -136069,6 +139732,9 @@
    ],
    "num": 840,
    "prevo": null,
+   "remind": [
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -136191,6 +139857,9 @@
    ],
    "num": 841,
    "prevo": 840,
+   "remind": [
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -136313,6 +139982,9 @@
    ],
    "num": 842,
    "prevo": 840,
+   "remind": [
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -136423,6 +140095,11 @@
    ],
    "num": 843,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "DRAGONRUSH",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -136524,6 +140201,11 @@
    ],
    "num": 844,
    "prevo": 843,
+   "remind": [
+    "BELCH",
+    "DRAGONRUSH",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -136624,6 +140306,11 @@
    ],
    "num": 845,
    "prevo": null,
+   "remind": [
+    "AQUACUTTER",
+    "AQUARING",
+    "BELCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -136724,6 +140411,11 @@
    ],
    "num": 846,
    "prevo": null,
+   "remind": [
+    "ACUPRESSURE",
+    "SLASH",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -136819,6 +140511,11 @@
    ],
    "num": 847,
    "prevo": 846,
+   "remind": [
+    "ACUPRESSURE",
+    "SLASH",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -137376,6 +141073,10 @@
    ],
    "num": 852,
    "prevo": null,
+   "remind": [
+    "SOAK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -137484,6 +141185,10 @@
    ],
    "num": 853,
    "prevo": 852,
+   "remind": [
+    "SOAK",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -137811,6 +141516,10 @@
    ],
    "num": 856,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "NUZZLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -137919,6 +141628,10 @@
    ],
    "num": 857,
    "prevo": 856,
+   "remind": [
+    "AFTERYOU",
+    "NUZZLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -138027,6 +141740,10 @@
    ],
    "num": 858,
    "prevo": 857,
+   "remind": [
+    "AFTERYOU",
+    "NUZZLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -138141,6 +141858,9 @@
    ],
    "num": 859,
    "prevo": null,
+   "remind": [
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -138259,6 +141979,9 @@
    ],
    "num": 860,
    "prevo": 859,
+   "remind": [
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -138381,6 +142104,9 @@
    ],
    "num": 861,
    "prevo": 860,
+   "remind": [
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -138518,6 +142244,11 @@
    ],
    "num": 862,
    "prevo": 264,
+   "remind": [
+    "EXTREMESPEED",
+    "SIMPLEBEAM",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -138635,6 +142366,13 @@
    ],
    "num": 863,
    "prevo": 52,
+   "remind": [
+    "COVET",
+    "FLAIL",
+    "HYPNOSIS",
+    "LASTRESORT",
+    "TAILWHIP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -138743,6 +142481,12 @@
    ],
    "num": 864,
    "prevo": 222,
+   "remind": [
+    "AQUARING",
+    "HEADSMASH",
+    "INGRAIN",
+    "MIST"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -138867,6 +142611,14 @@
    ],
    "num": 865,
    "prevo": 83,
+   "remind": [
+    "COVET",
+    "FEINT",
+    "FLAIL",
+    "GUST",
+    "QUICKATTACK",
+    "SIMPLEBEAM"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -139039,6 +142791,11 @@
    ],
    "num": 866,
    "prevo": 122,
+   "remind": [
+    "HEALINGWISH",
+    "POWERSPLIT",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -139164,6 +142921,9 @@
    ],
    "num": 867,
    "prevo": 562,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -139274,6 +143034,10 @@
    ],
    "num": 868,
    "prevo": null,
+   "remind": [
+    "BABYDOLLEYES",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -139378,6 +143142,10 @@
    ],
    "num": 869,
    "prevo": 868,
+   "remind": [
+    "BABYDOLLEYES",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -139594,6 +143362,10 @@
    ],
    "num": 871,
    "prevo": null,
+   "remind": [
+    "MEMENTO",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -139662,6 +143434,10 @@
    ],
    "num": 872,
    "prevo": null,
+   "remind": [
+    "FAIRYWIND",
+    "MIRRORCOAT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -139786,6 +143562,10 @@
    ],
    "num": 873,
    "prevo": 872,
+   "remind": [
+    "FAIRYWIND",
+    "MIRRORCOAT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -139990,6 +143770,13 @@
    ],
    "num": 875,
    "prevo": null,
+   "remind": [
+    "AQUARING",
+    "BELLYDRUM",
+    "HEADSMASH",
+    "ICICLECRASH",
+    "SOAK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -140094,6 +143881,9 @@
    ],
    "num": 876,
    "prevo": null,
+   "remind": [
+    "EXTRASENSORY"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -140203,6 +143993,11 @@
    ],
    "num": 877,
    "prevo": null,
+   "remind": [
+    "PARTINGSHOT",
+    "RAPIDSPIN",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -140316,6 +144111,10 @@
    ],
    "num": 878,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "SLAM"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -140424,6 +144223,10 @@
    ],
    "num": 879,
    "prevo": 878,
+   "remind": [
+    "BELCH",
+    "SLAM"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -140528,6 +144331,9 @@
    ],
    "num": 880,
    "prevo": null,
+   "remind": [
+    "RISINGVOLTAGE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -140633,6 +144439,9 @@
    ],
    "num": 881,
    "prevo": null,
+   "remind": [
+    "RISINGVOLTAGE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -140957,6 +144766,10 @@
    ],
    "num": 884,
    "prevo": null,
+   "remind": [
+    "MIRRORCOAT",
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -141035,6 +144848,10 @@
    ],
    "num": 885,
    "prevo": null,
+   "remind": [
+    "DISABLE",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -141165,6 +144982,10 @@
    ],
    "num": 886,
    "prevo": 885,
+   "remind": [
+    "DISABLE",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -141291,6 +145112,10 @@
    ],
    "num": 887,
    "prevo": 886,
+   "remind": [
+    "DISABLE",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -141613,6 +145438,9 @@
    ],
    "num": 890,
    "prevo": null,
+   "remind": [
+    "ETERNABEAM"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -142629,6 +146457,13 @@
    ],
    "num": 899,
    "prevo": 234,
+   "remind": [
+    "BITE",
+    "DISABLE",
+    "DOUBLEKICK",
+    "EXTRASENSORY",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -142738,6 +146573,10 @@
    ],
    "num": 900,
    "prevo": 123,
+   "remind": [
+    "FEINT",
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -142863,6 +146702,11 @@
    ],
    "num": 901,
    "prevo": 217,
+   "remind": [
+    "BELLYDRUM",
+    "CROSSCHOP",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -142988,6 +146832,9 @@
    ],
    "num": 902,
    "prevo": 550,
+   "remind": [
+    "LASTRESPECTS"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -143101,6 +146948,12 @@
    ],
    "num": 903,
    "prevo": 215,
+   "remind": [
+    "BITE",
+    "FEINT",
+    "ICESHARD",
+    "ICICLECRASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -143222,6 +147075,12 @@
    ],
    "num": 904,
    "prevo": 211,
+   "remind": [
+    "AQUAJET",
+    "ASTONISH",
+    "FLAIL",
+    "SUPERSONIC"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -143455,6 +147314,11 @@
    ],
    "num": 906,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "LEECHSEED",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -143571,6 +147435,11 @@
    ],
    "num": 907,
    "prevo": 906,
+   "remind": [
+    "COPYCAT",
+    "LEECHSEED",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -143695,6 +147564,11 @@
    ],
    "num": 908,
    "prevo": 907,
+   "remind": [
+    "COPYCAT",
+    "LEECHSEED",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -143803,6 +147677,10 @@
    ],
    "num": 909,
    "prevo": null,
+   "remind": [
+    "BELCH",
+    "SLACKOFF"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -143918,6 +147796,10 @@
    ],
    "num": 910,
    "prevo": 909,
+   "remind": [
+    "BELCH",
+    "SLACKOFF"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -144041,6 +147923,10 @@
    ],
    "num": 911,
    "prevo": 910,
+   "remind": [
+    "BELCH",
+    "SLACKOFF"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -144150,6 +148036,10 @@
    ],
    "num": 912,
    "prevo": null,
+   "remind": [
+    "LASTRESORT",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -144270,6 +148160,10 @@
    ],
    "num": 913,
    "prevo": 912,
+   "remind": [
+    "LASTRESORT",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -144398,6 +148292,10 @@
    ],
    "num": 914,
    "prevo": 913,
+   "remind": [
+    "LASTRESORT",
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -144511,6 +148409,12 @@
    ],
    "num": 915,
    "prevo": null,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "STUFFCHEEKS",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -144623,6 +148527,12 @@
    ],
    "num": 916,
    "prevo": 915,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "STUFFCHEEKS",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -144738,6 +148648,10 @@
    ],
    "num": 917,
    "prevo": null,
+   "remind": [
+    "MEMENTO",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -144849,6 +148763,10 @@
    ],
    "num": 918,
    "prevo": 917,
+   "remind": [
+    "MEMENTO",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -145208,6 +149126,11 @@
    ],
    "num": 921,
    "prevo": null,
+   "remind": [
+    "MACHPUNCH",
+    "SWEETKISS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -145333,6 +149256,11 @@
    ],
    "num": 922,
    "prevo": 921,
+   "remind": [
+    "MACHPUNCH",
+    "SWEETKISS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -145462,6 +149390,11 @@
    ],
    "num": 923,
    "prevo": 922,
+   "remind": [
+    "MACHPUNCH",
+    "SWEETKISS",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -145580,6 +149513,13 @@
    ],
    "num": 924,
    "prevo": null,
+   "remind": [
+    "AFTERYOU",
+    "BITE",
+    "FEINT",
+    "SWITCHEROO",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -145697,6 +149637,13 @@
    ],
    "num": 925,
    "prevo": 924,
+   "remind": [
+    "AFTERYOU",
+    "BITE",
+    "FEINT",
+    "SWITCHEROO",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -145817,6 +149764,12 @@
    ],
    "num": 926,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "HOWL",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -145929,6 +149882,12 @@
    ],
    "num": 927,
    "prevo": 926,
+   "remind": [
+    "COPYCAT",
+    "HOWL",
+    "WISH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -146040,6 +149999,11 @@
    ],
    "num": 928,
    "prevo": null,
+   "remind": [
+    "MEMENTO",
+    "STRENGTHSAP",
+    "SYNTHESIS"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -146152,6 +150116,11 @@
    ],
    "num": 929,
    "prevo": 928,
+   "remind": [
+    "MEMENTO",
+    "STRENGTHSAP",
+    "SYNTHESIS"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -146272,6 +150241,11 @@
    ],
    "num": 930,
    "prevo": 929,
+   "remind": [
+    "MEMENTO",
+    "STRENGTHSAP",
+    "SYNTHESIS"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -146389,6 +150363,11 @@
    ],
    "num": 931,
    "prevo": null,
+   "remind": [
+    "FINALGAMBIT",
+    "FLATTER",
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -146860,6 +150839,10 @@
    ],
    "num": 935,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -146983,6 +150966,10 @@
    ],
    "num": 936,
    "prevo": 935,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -147099,6 +151086,12 @@
    ],
    "num": 937,
    "prevo": 935,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "QUICKGUARD",
+    "SHADOWSNEAK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -147212,6 +151205,10 @@
    ],
    "num": 938,
    "prevo": null,
+   "remind": [
+    "PARABOLICCHARGE",
+    "SOAK"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -147320,6 +151317,10 @@
    ],
    "num": 939,
    "prevo": 938,
+   "remind": [
+    "PARABOLICCHARGE",
+    "SOAK"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -147429,6 +151430,11 @@
    ],
    "num": 940,
    "prevo": null,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -147539,6 +151545,11 @@
    ],
    "num": 941,
    "prevo": 940,
+   "remind": [
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -147660,6 +151671,9 @@
    ],
    "num": 942,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -147780,6 +151794,9 @@
    ],
    "num": 943,
    "prevo": 942,
+   "remind": [
+    "DESTINYBOND"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -147900,6 +151917,10 @@
    ],
    "num": 944,
    "prevo": null,
+   "remind": [
+    "COPYCAT",
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -148013,6 +152034,10 @@
    ],
    "num": 945,
    "prevo": 944,
+   "remind": [
+    "COPYCAT",
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -148134,6 +152159,12 @@
    ],
    "num": 946,
    "prevo": null,
+   "remind": [
+    "BLOCK",
+    "LEECHSEED",
+    "SHADOWSNEAK",
+    "STRENGTHSAP"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -148246,6 +152277,12 @@
    ],
    "num": 947,
    "prevo": 946,
+   "remind": [
+    "BLOCK",
+    "LEECHSEED",
+    "SHADOWSNEAK",
+    "STRENGTHSAP"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -148374,6 +152411,14 @@
    ],
    "num": 948,
    "prevo": null,
+   "remind": [
+    "ACUPRESSURE",
+    "LEECHSEED",
+    "MIRRORCOAT",
+    "RAGEPOWDER",
+    "RAPIDSPIN",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -148498,6 +152543,14 @@
    ],
    "num": 949,
    "prevo": 948,
+   "remind": [
+    "ACUPRESSURE",
+    "LEECHSEED",
+    "MIRRORCOAT",
+    "RAGEPOWDER",
+    "RAPIDSPIN",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -148607,6 +152660,9 @@
    ],
    "num": 950,
    "prevo": null,
+   "remind": [
+    "CRABHAMMER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -148715,6 +152771,12 @@
    ],
    "num": 951,
    "prevo": null,
+   "remind": [
+    "INGRAIN",
+    "LEECHSEED",
+    "RAGEPOWDER",
+    "WORRYSEED"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -148835,6 +152897,11 @@
    ],
    "num": 952,
    "prevo": 951,
+   "remind": [
+    "INGRAIN",
+    "LEECHSEED",
+    "RAGEPOWDER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -148936,6 +153003,10 @@
    ],
    "num": 953,
    "prevo": null,
+   "remind": [
+    "MEMENTO",
+    "RECOVER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -149055,6 +153126,10 @@
    ],
    "num": 954,
    "prevo": 953,
+   "remind": [
+    "MEMENTO",
+    "RECOVER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -149156,6 +153231,9 @@
    ],
    "num": 955,
    "prevo": null,
+   "remind": [
+    "HYPNOSIS"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -149272,6 +153350,9 @@
    ],
    "num": 956,
    "prevo": 955,
+   "remind": [
+    "HYPNOSIS"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -149396,6 +153477,10 @@
    ],
    "num": 957,
    "prevo": null,
+   "remind": [
+    "FEINT",
+    "ICEHAMMER"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -149521,6 +153606,10 @@
    ],
    "num": 958,
    "prevo": 957,
+   "remind": [
+    "FEINT",
+    "ICEHAMMER"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -149642,6 +153731,10 @@
    ],
    "num": 959,
    "prevo": 958,
+   "remind": [
+    "FEINT",
+    "ICEHAMMER"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -149751,6 +153844,10 @@
    ],
    "num": 960,
    "prevo": null,
+   "remind": [
+    "FINALGAMBIT",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -149855,6 +153952,10 @@
    ],
    "num": 961,
    "prevo": 960,
+   "remind": [
+    "FINALGAMBIT",
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -149971,6 +154072,10 @@
    ],
    "num": 962,
    "prevo": null,
+   "remind": [
+    "POWERTRIP",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -150084,6 +154189,10 @@
    ],
    "num": 963,
    "prevo": null,
+   "remind": [
+    "BOOMBURST",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -150204,6 +154313,10 @@
    ],
    "num": 964,
    "prevo": 963,
+   "remind": [
+    "BOOMBURST",
+    "TICKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -150323,6 +154436,9 @@
    ],
    "num": 965,
    "prevo": null,
+   "remind": [
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -150443,6 +154559,9 @@
    ],
    "num": 966,
    "prevo": 965,
+   "remind": [
+    "PARTINGSHOT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -150551,6 +154670,9 @@
    ],
    "num": 967,
    "prevo": null,
+   "remind": [
+    "AQUATAIL"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -150659,6 +154781,10 @@
    ],
    "num": 968,
    "prevo": null,
+   "remind": [
+    "COIL",
+    "METALBURST"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -150774,6 +154900,9 @@
    ],
    "num": 969,
    "prevo": null,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -150894,6 +155023,9 @@
    ],
    "num": 970,
    "prevo": 969,
+   "remind": [
+    "MEMENTO"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -151015,6 +155147,14 @@
    ],
    "num": 971,
    "prevo": null,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "HOWL",
+    "MEMENTO",
+    "SHADOWSNEAK",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -151130,6 +155270,14 @@
    ],
    "num": 972,
    "prevo": 971,
+   "remind": [
+    "DESTINYBOND",
+    "DISABLE",
+    "HOWL",
+    "MEMENTO",
+    "SHADOWSNEAK",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -151242,6 +155390,9 @@
    ],
    "num": 973,
    "prevo": null,
+   "remind": [
+    "QUICKGUARD"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -151363,6 +155514,12 @@
    ],
    "num": 974,
    "prevo": null,
+   "remind": [
+    "BELLYDRUM",
+    "ENTRAINMENT",
+    "ICICLECRASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -151475,6 +155632,12 @@
    ],
    "num": 975,
    "prevo": 974,
+   "remind": [
+    "BELLYDRUM",
+    "ENTRAINMENT",
+    "ICICLECRASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -151578,6 +155741,10 @@
    ],
    "num": 976,
    "prevo": null,
+   "remind": [
+    "RECOVER",
+    "THRASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -151699,6 +155866,10 @@
    ],
    "num": 977,
    "prevo": null,
+   "remind": [
+    "THRASH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -151798,6 +155969,9 @@
    ],
    "num": 978,
    "prevo": null,
+   "remind": [
+    "RAPIDSPIN"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -152033,6 +156207,14 @@
    ],
    "num": 980,
    "prevo": 194,
+   "remind": [
+    "AFTERYOU",
+    "DOUBLEKICK",
+    "RECOVER",
+    "SPITUP",
+    "STOCKPILE",
+    "SWALLOW"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -152150,6 +156332,12 @@
    ],
    "num": 981,
    "prevo": 203,
+   "remind": [
+    "DOUBLEKICK",
+    "MEANLOOK",
+    "MIRRORCOAT",
+    "WISH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -152271,6 +156459,12 @@
    ],
    "num": 982,
    "prevo": 206,
+   "remind": [
+    "AQUATAIL",
+    "ASTONISH",
+    "BITE",
+    "LASTRESORT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -152391,6 +156585,11 @@
    ],
    "num": 983,
    "prevo": 625,
+   "remind": [
+    "MEANLOOK",
+    "QUICKGUARD",
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -153939,6 +158138,11 @@
    ],
    "num": 996,
    "prevo": null,
+   "remind": [
+    "AQUATAIL",
+    "DRAGONRUSH",
+    "FREEZEDRY"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -154048,6 +158252,11 @@
    ],
    "num": 997,
    "prevo": 996,
+   "remind": [
+    "AQUATAIL",
+    "DRAGONRUSH",
+    "FREEZEDRY"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -154169,6 +158378,11 @@
    ],
    "num": 998,
    "prevo": 997,
+   "remind": [
+    "AQUATAIL",
+    "DRAGONRUSH",
+    "FREEZEDRY"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -155681,6 +159895,9 @@
    ],
    "num": 1011,
    "prevo": 840,
+   "remind": [
+    "SUCKERPUNCH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -156449,6 +160666,10 @@
    ],
    "num": 1018,
    "prevo": 884,
+   "remind": [
+    "MIRRORCOAT",
+    "SLASH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -156567,6 +160788,10 @@
    ],
    "num": 1019,
    "prevo": 1011,
+   "remind": [
+    "SUCKERPUNCH",
+    "YAWN"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [

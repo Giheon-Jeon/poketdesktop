@@ -372,11 +372,24 @@ def order_bias(bt, f, who, ev):
     return 0
 
 
+def choice_locked(f):
+    """구애 도구가 묶어 둔 기술. 도구가 없어졌거나 그 기술을 더는 안 가졌으면(변신이 풀림 ...) None."""
+    if f.held in CHOICE and f.locked and f.locked in f.pp:
+        return f.locked
+    return None
+
+
 def lock_pool(f, pool):
-    """구애 도구를 들었으면 처음 쓴 기술만 남긴다. PP 가 없으면 풀어 준다."""
-    if f.held in CHOICE and f.locked in pool:
-        return [f.locked]
-    return pool
+    """구애 도구를 들었으면 처음 쓴 기술만 남긴다. pool 은 지금 쓸 수 있는 기술 (Battle.usable).
+
+    **묶인 기술을 지금 못 쓰면 발버둥** (1.13.3, 본가 · Showdown 과 같다) - PP 가 없다 · 사슬묶기 · 도발 · 트집 ·
+    회복봉인 …. 예전에는 여기서 잠금을 풀어 다른 기술을 골랐는데 force_move 가 다시 묶인 기술로 되돌려서, 사슬묶기가
+    풀릴 때까지 턴을 그냥 날렸다 (샌드백).
+    """
+    k = choice_locked(f)
+    if k is None:
+        return pool
+    return [k] if k in pool else ["STRUGGLE"]
 
 
 # 구애 도구를 지닌 채 써도 되는 변화기 - 도구를 상대에게 넘기니 묶이지 않는다
@@ -397,14 +410,23 @@ def choice_pool(f, pool, attacks):
     return out or pool
 
 
-def force_move(f, key, ev, who):
-    """사람이 고른 기술도 구애 잠금을 받는다 (야생 배틀). 바꿨으면 그 기술."""
-    if f.held in CHOICE and f.locked and key != f.locked \
-            and f.pp.get(f.locked, 0) > 0:
-        _say(ev, who, "%s 은(는) %s 때문에 %s 밖에 쓸 수 없다!"
-             % (f.name, name(f.held), f.dex_move_name(f.locked)))
-        return f.locked
-    return key
+def force_move(f, key, ev, who, bt=None):
+    """사람이 고른 기술도 구애 잠금을 받는다 (관장 · 레이드 · 실시간 배틀). 바꿨으면 그 기술.
+
+    bt (Battle) 를 주면 묶인 기술을 지금 쓸 수 있는지(사슬묶기 · 도발 …)까지 보고, 못 쓰면 **발버둥** (1.13.3).
+    """
+    k = choice_locked(f)
+    if k is None or key == k:
+        return key
+    usable = f.pp.get(k, 0) > 0 and (bt is None or k in bt.usable(f))
+    if usable:
+        if key != "STRUGGLE":
+            _say(ev, who, "%s 은(는) %s 때문에 %s 밖에 쓸 수 없다!"
+                 % (f.name, name(f.held), f.dex_move_name(k)))
+        return k
+    _say(ev, who, "%s 은(는) %s 때문에 %s 밖에 쓸 수 없는데 지금은 쓸 수 없어서 발버둥을 친다!"
+         % (f.name, name(f.held), f.dex_move_name(k)))
+    return "STRUGGLE"
 
 
 def note_move(f, key):

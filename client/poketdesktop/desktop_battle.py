@@ -33,6 +33,7 @@ from . import evolve_fx
 from . import mega_fx
 from .fx_layer import FloatText, HpBar, open_layer
 from . import platform_os as PLAT
+from . import trouble
 from .ui_common import run_async
 
 APPROACH_GAP = 96          # 붙어 서는 간격 (가로)
@@ -243,15 +244,24 @@ class DesktopBattle(object):
             bar.clear()
         self.bars = None
 
-    def abort(self, msg):
+    def abort(self, msg, detail=""):
         # **왜 접었는지 기록에 남긴다** (1.13.1, 게시판 #266-1 '세 번째 포켓몬이 나온 뒤 배틀이 사라진다').
         # 예전에는 알림만 띄우고 사라져서, 제보가 와도 어느 길로 접혔는지 가릴 수 없었다.
+        # **서버에도 알린다** (1.13.3) - 기록 파일은 사용자 PC 에만 있어서 매번 열어 달라고 해야 했다
+        # (#266 레드 36세 · #280 니뉴). 그때의 상태와 오류 내용(detail)을 같이 보낸다.
+        b = {}
         try:
             b = self.b or {}
             ov = getattr(self.app, "overlay", None)
-            config.log("배틀을 접음: %s (판 %s, 내 포켓몬 %s, 화면의 도트 %s)"
-                       % (msg, b.get("id"), (b.get("me") or {}).get("id"),
-                          sorted((getattr(ov, "pets", None) or {}).keys())))
+            state = ("판 %s, 내 포켓몬 %s, 화면의 도트 %s, 내 도트 %s, 야생 도트 %s, 층 %s, "
+                     "busy %s, playing %s, 메뉴 %s, 멈춤 %s, 던질 볼 %s"
+                     % (b.get("id"), (b.get("me") or {}).get("id"),
+                        sorted((getattr(ov, "pets", None) or {}).keys()),
+                        self.mine is not None, self.foe is not None, self.layer is not None,
+                        self.busy, getattr(self, "playing", None), getattr(self, "menu_open", None),
+                        getattr(self, "holding", None), getattr(self, "pending_ball", None)))
+            config.log("배틀을 접음: %s (%s)" % (msg, state))
+            trouble.send(self.app, "battle_abort", b.get("id"), msg, state + ("\n" + detail if detail else ""))
         except Exception:                                   # noqa: BLE001
             pass
         self.app.notify(msg)
@@ -849,9 +859,10 @@ class DesktopBattle(object):
         try:
             return fn(*args)
         except Exception as e:                              # noqa: BLE001
-            config.log("배틀 연출 오류: %s\n%s" % (e, traceback.format_exc()))
+            tb = traceback.format_exc()
+            config.log("배틀 연출 오류: %s\n%s" % (e, tb))
             if not self.closed:
-                self.abort("배틀을 이어가지 못해 멈췄습니다.")
+                self.abort("배틀을 이어가지 못해 멈췄습니다.", tb)
 
     # ---------------- 정리 ----------------
     def finish_cleanup(self):

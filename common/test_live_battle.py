@@ -67,6 +67,32 @@ def both(lb, key="TACKLE"):
                 lb.choose(w, *lb.auto_choice(w))
 
 
+def turn_end_checks():
+    """쓰러짐과 턴 끝. 마지막끼리는 턴 끝 화상 데미지로 이긴 쪽까지 쓰러지면 무승부 - **시즌 중에 판정을 바꾸지
+    않는다** (형평성, 2026-10-20 사용자 결정, 바뀌면 알리려고 못 박는다). 상대에게 다음 포켓몬이 있으면 턴 끝은 온다."""
+    print("\n== 쓰러짐과 턴 끝 (1.13.3)")
+    a = [L.leveled(mon("MACHAMP", 100, ["CROSSCHOP"]), 70)]
+    a[0]["ability"] = "NOGUARD"
+    b = [L.leveled(mon("CATERPIE", 5, ["STRINGSHOT"]), 2)]
+    lb = L.LiveBattle(DEX, (1, "가", a), (2, "나", b), rng=random.Random(5))
+    lb.start()
+    lb.a.mon.status, lb.a.mon.hp = "burn", 1
+    lb.choose("a", "move", "CROSSCHOP")
+    lb.choose("b", "move", "STRINGSHOT")
+    lb.resolve()
+    chk("마지막끼리는 예전 그대로: 화상 데미지로 같이 쓰러지면 무승부 (시즌 중 판정 유지)", lb.over and lb.result == "draw",
+        (lb.over, lb.result))
+    a = [L.leveled(mon("CONKELDURR", 100, ["MACHPUNCH"]), 70)]
+    a[0]["ability"], a[0]["held"] = "GUTS", "FLAMEORB"
+    b = [L.leveled(mon("CATERPIE", 5, ["STRINGSHOT"]), 2), L.leveled(mon("BLISSEY", 100, ["SOFTBOILED"]), 70)]
+    lb = L.LiveBattle(DEX, (1, "가", a), (2, "나", b), rng=random.Random(5))
+    lb.start()
+    lb.choose("a", "move", "MACHPUNCH")
+    lb.choose("b", "move", "STRINGSHOT")
+    lb.resolve()
+    chk("상대에게 다음 포켓몬이 있으면 쓰러뜨린 턴에도 턴 끝 (화염구슬)", lb.a.mon.status == "burn", lb.a.mon.status)
+
+
 def main():
     global DEX
     DEX = P.Pokedex.load(DEX_PATH)
@@ -375,6 +401,7 @@ def main():
     kinds_ = [e.get("t") for e in ev]
     chk("멈췄다 이어진 턴에도 고른 Z기술이 나간다", "zpower" in kinds_ and "foe" in lb.z_done, kinds_)
 
+    turn_end_checks()
     print("\n%d개 통과, %d개 실패" % (OK, FAIL))
     return 1 if FAIL else 0
 

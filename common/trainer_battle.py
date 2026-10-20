@@ -846,7 +846,7 @@ class TrainerBattle(object):
             if me_move != B.STRUGGLE and (me_move not in me.pp or me.pp.get(me_move, 0) <= 0):
                 me_move = bt.usable(me)[0]
             if me.held:
-                me_move = H.force_move(me, me_move, ev, "me")
+                me_move = H.force_move(me, me_move, ev, "me", bt)
 
         if foe_slot is not None:
             self._switch("foe", foe_slot, ev)
@@ -943,6 +943,8 @@ class TrainerBattle(object):
     def _end_turn(self, ev):
         """턴 끝: 독·날씨 같은 것, 쓰러진 쪽 정리, 턴 수 제한."""
         bt = self.bt
+        # 마지막끼리 쓰러뜨린 턴에도 턴 끝이 돈다 - 이긴 쪽이 화상 · 독 데미지로 같이 쓰러지면 무승부. 본가와 다르지만
+        # **시즌 중에 판정을 바꾸지 않는다** (랭크 · 길드전 형평성, 2026-10-20 사용자 결정 - 1.13.3 에서 고쳤다가 되돌림).
         if self.me.alive() or self.foe.alive():
             bt._end_of_turn(ev)
         bt._check_faint(ev)

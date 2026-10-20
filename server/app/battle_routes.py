@@ -21,7 +21,7 @@ from common import held as HELD
 from common import pokelogic as P
 from common import statusmoves as SM
 
-from . import achievements, auth, config, db, deps, guild, items, tms, walk, mega
+from . import achievements, auth, config, db, deps, guild, items, tms, troubles, walk, mega
 
 router = APIRouter()
 
@@ -101,6 +101,7 @@ def _load(ctx, bid=None):
         raise HTTPException(409, "이미 끝난 배틀입니다.")
     exp = auth.parse_iso(row["expires_at"])
     if exp and exp < _now():
+        troubles.battle_left(row, "expired")            # 앱이 제한 시간 뒤에 이어 가려 했다 (1.13.3)
         db.run("UPDATE battle SET state='done', result='fled' WHERE id=?", (row["id"],))
         raise HTTPException(410, "배틀이 시간 초과로 끝났습니다.")
     return row
@@ -205,7 +206,7 @@ def _side(dex, f, reveal_pp=True):
             "maxpp": (dex.move(m) or {}).get("pp", 0),
         } for m in f.moves]
         if not any(x["pp"] > 0 for x in out["moves"]):
-            out["moves"].append({"key": B.STRUGGLE, "kr": "몸부림", "type": "NORMAL",
+            out["moves"].append({"key": B.STRUGGLE, "kr": B.STRUGGLE_MOVE["kr"], "type": "NORMAL",
                                  "typeKr": "노말", "cat": "physical", "power": 50,
                                  "acc": 0, "pp": 1, "maxpp": 1})
     return out
@@ -440,6 +441,9 @@ def start(wid: int, ctx=Depends(deps.current)):
             me, foe = _fighters(d, old)
             bt = _battle(d, old, me, foe)
             return {"battle": _view(d, old, bt), "resumed": True}
+        # 옛 판이 끝나지 않은 채 남아 있었다 = 앱이 그 판을 끝까지 몰고 가지 않았다. 남긴다 (1.13.3, 게시판 #266
+        # 레드 36세 10/19 08:24 - 네 번째 포켓몬이 나온 뒤 한 번도 안 움직였고 8분 뒤 이 줄이 그 판을 닫았다).
+        troubles.battle_left(old, "party_changed" if old["wild_id"] == wid else "new_battle")
         db.run("UPDATE battle SET state='done', result='fled' WHERE id=?",
                (old["id"],))
 
@@ -548,8 +552,20 @@ def use_move(bid: int, body: MoveIn, ctx=Depends(deps.current)):
     # 알아서 한다 - **잡기 모드에서는 안 한다**(약하게 만들려다 세져서 쓰러뜨린다).
     bt.keystone["me"] = mega.has_keystone(uid)
     want_mega = bool(body.mega) or (auto and not spare)
-    out = {"myMove": pick, "myMoveKr": bt.move_name(pick),
-           "events": bt.take_turn(pick, mega=want_mega), "spare": spare}
+    ev = bt.take_turn(pick, mega=want_mega)
+    late = False
+    if (bt.over and bt.result == "lost" and not me.alive() and foe.alive()
+            and _next_ups(uid, _fainted(row) + [row["mine_id"]])):
+        # **내 포켓몬이 쓰러져도 다음 포켓몬이 있으면 턴 끝은 온다** (1.13.3, 게시판 #295 화염구슬 다시 보기).
+        # 1:1 배틀은 누가 쓰러지면 판이 끝난 것으로 보고 턴 끝을 건너뛴다. 그래서 내 포켓몬을 쓰러뜨린 턴에는
+        # 야생의 화염구슬 · 먹다남은음식 · 독 데미지가 빠졌다. 본가처럼 턴 끝을 마친 뒤 다음 포켓몬이 나온다.
+        # 마지막 포켓몬이 쓰러졌으면 판이 끝나므로 턴 끝은 없다 (랭크 · 관장 배틀과 같다).
+        late = True
+        bt.over = False
+        bt._end_of_turn(ev)
+        if not bt.over:
+            bt.over, bt.result = True, "lost"
+    out = {"myMove": pick, "myMoveKr": bt.move_name(pick), "events": ev, "spare": spare}
     if spare and not bt.over:
         # 다음 턴에 멈출 판이면 지금 알려 준다. 한 번 더 불러서 빈 답을 받는 사이
         # 0.6초가 그냥 흐른다. (잠재우기가 남았으면 멈추지 않는다 - 같은 판단)
@@ -561,6 +577,10 @@ def use_move(bid: int, body: MoveIn, ctx=Depends(deps.current)):
         db.run("INSERT INTO wild_state (user_id, wins) VALUES (?,1)"
                " ON CONFLICT(user_id) DO UPDATE SET wins=wins+1", (uid,))
         out["exp"] = award(d, uid, foe, row["mine_id"], hour)
+        if late:
+            # 내 포켓몬이 쓰러진 뒤 야생이 턴 끝 데미지로 쓰러졌다 - 이긴 판이다. 쓰러진 것은 쓰러진 것이라
+            # 친밀도는 깎인다 (_lost 와 같다). 경험치는 대폭발로 같이 쓰러졌을 때처럼 준다.
+            walk.on_faint(uid, row["mine_id"])
         mega.on_ko(uid, row["mine_id"])                  # 유대 미션 ② (시즌 3)
         guild.note_safe(uid, "battle")                   # 길드 일일 미션 (1.10.0)
         items.mark_seen(uid, foe.mon["species"], False, auth.now_iso())

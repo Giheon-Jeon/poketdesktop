@@ -276,9 +276,9 @@ def form_move(r, d=None):
 def rememberable(r, sp, d=None):
     """떠올릴 수 있는 기술. [(기술, 레벨)] 을 레벨 순으로.
 
-    **지금 종의 학습표에서 지금 레벨 이하인 것**이다. 레벨 0 은 진화할 때
-    배우는 기술이다. 진화 전 종의 표는 따로 안 본다 - 진화형 표에 이미
-    레벨 1 로 실려 있다(리자몽 표에 파이리 기술이 다 들어 있다).
+    **지금 종(과 진화 전 단계)의 학습표에서 지금 레벨 이하인 것**이다. 레벨 0 은 진화할 때
+    배우는 기술이다. 진화 전 종의 표도 본다 (1.13.3) - 대개 진화형 표에 이미 레벨 1 로 실려
+    있지만(리자몽 표에 파이리 기술), 돌로 진화하는 종은 빠져 있었다(나인테일 · 픽시).
 
     기다리는 기술(pending)도 넣는다. 레벨업 때 자리가 없어 못 배운 것이라
     대부분 이미 위에 들어 있지만, 진화 전에 생긴 것은 지금 표에 없을 수 있다.
@@ -300,6 +300,14 @@ def rememberable(r, sp, d=None):
     except Exception:                                       # noqa: BLE001
         pass
     learn = list((sp or {}).get("moves", [])) + [(1, mv) for mv in (sp or {}).get("remind") or []]
+    # **진화 전 단계의 레벨업 기술도** (1.13.3, 게시판 #291 니뉴). 본가 SV 는 진화형 표에 진화 전 기술을 Lv.1 로
+    # 다 싣지만(픽시에 삐삐 기술 21개), PokeAPI 자료에는 돌로 진화하는 종(나인테일 · 픽시 …)이 빠져 있어서 진화한
+    # 뒤에는 식스테일의 인페르노 같은 기술을 떠올릴 수 없었다. 진화 전 표의 레벨 그대로 지금 레벨까지.
+    cur, seen = d.get((sp or {}).get("prevo")) if (sp or {}).get("prevo") else None, set()
+    while cur and cur.get("num") not in seen:
+        seen.add(cur.get("num"))
+        learn += list(cur.get("moves") or [])
+        cur = d.get(cur.get("prevo")) if cur.get("prevo") else None
     sig, _fk = form_move(r, d)
     if sig:
         learn.append((1, sig))

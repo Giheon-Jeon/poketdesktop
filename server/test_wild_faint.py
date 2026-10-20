@@ -13,6 +13,8 @@
   2. 다음 포켓몬으로 바꾸면 **같은 판**이 이어진다 - 야생의 체력이 그대로다.
   3. 데리고 다니는 포켓몬을 다 쓰면 allDown 이고 야생은 떠난다.
   4. 도망에 실패한 턴에 쓰러져도 같다.
+  5. 공격 턴에 내 포켓몬이 쓰러져도 다음 포켓몬이 있으면 야생의 턴 끝(화염구슬 · 독 데미지)이 온다 (1.13.3).
+     야생이 턴 끝 데미지로 쓰러지면 이긴 판이다. 마지막 포켓몬이 쓰러졌으면 턴 끝은 없다.
 """
 import datetime
 import json
@@ -121,9 +123,70 @@ def main():
             (out.get("canSwitch"), out.get("party")))
     finally:
         P.catch_attempt, BR.foe_only_turn, B.Battle.try_run = real_catch, real_turn, real_run
+    end_of_turn_checks()
 
     print("\n%d개 통과, %d개 실패" % (OK, FAIL))
     return 1 if FAIL else 0
+
+
+def mkfoe(uid, held=None):
+    """마하펀치(선공기)로 레벨 2 캐터피를 먼저 쓰러뜨리는 야생 괴력몬."""
+    m = P.make_pokemon(deps.dex().get("CONKELDURR"), 30, random.Random(7), shiny_rate=10 ** 9)
+    m["moves"], m["held"], m["ability"] = ["MACHPUNCH"], held, "GUTS"
+    later = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)).isoformat()
+    return db.run("INSERT INTO wild (user_id, state, species, data, created_at, expires_at)"
+                  " VALUES (?,'revealed',?,?,'',?)", (uid, "CONKELDURR", json.dumps(m), later)).lastrowid
+
+
+def happy(pid):
+    return db.q1("SELECT happiness FROM pokemon WHERE id=?", (pid,))["happiness"]
+
+
+def end_of_turn_checks():
+    print("\n=== 내 포켓몬이 쓰러진 턴에도 야생의 턴 끝이 온다 (게시판 #295) ===")
+    uid = mkuser("턴끝")
+    weak = mkmon(uid, "CATERPIE", 2, 0)
+    mkmon(uid, "ONIX", 30, 1)
+    bid = BR.start(mkfoe(uid, "FLAMEORB"), ctx=ctx(uid))["battle"]["id"]
+    out = BR.use_move(bid, BR.MoveIn(move="TACKLE"), ctx=ctx(uid))
+    ev = out.get("events") or []
+    faint_at = next((i for i, e in enumerate(ev) if e.get("t") == "faint" and e.get("who") == "me"), None)
+    burn_at = next((i for i, e in enumerate(ev) if e.get("who") == "foe" and e.get("t") == "ailment"
+                    and e.get("status") == "burn"), None)
+    chk("캐터피가 쓰러진 턴 끝에 야생의 화염구슬이 터진다", faint_at is not None and burn_at is not None
+        and burn_at > faint_at, [(e.get("t"), e.get("who")) for e in ev])
+    chk("  야생의 화상이 판에 남는다 (다음 포켓몬과 싸울 때 그대로)",
+        json.loads(db.q1("SELECT foe FROM battle WHERE id=?", (bid,))["foe"])["status"] == "burn")
+    chk("  판은 졌다 · 다음 포켓몬을 실어 보낸다", (out.get("battle") or {}).get("result") == "lost"
+        and out.get("canSwitch") is True, (out.get("battle") or {}).get("result"))
+
+    print("\n=== 야생이 턴 끝 데미지(독)로 쓰러지면 이긴 판이다 ===")
+    uid = mkuser("독끝")
+    weak = mkmon(uid, "CATERPIE", 2, 0)
+    mkmon(uid, "ONIX", 30, 1)
+    wid = mkfoe(uid)
+    bid = BR.start(wid, ctx=ctx(uid))["battle"]["id"]
+    foe = json.loads(db.q1("SELECT foe FROM battle WHERE id=?", (bid,))["foe"])
+    foe["hp"], foe["status"] = 1, "poison"
+    db.run("UPDATE battle SET foe=? WHERE id=?", (json.dumps(foe), bid))
+    before = happy(weak)
+    out = BR.use_move(bid, BR.MoveIn(move="TACKLE"), ctx=ctx(uid))
+    ev = out.get("events") or []
+    chk("내 포켓몬이 쓰러지고 야생도 독으로 쓰러진다", [e.get("who") for e in ev if e.get("t") == "faint"]
+        == ["me", "foe"], [(e.get("t"), e.get("who")) for e in ev])
+    chk("  이긴 판이다 · 야생은 사라진다", (out.get("battle") or {}).get("result") == "won"
+        and db.q1("SELECT id FROM wild WHERE id=?", (wid,)) is None, (out.get("battle") or {}).get("result"))
+    chk("  쓰러진 캐터피의 친밀도는 깎인다 (진 판에서 쓰러졌을 때와 같다)", happy(weak) < before,
+        (before, happy(weak)))
+
+    print("\n=== 마지막 포켓몬이 쓰러지면 턴 끝은 없다 ===")
+    uid = mkuser("혼자")
+    mkmon(uid, "CATERPIE", 2, 0)
+    bid = BR.start(mkfoe(uid, "FLAMEORB"), ctx=ctx(uid))["battle"]["id"]
+    out = BR.use_move(bid, BR.MoveIn(move="TACKLE"), ctx=ctx(uid))
+    chk("화염구슬이 안 터진다 · 데리고 다니는 포켓몬을 다 써서 야생은 떠난다",
+        not any(e.get("t") == "ailment" and e.get("who") == "foe" for e in out.get("events") or [])
+        and out.get("allDown") is True, (out.get("allDown"), [(e.get("t"), e.get("who")) for e in out.get("events")]))
 
 
 if __name__ == "__main__":

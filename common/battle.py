@@ -99,7 +99,7 @@ SELF_HALF = ("BELLYDRUM", "FILLETAWAY")
 # 이게 없으면 양쪽 다 PP 가 떨어졌을 때 아무도 못 때려서 배틀이 안 끝난다.
 STRUGGLE = "STRUGGLE"
 STRUGGLE_MOVE = {
-    "kr": "몸부림", "en": "Struggle", "type": "NORMAL", "cat": "physical",
+    "kr": "발버둥", "en": "Struggle", "type": "NORMAL", "cat": "physical",     # 공식 이름 (1.13.3 까지 '몸부림')
     "power": 50, "acc": 0, "pp": 1, "pri": 0,
     "drain": -25,          # 준 데미지의 1/4 을 자기도 받는다
     "hits": [1, 1], "stat": [], "ail": None,
@@ -1324,7 +1324,7 @@ class Battle(object):
             my_move = self.usable(self.me)[0]
         if self.me.held:
             # 사람이 고른 기술도 구애 잠금을 받는다 (야생 배틀은 사람이 고른다).
-            my_move = H.force_move(self.me, my_move, ev, "me")
+            my_move = H.force_move(self.me, my_move, ev, "me", self)
         # Z기술 (시즌 4): 내가 눌렀거나, AI 가 고른 기술이 Z로 쓸 수 있는 공격기면 이 턴에 쓴다.
         self.z_request("me", my_move, z)
         self._auto_z("me", my_move)

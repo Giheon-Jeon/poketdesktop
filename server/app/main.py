@@ -35,7 +35,7 @@ from . import (achievements, auth, avatar, battle_routes, board, board_routes, m
                errors, friendly, items, live, live_routes, migrations, mypage, party, pvp, pvp_routes,
                raid, raid_routes,
                guild, guild_routes, guild_war_routes, guild_ws,
-               boss_routes, gym_routes, social_routes, tm_routes, tms, visit, walk)
+               boss_routes, gym_routes, social_routes, tm_routes, tms, troubles, visit, walk)
 
 app = FastAPI(title="poketdesktop", version=config.VERSION)
 app.include_router(battle_routes.router)
@@ -57,6 +57,7 @@ app.include_router(guild_routes.router)
 app.include_router(guild_ws.router)
 app.include_router(visit.router)               # 친구 집에 놀러 가기 · 친구 채팅 (1.11.0)
 app.include_router(expedition.router)
+app.include_router(troubles.router)             # 앱이 배틀을 접은 까닭 (1.13.3)
 
 RNG = deps.RNG
 
@@ -1709,7 +1710,7 @@ def _sweep(uid):
     gone = db.q("SELECT * FROM wild WHERE user_id=? AND expires_at < ?", (uid, t))
     for r in gone:
         db.run("DELETE FROM wild WHERE id=?", (r["id"],))
-        deps.close_battles_of(uid, r["id"], "fled")
+        deps.close_battles_of(uid, r["id"], "fled", "wild_expired")
         if r["state"] == "grass":
             _bump(uid, "fled")
             _schedule_next(uid, config.MISS_COOLDOWN)
@@ -2011,7 +2012,7 @@ def wild_catch(wid: int, body: CatchIn, ctx=Depends(current)):
     db.run("DELETE FROM wild WHERE id=?", (wid,))
     # 이 야생에 배틀이 걸려 있었으면 같이 닫는다 (1.10.4). 안 닫으면 야생은 볼에 들어갔는데
     # 배틀 줄만 남아, 내 포켓몬이 계속 '배틀 중' 이라 도구를 못 쓴다 (게시판 #174).
-    deps.close_battles_of(uid, wid, "caught")
+    deps.close_battles_of(uid, wid, "caught", "field_catch")
     _bump(uid, "caught")
     _schedule_next(uid, _cooldown())
     items.mark_seen(uid, mon["species"], True, auth.now_iso())
@@ -2040,7 +2041,7 @@ def wild_flee(wid: int, ctx=Depends(current)):
     row = db.q1("SELECT * FROM wild WHERE id=? AND user_id=?", (wid, uid))
     if row:
         db.run("DELETE FROM wild WHERE id=?", (wid,))
-        deps.close_battles_of(uid, wid, "fled")
+        deps.close_battles_of(uid, wid, "fled", "wild_flee")
         _bump(uid, "fled")
         _schedule_next(uid, _cooldown() if row["state"] == "revealed"
                        else config.MISS_COOLDOWN)

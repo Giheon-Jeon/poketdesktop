@@ -90,8 +90,10 @@ def remember_checks(d, R, Body):
 
     lst = R.remember_list(pid, me)
     got = [x["move"] for x in lst["remember"]]
-    chk("지금 레벨 이하 기술이 전부 나온다",
-        sorted(got) == sorted(low - {"TACKLE"}), (got, sorted(low)))
+    # 떠올리기 전용 기술(remind - 1.13.3 부터 기술머신이 없는 알 기술도: 이상해씨 뿌리박기)은 레벨과 상관없이 나온다
+    remind = set(sp.get("remind") or [])
+    chk("지금 레벨 이하 기술 + 떠올리기 전용 기술이 전부 나온다",
+        sorted(got) == sorted((low | remind) - {"TACKLE"}), (got, sorted(low), sorted(remind)))
     chk("아는 기술은 안 나온다", "TACKLE" not in got, got)
     chk("높은 레벨 기술은 안 나온다", not (high & set(got)), high & set(got))
     lvs = [x["level"] for x in lst["remember"]]
@@ -164,8 +166,10 @@ def remember_checks(d, R, Body):
     items.money_add(uid, cost)
     r = R.remember(Body(pokemon=og, move="HORNLEECH", forget=""), me)
     chk("  실제로 떠올린다", r["ok"] and "HORNLEECH" in moves_of(og), moves_of(og))
-    chk("아기 포켓몬의 알 기술은 넣지 않는다 (피츄 - 진화형의 교배로 받는 진짜 알 기술)",
-        not d.get("PICHU").get("remind"), d.get("PICHU").get("remind"))
+    # 1.13.0 에는 아기 포켓몬의 알 기술을 뺐다. 1.13.3 부터 교배가 없는 대신 **기술머신이 없는 알 기술은 전부
+    # 떠올리기로** 배운다 (2026-10-20 사용자 결정, tools/add_reminder.py) - 피츄도.
+    chk("기술머신이 없는 알 기술은 아기 포켓몬도 떠올리기로 (피츄 바라기 · 1.13.3)",
+        "WISH" in (d.get("PICHU").get("remind") or []), d.get("PICHU").get("remind"))
     chk("  돈은 떠올린 만큼만", money() == 2000, money())
 
     print("\n=== 떠올리기 - 기다리던 기술은 공짜 ===")
@@ -290,8 +294,9 @@ def main():
     chk("  팽도리 계열·윽우지·떨구새도", all(tms.can_learn(n, r) for n in (393, 394, 395, 845, 962)))
     chk("  원작에서 어떤 길로도 못 배우는 종은 여전히 못 배운다 (갸라도스·레쿠쟈)", not tms.can_learn(130, r) and not tms.can_learn(384, r))
     c = tms.data()["counts"]
-    chk("  자료에 알 기술로 들어간 줄 수가 적혀 있다 (전 세대 기술머신 61463줄 + 알 기술)", c.get("eggRows", 0) > 1000
-        and c["rows"] == 61463 + c["eggRows"], c)
+    chk("  자료에 알 기술 · 가르침 기술로 들어간 줄 수가 적혀 있다 (전 세대 기술머신 61463줄 + 알 기술 + 최신작 가르침, 1.13.3)",
+        c.get("eggRows", 0) > 1000 and c.get("tutorRows", 0) > 200
+        and c["rows"] == 61463 + c["eggRows"] + c["tutorRows"], c)
     chk("  기술머신의 수는 그대로다 (새 기술머신을 만들지 않는다)", tms.count() == 358)
 
     print("\n=== 누가 배울 수 있나 ===")
