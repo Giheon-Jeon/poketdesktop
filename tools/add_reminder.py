@@ -24,6 +24,14 @@
 아기 포켓몬이 있는 계열은 아기에게만 적는다 (피츄 7개 · 피카츄 0개). '최신작' 은 tools/learn_ref.py 가 고른다.
 **build_tms.py 를 먼저 돌린다** (기술머신이 있는지를 server/data/tms.json 에서 본다).
 
+**메가진화하는 종은 레전즈 Z-A 의 학습표도 (1.13.4, 사용자 결정 '메가 있는 종만'):** 2026-10-20 게시판 #291 (니뉴) -
+메가픽시는 Z-A 에서 나온 메가라 Z-A 학습표(픽시 Lv.52 에어슬래시)를 바탕으로 짜였는데, 이 게임은 SV 학습표만 따라서
+못 배웠다. 메가진화가 있는 종(도감의 megas 의 megaOf, 옛 메가 포함 87종)에 한해 Z-A 학습표의 기술 가운데 이 게임에서
+지금 배울 길이 없는 것(레벨업 · 진화 전 단계 레벨업 · 그 종의 기술머신 호환 · 이미 넣은 떠올리기에 없는 것)을
+떠올리기로 넣는다. 다른 종까지 넓히면 기술 폭이 너무 바뀐다. 자료는 쇼다운의 Z-A 학습표 (없으면 멈춘다):
+  tools/_cache/showdown_gen9legends_learnsets.ts
+  https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen9legends/learnsets.ts
+
 레벨업 표(moves)에는 넣지 않는다 - 거기 넣으면 새로 생기는 포켓몬(알 · 레이드 · 악당 전설)의 처음 기술이
 바뀐다. 기술 떠올리기(server/app/tm_routes.rememberable)만 이 칸을 본다.
 
@@ -43,6 +51,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, "tools", "_cache")
 DEX = os.path.join(ROOT, "server", "data", "pokedex.json")
 TMS = os.path.join(ROOT, "server", "data", "tms.json")
+ZA_LEARNSETS = os.path.join(CACHE, "showdown_gen9legends_learnsets.ts")
 SV = "scarlet-violet"
 EGG = "2"           # pokemon_move_methods: egg
 
@@ -69,6 +78,26 @@ MANUAL = {
 
 def key(ident):
     return re.sub(r"[^A-Za-z0-9]", "", ident).upper()
+
+
+def za_learnsets(path=ZA_LEARNSETS):
+    """쇼다운 Z-A 학습표 -> {종 열쇠(CLEFABLE): set(기술 열쇠)}. 배우는 방법(레벨 · 기술머신)은 가리지 않는다."""
+    if not os.path.exists(path):
+        raise SystemExit("레전즈 Z-A 학습표가 없습니다: %s\n  받기: curl -o '%s' "
+                         "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen9legends/"
+                         "learnsets.ts" % (path, path))
+    out, cur = {}, None
+    with io.open(path, encoding="utf-8") as f:
+        for line in f:
+            m = re.match(r"^\t(\w+): \{", line)
+            if m:
+                cur = key(m.group(1))
+                out[cur] = set()
+                continue
+            m = re.match(r"^\t\t\t(\w+): \[", line)
+            if m and cur:
+                out[cur].add(key(m.group(1)))
+    return out
 
 
 def build(dex):
@@ -110,6 +139,26 @@ def build(dex):
                 continue
             lst = out.setdefault(sp["internal"], [])
             if mv not in lst:
+                lst.append(mv)
+    # ---- 1.13.4: 메가진화하는 종은 레전즈 Z-A 학습표에서 배울 길이 없는 것 ----
+    za = za_learnsets()
+    learn_tm = json.load(io.open(TMS, encoding="utf-8"))
+    tm_no = dict((no, t["move"]) for no, t in learn_tm["tms"].items())
+    by_name = dict((s["internal"], s) for s in dex["species"])
+    for name in sorted(set(m["megaOf"] for m in dex.get("megas") or [] if m.get("megaOf"))):
+        sp = by_name.get(name)
+        if sp is None or name not in za:
+            continue
+        have, cur, seen = set(), sp, set()
+        while cur and cur["num"] not in seen:           # 레벨업 (진화 전 단계 것도 떠올리기에 나온다)
+            seen.add(cur["num"])
+            have |= set(mv for _lv, mv in cur.get("moves") or [])
+            p = cur.get("prevo")
+            cur = by_num.get(p) if isinstance(p, int) else None
+        have |= set(tm_no.get(str(no)) for no in learn_tm["learn"].get(str(sp["num"]), []))
+        lst = out.setdefault(name, [])
+        for mv in sorted(za[name]):
+            if mv in dex["moves"] and mv not in have and mv not in lst:
                 lst.append(mv)
     names = set(s["internal"] for s in dex["species"])
     for sp, mvs in MANUAL.items():

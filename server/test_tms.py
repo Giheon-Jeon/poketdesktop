@@ -171,6 +171,15 @@ def remember_checks(d, R, Body):
     chk("기술머신이 없는 알 기술은 아기 포켓몬도 떠올리기로 (피츄 바라기 · 1.13.3)",
         "WISH" in (d.get("PICHU").get("remind") or []), d.get("PICHU").get("remind"))
     chk("  돈은 떠올린 만큼만", money() == 2000, money())
+    # 1.13.4 (게시판 #291 니뉴, 사용자 결정 '메가 있는 종만'): 메가진화하는 종은 레전즈 Z-A 학습표에서 배울 길이
+    # 없던 기술도 떠올리기로 - 메가픽시는 Z-A 의 메가라 픽시 Lv.52 에어슬래시를 바탕으로 짜였다.
+    cf = mkmon(uid, "CLEFABLE", ["MOONBLAST"], level=10)
+    names = [x["move"] for x in R.remember_list(cf, me)["remember"]]
+    chk("메가가 있는 종: Z-A 학습표 기술도 떠올리기로 (픽시 에어슬래시 · 레벨 10 이어도)", "AIRSLASH" in names, names)
+    chk("  메가가 없는 종에는 안 붙는다 (삐삐 · 메가가 있는 종으로만 좁혔다)",
+        "AIRSLASH" not in (d.get("CLEFAIRY").get("remind") or []), d.get("CLEFAIRY").get("remind"))
+    chk("  옛 메가의 종도 (메가리자몽 - 리자몽 더블윙)", "DUALWINGBEAT" in (d.get("CHARIZARD").get("remind") or []),
+        d.get("CHARIZARD").get("remind"))
 
     print("\n=== 떠올리기 - 기다리던 기술은 공짜 ===")
     owed = rest[3]

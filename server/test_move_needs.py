@@ -137,8 +137,11 @@ def main():
     chk("가르침(기술머신 없음): 야나프가 탐내다 · 광합성을 떠올리기로", reminds("PANSAGE", "COVET") and reminds("PANSAGE", "SYNTHESIS"))
     chk("알 기술(기술머신 없음)은 떠올리기로: 리자몽 배북 · 역린돌격", reminds("CHARIZARD", "BELLYDRUM") and reminds("CHARIZARD", "DRAGONRUSH"))
     chk("  아기에게만 적힌 알 기술은 진화형도 (피츄 -> 피카츄 바라기 · 선물)", reminds("PIKACHU", "WISH") and reminds("PIKACHU", "PRESENT"))
-    chk("  기술머신이 있는 알 기술은 떠올리기에 안 넣는다 (기술머신으로 배운다)",
-        not any(mv in set(t["move"] for t in tms.all_tms().values()) for mv in d.get("CHARIZARD").get("remind") or []))
+    # 리자몽 대신 리자드를 본다 - 메가가 있는 종(리자몽)은 1.13.4 부터 레전즈 Z-A 학습표의 기술을 기술머신이 있어도
+    # 떠올리기로 받는다 (그 종이 그 기술머신으로 못 배우는 것만, 사용자 결정 '떠올리기로'). 알 기술 규칙은 그대로다.
+    chk("  기술머신이 있는 알 기술은 떠올리기에 안 넣는다 (기술머신으로 배운다 - 리자드 · 피카츄)",
+        not any(mv in set(t["move"] for t in tms.all_tms().values())
+                for sp in ("CHARMELEON", "PIKACHU") for mv in d.get(sp).get("remind") or []))
     chk("옛 전용기: 무한다이노 무한다이빔 · 비퀸 회복지령 · 나시 구슬던지기 · 텅구리 뼈다귀치기",
         reminds("ETERNATUS", "ETERNABEAM") and reminds("VESPIQUEN", "HEALORDER") and reminds("EXEGGUTOR", "BARRAGE")
         and reminds("MAROWAK", "BONECLUB"))

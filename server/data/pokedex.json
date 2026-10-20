@@ -39507,7 +39507,8 @@
    "num": 3,
    "prevo": 2,
    "remind": [
-    "INGRAIN"
+    "INGRAIN",
+    "SLUDGEWAVE"
    ],
    "spawnable": true,
    "stage": 2,
@@ -39847,7 +39848,11 @@
    "remind": [
     "BELLYDRUM",
     "BITE",
-    "DRAGONRUSH"
+    "DRAGONRUSH",
+    "DUALWINGBEAT",
+    "OMINOUSWIND",
+    "SCALESHOT",
+    "TACKLE"
    ],
    "spawnable": true,
    "stage": 2,
@@ -40218,6 +40223,7 @@
     "AQUAJET",
     "AQUARING",
     "FLAIL",
+    "IRONHEAD",
     "LIFEDEW",
     "MIRRORCOAT",
     "MIST",
@@ -40733,6 +40739,14 @@
    ],
    "num": 15,
    "prevo": 14,
+   "remind": [
+    "BUGBUZZ",
+    "DOUBLEHIT",
+    "DUALWINGBEAT",
+    "ELECTROWEB",
+    "IRONDEFENSE",
+    "LUNGE"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -41076,6 +41090,12 @@
    ],
    "num": 18,
    "prevo": 17,
+   "remind": [
+    "DUALWINGBEAT",
+    "GROWL",
+    "HEATWAVE",
+    "OMINOUSWIND"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -42095,9 +42115,13 @@
    "num": 26,
    "prevo": 25,
    "remind": [
+    "DAZZLINGGLEAM",
+    "DRAINPUNCH",
     "FLAIL",
+    "MAGNETBOMB",
     "PRESENT",
     "TICKLE",
+    "VOLTTACKLE",
     "WISH"
    ],
    "spawnable": true,
@@ -43290,9 +43314,12 @@
    "prevo": 35,
    "remind": [
     "AFTERYOU",
+    "AIRSLASH",
     "COPYCAT",
+    "FAIRYWIND",
     "FOLLOWME",
     "GROWL",
+    "HEALBLOCK",
     "HEALINGWISH",
     "HEALPULSE",
     "MOONLIGHT",
@@ -43300,6 +43327,7 @@
     "PRESENT",
     "SPLASH",
     "SWEETKISS",
+    "TACKLE",
     "TICKLE",
     "WISH"
    ],
@@ -47563,6 +47591,7 @@
     "SWALLOW",
     "SYNTHESIS",
     "TICKLE",
+    "TOXICSPIKES",
     "WORRYSEED"
    ],
    "spawnable": true,
@@ -48710,9 +48739,12 @@
    "num": 80,
    "prevo": 79,
    "remind": [
+    "ANCIENTPOWER",
     "BELCH",
     "BELLYDRUM",
     "BLOCK",
+    "HEALBLOCK",
+    "POWERGEM",
     "STOMP"
    ],
    "spawnable": true,
@@ -50470,7 +50502,10 @@
    "remind": [
     "ASTONISH",
     "CLEARSMOG",
+    "CONFUSION",
     "DISABLE",
+    "OMINOUSWIND",
+    "SHADOWSNEAK",
     "SMOG"
    ],
    "spawnable": true,
@@ -53154,9 +53189,12 @@
    "num": 115,
    "prevo": null,
    "remind": [
+    "COMETPUNCH",
     "CRUSHCLAW",
     "DISABLE",
-    "HAMMERARM"
+    "DUALCHOP",
+    "HAMMERARM",
+    "TACKLE"
    ],
    "spawnable": true,
    "stage": 0,
@@ -53855,6 +53893,21 @@
    ],
    "num": 121,
    "prevo": 120,
+   "remind": [
+    "ANCIENTPOWER",
+    "AQUAJET",
+    "BULKUP",
+    "CHARGEBEAM",
+    "CHILLINGWATER",
+    "FLIPTURN",
+    "HEALBLOCK",
+    "LIQUIDATION",
+    "METEORBEAM",
+    "SAFEGUARD",
+    "SELFDESTRUCT",
+    "TRIPLEAXEL",
+    "ZENHEADBUTT"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -54622,10 +54675,16 @@
    "num": 127,
    "prevo": null,
    "remind": [
+    "AERIALACE",
+    "CIRCLETHROW",
+    "DETECT",
+    "DUALWINGBEAT",
     "FEINT",
     "FLAIL",
     "FURYATTACK",
+    "LUNGE",
     "QUICKATTACK",
+    "TACKLE",
     "THRASH"
    ],
    "spawnable": true,
@@ -54936,6 +54995,9 @@
    ],
    "num": 130,
    "prevo": 129,
+   "remind": [
+    "DRAGONRUSH"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -56475,6 +56537,9 @@
    "num": 142,
    "prevo": null,
    "remind": [
+    "DUALWINGBEAT",
+    "METEORBEAM",
+    "OMINOUSWIND",
     "WIDEGUARD"
    ],
    "spawnable": true,
@@ -57364,8 +57429,12 @@
    "prevo": 148,
    "remind": [
     "AQUAJET",
+    "DUALWINGBEAT",
     "MIST",
-    "SUPERSONIC"
+    "SUPERSONIC",
+    "TACKLE",
+    "VACUUMWAVE",
+    "WHIRLWIND"
    ],
    "spawnable": true,
    "stage": 2,
@@ -57483,6 +57552,12 @@
    ],
    "num": 150,
    "prevo": null,
+   "remind": [
+    "COMETPUNCH",
+    "DISCHARGE",
+    "HEALBLOCK",
+    "VACUUMWAVE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -57943,9 +58018,15 @@
    "num": 154,
    "prevo": 153,
    "remind": [
+    "DAZZLINGGLEAM",
+    "DISARMINGVOICE",
+    "EARTHPOWER",
     "FLAIL",
     "HEALPULSE",
     "INGRAIN",
+    "LEAFAGE",
+    "LEAFBLADE",
+    "TAILWHIP",
     "VINEWHIP"
    ],
    "spawnable": true,
@@ -58688,7 +58769,10 @@
    "remind": [
     "AQUAJET",
     "BLOCK",
-    "FLATTER"
+    "BUBBLEBEAM",
+    "FLATTER",
+    "ICICLESPEAR",
+    "TACKLE"
    ],
    "spawnable": true,
    "stage": 2,
@@ -61258,6 +61342,9 @@
    "prevo": 180,
    "remind": [
     "AFTERYOU",
+    "COMETPUNCH",
+    "DUALCHOP",
+    "FLASHCANNON",
     "FLATTER"
    ],
    "spawnable": true,
@@ -64603,9 +64690,14 @@
    "num": 208,
    "prevo": 95,
    "remind": [
+    "ANCIENTPOWER",
     "BLOCK",
+    "FISSURE",
     "FLAIL",
     "HEADSMASH",
+    "METEORBEAM",
+    "SCORCHINGSANDS",
+    "STEELBEAM",
     "WIDEGUARD"
    ],
    "spawnable": true,
@@ -65110,7 +65202,9 @@
    "num": 212,
    "prevo": 123,
    "remind": [
+    "DUALCHOP",
     "FEINT",
+    "MAGNETBOMB",
     "QUICKGUARD"
    ],
    "spawnable": true,
@@ -65350,9 +65444,14 @@
    "num": 214,
    "prevo": null,
    "remind": [
+    "CIRCLETHROW",
     "FEINT",
     "FLAIL",
-    "HARDEN"
+    "HARDEN",
+    "MUDSHOT",
+    "OUTRAGE",
+    "SILVERWIND",
+    "SKULLBASH"
    ],
    "spawnable": true,
    "stage": 0,
@@ -66930,7 +67029,11 @@
    "num": 227,
    "prevo": null,
    "remind": [
-    "FEINT"
+    "FEINT",
+    "MAGNETBOMB",
+    "RAZORWIND",
+    "SCALESHOT",
+    "SKULLBASH"
    ],
    "spawnable": true,
    "stage": 0,
@@ -67186,7 +67289,8 @@
    "remind": [
     "DESTINYBOND",
     "FEINT",
-    "SUCKERPUNCH"
+    "SUCKERPUNCH",
+    "TACKLE"
    ],
    "spawnable": true,
    "stage": 1,
@@ -69447,6 +69551,8 @@
    "num": 248,
    "prevo": 247,
    "remind": [
+    "SCALESHOT",
+    "SCORCHINGSANDS",
     "STOMP"
    ],
    "spawnable": true,
@@ -70148,10 +70254,13 @@
    "remind": [
     "ABSORB",
     "DOUBLEKICK",
+    "DRAGONRUSH",
+    "DUALCHOP",
     "LEECHSEED",
     "SHEDTAIL",
     "SLASH",
     "SYNTHESIS",
+    "TACKLE",
     "WORRYSEED"
    ],
    "spawnable": true,
@@ -70525,7 +70634,11 @@
    "num": 257,
    "prevo": 256,
    "remind": [
+    "CIRCLETHROW",
+    "COMETPUNCH",
     "CRUSHCLAW",
+    "DRAINPUNCH",
+    "DUALCHOP",
     "EMBER",
     "FEINT",
     "LASTRESORT",
@@ -70906,10 +71019,14 @@
    "num": 260,
    "prevo": 259,
    "remind": [
+    "AQUARING",
     "BITE",
+    "BUBBLEBEAM",
+    "FISSURE",
     "HAMMERARM",
     "MIRRORCOAT",
     "SLUDGE",
+    "SLUDGEBOMB",
     "STOMP",
     "WIDEGUARD",
     "YAWN"
@@ -73500,6 +73617,7 @@
     "DISABLE",
     "MEANLOOK",
     "MEMENTO",
+    "MIMIC",
     "SHADOWSNEAK"
    ],
    "spawnable": true,
@@ -75913,9 +76031,16 @@
    "remind": [
     "FEINT",
     "FLATTER",
+    "HEALBLOCK",
     "METALBURST",
+    "NIGHTSLASH",
+    "OMINOUSWIND",
+    "PARTINGSHOT",
     "RECOVER",
-    "SUCKERPUNCH"
+    "SAFEGUARD",
+    "SHADOWPUNCH",
+    "SUCKERPUNCH",
+    "TACKLE"
    ],
    "spawnable": true,
    "stage": 0,
@@ -76036,8 +76161,15 @@
    "num": 303,
    "prevo": null,
    "remind": [
+    "CHARM",
+    "DAZZLINGGLEAM",
+    "DOUBLEEDGE",
+    "DYNAMICPUNCH",
+    "HEADBUTT",
+    "KNOCKOFF",
     "METALBURST",
     "SLAM",
+    "STEELBEAM",
     "TICKLE"
    ],
    "spawnable": true,
@@ -76430,8 +76562,14 @@
    "num": 306,
    "prevo": 305,
    "remind": [
+    "ANCIENTPOWER",
     "DRAGONRUSH",
     "HEADSMASH",
+    "MAGNETBOMB",
+    "METEORBEAM",
+    "MUDSHOT",
+    "SCORCHINGSANDS",
+    "STEELBEAM",
     "STOMP"
    ],
    "spawnable": true,
@@ -76691,7 +76829,10 @@
    "num": 308,
    "prevo": 307,
    "remind": [
+    "AGILITY",
+    "BLAZEKICK",
     "BULLETPUNCH",
+    "COMETPUNCH",
     "QUICKGUARD"
    ],
    "spawnable": true,
@@ -76924,8 +77065,12 @@
    "num": 310,
    "prevo": 309,
    "remind": [
+    "FLAMECHARGE",
+    "RAZORWIND",
     "SPARK",
-    "SWITCHEROO"
+    "SWITCHEROO",
+    "THUNDERSHOCK",
+    "TRAILBLAZE"
    ],
    "spawnable": true,
    "stage": 1,
@@ -78053,6 +78198,9 @@
    "prevo": 318,
    "remind": [
     "DESTINYBOND",
+    "FLIPTURN",
+    "SCALESHOT",
+    "SKULLBASH",
     "THRASH"
    ],
    "spawnable": true,
@@ -78563,7 +78711,9 @@
    "prevo": 322,
    "remind": [
     "GROWTH",
+    "HEADBUTT",
     "HOWL",
+    "SELFDESTRUCT",
     "SPITUP",
     "STOCKPILE",
     "STOMP",
@@ -79920,7 +80070,10 @@
    "prevo": 333,
    "remind": [
     "ASTONISH",
-    "DRAGONRUSH"
+    "DRAGONRUSH",
+    "PETALDANCE",
+    "SILVERWIND",
+    "TWISTER"
    ],
    "spawnable": true,
    "stage": 1,
@@ -82289,8 +82442,18 @@
    "num": 354,
    "prevo": 353,
    "remind": [
+    "BODYSLAM",
     "DESTINYBOND",
-    "DISABLE"
+    "DISABLE",
+    "HEADBUTT",
+    "HEALBLOCK",
+    "ICICLESPEAR",
+    "LICK",
+    "RAZORWIND",
+    "SHADOWPUNCH",
+    "SLASH",
+    "VACUUMWAVE",
+    "ZENHEADBUTT"
    ],
    "spawnable": true,
    "stage": 1,
@@ -82771,9 +82934,22 @@
    "num": 358,
    "prevo": 433,
    "remind": [
+    "AMNESIA",
+    "BOOMBURST",
     "DISABLE",
+    "FLASHCANNON",
+    "HEALBLOCK",
     "HYPNOSIS",
+    "MAGNETBOMB",
+    "METALSOUND",
+    "METEORBEAM",
+    "OMINOUSWIND",
     "RECOVER",
+    "SCREECH",
+    "SELFDESTRUCT",
+    "SUPERSONIC",
+    "TACKLE",
+    "WATERPULSE",
     "WISH"
    ],
    "spawnable": true,
@@ -82882,9 +83058,14 @@
    "prevo": null,
    "remind": [
     "BITE",
+    "CONFUSERAY",
     "FEINT",
     "MAGICCOAT",
-    "MEANLOOK"
+    "MEANLOOK",
+    "OMINOUSWIND",
+    "PHANTOMFORCE",
+    "RAZORWIND",
+    "SHADOWSNEAK"
    ],
    "spawnable": true,
    "stage": 0,
@@ -83237,6 +83418,8 @@
     "BLOCK",
     "DISABLE",
     "ICICLECRASH",
+    "OMINOUSWIND",
+    "SKULLBASH",
     "SWITCHEROO"
    ],
    "spawnable": true,
@@ -84598,6 +84781,9 @@
    "prevo": 372,
    "remind": [
     "DRAGONRUSH",
+    "FLAMECHARGE",
+    "SCALESHOT",
+    "SKULLBASH",
     "THRASH",
     "TWISTER"
    ],
@@ -84897,6 +85083,13 @@
    ],
    "num": 376,
    "prevo": 375,
+   "remind": [
+    "COMETPUNCH",
+    "HEADBUTT",
+    "MAGNETBOMB",
+    "SHADOWPUNCH",
+    "SKULLBASH"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -85354,6 +85547,10 @@
    ],
    "num": 380,
    "prevo": null,
+   "remind": [
+    "PSYBEAM",
+    "RAZORWIND"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -85470,6 +85667,14 @@
    ],
    "num": 381,
    "prevo": null,
+   "remind": [
+    "HEALBLOCK",
+    "PSYBEAM",
+    "RAZORWIND",
+    "TWISTER",
+    "WISH",
+    "WORKUP"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -85796,6 +86001,10 @@
    ],
    "num": 384,
    "prevo": null,
+   "remind": [
+    "DRAGONRUSH",
+    "WHIRLWIND"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -87419,8 +87628,23 @@
    "prevo": 397,
    "remind": [
     "ASTONISH",
+    "BLAZEKICK",
+    "BRICKBREAK",
+    "BULKUP",
+    "FOCUSBLAST",
     "FURYATTACK",
-    "SANDATTACK"
+    "GUST",
+    "KNOCKOFF",
+    "LOWSWEEP",
+    "OMINOUSWIND",
+    "OUTRAGE",
+    "PECK",
+    "RAZORWIND",
+    "SANDATTACK",
+    "SKULLBASH",
+    "SKYATTACK",
+    "TORMENT",
+    "VACUUMWAVE"
    ],
    "spawnable": true,
    "stage": 2,
@@ -91041,11 +91265,17 @@
    "num": 428,
    "prevo": 427,
    "remind": [
+    "COMETPUNCH",
     "COPYCAT",
+    "COTTONGUARD",
+    "DYNAMICPUNCH",
     "FLAIL",
     "SWEETKISS",
     "SWITCHEROO",
-    "TEETERDANCE"
+    "SWORDSDANCE",
+    "TACKLE",
+    "TEETERDANCE",
+    "TRIPLEAXEL"
    ],
    "spawnable": true,
    "stage": 1,
@@ -93055,8 +93285,11 @@
    "num": 445,
    "prevo": 444,
    "remind": [
+    "NASTYPLOT",
+    "RAZORWIND",
     "THRASH",
-    "TWISTER"
+    "TWISTER",
+    "VACUUMWAVE"
    ],
    "spawnable": true,
    "stage": 2,
@@ -93479,6 +93712,7 @@
     "BITE",
     "BULLETPUNCH",
     "CROSSCHOP",
+    "DUALCHOP",
     "HIGHJUMPKICK",
     "HOWL"
    ],
@@ -94990,6 +95224,7 @@
    "prevo": 459,
    "remind": [
     "GROWTH",
+    "ICEHAMMER",
     "LEECHSEED",
     "STOMP"
    ],
@@ -97023,10 +97258,14 @@
    "num": 475,
    "prevo": 281,
    "remind": [
+    "COMETPUNCH",
     "DESTINYBOND",
     "DISABLE",
+    "DUALCHOP",
     "MEANLOOK",
     "MEMENTO",
+    "METRONOME",
+    "RAZORWIND",
     "SHADOWSNEAK"
    ],
    "spawnable": true,
@@ -97439,8 +97678,14 @@
    "remind": [
     "BLOCK",
     "DISABLE",
+    "HEALBLOCK",
     "ICICLECRASH",
-    "SWITCHEROO"
+    "NASTYPLOT",
+    "PETALDANCE",
+    "PHANTOMFORCE",
+    "SHEERCOLD",
+    "SWITCHEROO",
+    "TRAILBLAZE"
    ],
    "spawnable": true,
    "stage": 1,
@@ -98179,6 +98424,9 @@
    ],
    "num": 485,
    "prevo": null,
+   "remind": [
+    "FIRSTIMPRESSION"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -98805,6 +99053,20 @@
    ],
    "num": 491,
    "prevo": null,
+   "remind": [
+    "BRUTALSWING",
+    "CONFUSION",
+    "CRUNCH",
+    "FUTURESIGHT",
+    "ICICLESPEAR",
+    "OMINOUSWIND",
+    "PHANTOMFORCE",
+    "PSYBEAM",
+    "RAZORWIND",
+    "SHADOWPUNCH",
+    "SHADOWSNEAK",
+    "VACUUMWAVE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -99853,9 +100115,19 @@
    "num": 500,
    "prevo": 499,
    "remind": [
+    "CIRCLETHROW",
+    "COMETPUNCH",
+    "DUALCHOP",
+    "FLAMEWHEEL",
+    "FOCUSENERGY",
     "HAMMERARM",
+    "HEADBUTT",
+    "SMOKESCREEN",
+    "SOLARBLADE",
+    "STORMTHROW",
     "SUCKERPUNCH",
     "THRASH",
+    "VACUUMWAVE",
     "YAWN"
    ],
    "spawnable": true,
@@ -103352,7 +103624,11 @@
    "num": 530,
    "prevo": 529,
    "remind": [
-    "SLASH"
+    "AGILITY",
+    "LEER",
+    "MEGAHORN",
+    "SLASH",
+    "TACKLE"
    ],
    "spawnable": true,
    "stage": 1,
@@ -103478,6 +103754,8 @@
    "remind": [
     "HEALINGWISH",
     "SWEETKISS",
+    "TACKLE",
+    "TRIATTACK",
     "WISH",
     "YAWN"
    ],
@@ -105074,8 +105352,17 @@
    "num": 545,
    "prevo": 544,
    "remind": [
+    "ACIDSPRAY",
     "BITE",
-    "STEELROLLER"
+    "DOUBLEHIT",
+    "FIRSTIMPRESSION",
+    "GUNKSHOT",
+    "LEER",
+    "MORTALSPIN",
+    "SKULLBASH",
+    "STEELROLLER",
+    "TRAILBLAZE",
+    "UTURN"
    ],
    "spawnable": true,
    "stage": 2,
@@ -106959,7 +107246,12 @@
    "num": 560,
    "prevo": 559,
    "remind": [
-    "QUICKGUARD"
+    "DUALCHOP",
+    "DYNAMICPUNCH",
+    "PARTINGSHOT",
+    "QUICKGUARD",
+    "SKULLBASH",
+    "TACKLE"
    ],
    "spawnable": true,
    "stage": 1,
@@ -112179,6 +112471,13 @@
    ],
    "num": 604,
    "prevo": 603,
+   "remind": [
+    "COMETPUNCH",
+    "MUDDYWATER",
+    "POISONFANG",
+    "PSYCHICFANGS",
+    "WATERFALL"
+   ],
    "spawnable": true,
    "stage": 2,
    "types": [
@@ -112787,8 +113086,13 @@
    "prevo": 608,
    "remind": [
     "ACIDARMOR",
+    "ACIDSPRAY",
     "CLEARSMOG",
-    "POWERSPLIT"
+    "FLAMEWHEEL",
+    "HEALBLOCK",
+    "OMINOUSWIND",
+    "POWERSPLIT",
+    "SMOKESCREEN"
    ],
    "spawnable": true,
    "stage": 2,
@@ -114553,6 +114857,17 @@
    ],
    "num": 623,
    "prevo": 622,
+   "remind": [
+    "COMETPUNCH",
+    "FISSURE",
+    "HARDEN",
+    "IRONHEAD",
+    "MAGNETBOMB",
+    "MUDSHOT",
+    "ROLLOUT",
+    "SKULLBASH",
+    "TACKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [
@@ -118024,7 +118339,12 @@
    "prevo": 651,
    "remind": [
     "BELLYDRUM",
+    "DUALCHOP",
+    "GROWTH",
+    "HEADBUTT",
     "QUICKGUARD",
+    "SKULLBASH",
+    "SOLARBLADE",
     "SYNTHESIS",
     "WIDEGUARD"
    ],
@@ -118405,8 +118725,14 @@
    "num": 655,
    "prevo": 654,
    "remind": [
+    "CHARGEBEAM",
     "COPYCAT",
+    "HEALBLOCK",
     "HYPNOSIS",
+    "OMINOUSWIND",
+    "RAZORWIND",
+    "SILVERWIND",
+    "TACKLE",
     "WISH"
    ],
    "spawnable": true,
@@ -118770,7 +119096,15 @@
    "num": 658,
    "prevo": 657,
    "remind": [
-    "SWITCHEROO"
+    "BUBBLEBEAM",
+    "FLIPTURN",
+    "HEADBUTT",
+    "NASTYPLOT",
+    "PSYSHOCK",
+    "RAZORWIND",
+    "SWITCHEROO",
+    "TACKLE",
+    "VACUUMWAVE"
    ],
    "spawnable": true,
    "stage": 2,
@@ -119860,6 +120194,7 @@
    "num": 668,
    "prevo": 667,
    "remind": [
+    "EARTHPOWER",
     "ENTRAINMENT",
     "YAWN"
    ],
@@ -120100,6 +120435,9 @@
    "prevo": 669,
    "remind": [
     "COPYCAT",
+    "OMINOUSWIND",
+    "SILVERWIND",
+    "SOLARBLADE",
     "TEARFULLOOK"
    ],
    "spawnable": true,
@@ -121030,7 +121368,18 @@
    "num": 678,
    "prevo": 677,
    "remind": [
+    "HEALBLOCK",
+    "MOONBLAST",
+    "OMINOUSWIND",
+    "SPIKES",
+    "STEALTHROCK",
+    "TACKLE",
+    "TAUNT",
+    "TELEPORT",
     "TICKLE",
+    "TOXICSPIKES",
+    "TRIATTACK",
+    "WISH",
     "YAWN"
    ],
    "spawnable": true,
@@ -122137,8 +122486,20 @@
    "prevo": 686,
    "remind": [
     "ACUPRESSURE",
+    "BULKUP",
+    "CIRCLETHROW",
+    "CLOSECOMBAT",
+    "COMETPUNCH",
     "DESTINYBOND",
-    "DISABLE"
+    "DISABLE",
+    "DOUBLEHIT",
+    "HEADBUTT",
+    "HEALBLOCK",
+    "MIMIC",
+    "OCTOLOCK",
+    "POISONJAB",
+    "STEALTHROCK",
+    "ZENHEADBUTT"
    ],
    "spawnable": true,
    "stage": 1,
@@ -122371,8 +122732,15 @@
    "num": 689,
    "prevo": 688,
    "remind": [
+    "BUBBLEBEAM",
+    "CLOSECOMBAT",
+    "COMETPUNCH",
+    "DOUBLEHIT",
+    "DUALCHOP",
+    "ROCKTHROW",
     "SANDATTACK",
-    "SWITCHEROO"
+    "SWITCHEROO",
+    "WATERFALL"
    ],
    "spawnable": true,
    "stage": 1,
@@ -122607,7 +122975,9 @@
    "num": 691,
    "prevo": 690,
    "remind": [
-    "ACIDARMOR"
+    "ACIDARMOR",
+    "BUBBLEBEAM",
+    "POISONJAB"
    ],
    "spawnable": true,
    "stage": 1,
@@ -123834,11 +124204,15 @@
    "num": 701,
    "prevo": null,
    "remind": [
+    "AIRSLASH",
+    "COMETPUNCH",
     "CROSSCHOP",
+    "DUALCHOP",
     "ENTRAINMENT",
     "FEINT",
     "MEANLOOK",
-    "QUICKGUARD"
+    "QUICKGUARD",
+    "SKULLBASH"
    ],
    "spawnable": true,
    "stage": 0,
@@ -125919,6 +126293,15 @@
    ],
    "num": 718,
    "prevo": null,
+   "remind": [
+    "EXTREMESPEED",
+    "FISSURE",
+    "IRONHEAD",
+    "MAGNETBOMB",
+    "POISONFANG",
+    "PSYCHICFANGS",
+    "TRIATTACK"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -126031,6 +126414,11 @@
    ],
    "num": 719,
    "prevo": null,
+   "remind": [
+    "MAGNETBOMB",
+    "ROCKTHROW",
+    "SILVERWIND"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -128476,6 +128864,14 @@
    "num": 740,
    "prevo": 739,
    "remind": [
+    "COMETPUNCH",
+    "FIRSTIMPRESSION",
+    "HARDEN",
+    "ICICLESPEAR",
+    "MACHPUNCH",
+    "SHEERCOLD",
+    "TAUNT",
+    "TORMENT",
     "WIDEGUARD"
    ],
    "spawnable": true,
@@ -131679,8 +132075,14 @@
    "num": 768,
    "prevo": 767,
    "remind": [
+    "AGILITY",
     "AQUAJET",
+    "DOUBLEHIT",
+    "DUALCHOP",
+    "GUNKSHOT",
     "HARDEN",
+    "NIGHTSLASH",
+    "UTURN",
     "WIDEGUARD"
    ],
    "spawnable": true,
@@ -133063,9 +133465,15 @@
    "num": 780,
    "prevo": null,
    "remind": [
+    "BODYSLAM",
+    "CHARGEBEAM",
     "DRAGONRUSH",
+    "EARTHPOWER",
+    "LEER",
     "MIST",
-    "TICKLE"
+    "TICKLE",
+    "TRIATTACK",
+    "WHIRLWIND"
    ],
    "spawnable": true,
    "stage": 0,
@@ -135479,6 +135887,14 @@
    ],
    "num": 801,
    "prevo": null,
+   "remind": [
+    "MAGNETBOMB",
+    "PETALDANCE",
+    "POWERGEM",
+    "SKULLBASH",
+    "SOLARBLADE",
+    "VACUUMWAVE"
+   ],
    "spawnable": false,
    "stage": 0,
    "types": [
@@ -136199,7 +136615,11 @@
    "num": 807,
    "prevo": null,
    "remind": [
-    "RISINGVOLTAGE"
+    "COMETPUNCH",
+    "DYNAMICPUNCH",
+    "RAZORWIND",
+    "RISINGVOLTAGE",
+    "VACUUMWAVE"
    ],
    "spawnable": false,
    "stage": 0,
@@ -143254,6 +143674,14 @@
    ],
    "num": 870,
    "prevo": null,
+   "remind": [
+    "COMETPUNCH",
+    "DOUBLEHIT",
+    "FAKEOUT",
+    "LOWSWEEP",
+    "SEEDBOMB",
+    "SKULLBASH"
+   ],
    "spawnable": true,
    "stage": 0,
    "types": [
@@ -152898,9 +153326,16 @@
    "num": 952,
    "prevo": 951,
    "remind": [
+    "DOUBLEHIT",
+    "FIRESPIN",
+    "FLAREBLITZ",
     "INGRAIN",
     "LEECHSEED",
-    "RAGEPOWDER"
+    "NASTYPLOT",
+    "OUTRAGE",
+    "RAGEPOWDER",
+    "SWAGGER",
+    "THUNDERFANG"
    ],
    "spawnable": true,
    "stage": 1,
@@ -155024,6 +155459,7 @@
    "num": 970,
    "prevo": 969,
    "remind": [
+    "MAGNETBOMB",
     "MEMENTO"
    ],
    "spawnable": true,
@@ -155970,7 +156406,19 @@
    "num": 978,
    "prevo": null,
    "remind": [
-    "RAPIDSPIN"
+    "ANCIENTPOWER",
+    "CALMMIND",
+    "DARKPULSE",
+    "DRAGONRUSH",
+    "FLIPTURN",
+    "ICEBEAM",
+    "MIMIC",
+    "MUDSHOT",
+    "RAPIDSPIN",
+    "RAZORWIND",
+    "SCALD",
+    "TRIPLEAXEL",
+    "WATERFALL"
    ],
    "spawnable": true,
    "stage": 0,
@@ -158381,7 +158829,11 @@
    "remind": [
     "AQUATAIL",
     "DRAGONRUSH",
-    "FREEZEDRY"
+    "FREEZEDRY",
+    "FROSTBREATH",
+    "ICEHAMMER",
+    "PSYCHICFANGS",
+    "SHEERCOLD"
    ],
    "spawnable": true,
    "stage": 2,
