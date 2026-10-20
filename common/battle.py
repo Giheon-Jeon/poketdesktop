@@ -883,6 +883,8 @@ class Battle(object):
             return STRUGGLE
         if user.held:
             pool = H.lock_pool(user, pool)      # 구애 도구는 처음 쓴 기술만
+            # 아직 안 묶였으면 변화기는 안 고른다 - 칼춤에 묶여 칼춤만 썼다 (게시판 #284)
+            pool = H.choice_pool(user, pool, lambda k: MC.attacks(self.move_of(k)))
 
         if ai == "wild":
             # 위력이 있는 기술 쪽으로 살짝만 기울인 무작위

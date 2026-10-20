@@ -254,6 +254,25 @@ def _won(n):
     return "{:,}".format(int(n))
 
 
+def form_move(r, d=None):
+    """지금 모습이 바뀔 때 배우는 기술과 그 모습의 이름 (워시로토무 -> 하이드로펌프). 없으면 (None, None).
+
+    로토무는 모습을 바꿀 때 그 모습의 기술을 공짜로 배운다 (item_routes._rotom_moves). 기술 칸이 차 있으면
+    '배우겠습니까' 를 묻는데, 거기서 안 배우면 떠올리기에도 기술머신에도 없어서 되찾을 길이 없었다 (게시판
+    #279, 1.13.2). 그래서 떠올리기 목록에 **무료로** 넣는다 - 모습을 다시 바꾸면 어차피 공짜로 배우는 기술이다.
+    기술머신은 그대로 둔다 - 본가에서도 이 기술들은 모습을 바꿀 때만 배운다(PokeAPI 'form-change').
+    """
+    d = d or deps.dex()
+    try:
+        f = d.form_for(db.row_to_mon(r)) if hasattr(d, "form_for") else None
+    except Exception:                                       # noqa: BLE001
+        return None, None
+    sig = ((f or {}).get("formMoves") or {}).get("sig")
+    if not sig or d.move(sig) is None:
+        return None, None
+    return sig, f.get("formKr")
+
+
 def rememberable(r, sp, d=None):
     """떠올릴 수 있는 기술. [(기술, 레벨)] 을 레벨 순으로.
 
@@ -281,6 +300,9 @@ def rememberable(r, sp, d=None):
     except Exception:                                       # noqa: BLE001
         pass
     learn = list((sp or {}).get("moves", [])) + [(1, mv) for mv in (sp or {}).get("remind") or []]
+    sig, _fk = form_move(r, d)
+    if sig:
+        learn.append((1, sig))
     for lv, mv in learn:
         if lv > level or mv in known or d.move(mv) is None:
             continue
@@ -304,9 +326,13 @@ def remember_list(pid: int, me=Depends(deps.current)):
         raise HTTPException(404, "그런 종이 없습니다.")
     d = deps.dex()
     pending = set(_pending_of(r))
-    out = [{"move": mv, "kr": d.move_name(mv), "level": lv,
-            "free": mv in pending}
-           for mv, lv in rememberable(r, sp, d)]
+    sig, form_kr = form_move(r, d)
+    out = []
+    for mv, lv in rememberable(r, sp, d):
+        e = {"move": mv, "kr": d.move_name(mv), "level": lv, "free": mv in pending or mv == sig}
+        if mv == sig:
+            e["form"] = form_kr             # 화면이 'Lv.1' 대신 '워시로토무' 라고 적는다 (옛 화면은 Lv.1 · 무료)
+        out.append(e)
     return {"pokemon": pid, "name": r["nickname"] or sp["kr"],
             "moves": json.loads(r["moves"]), "remember": out,
             "cost": config.REMEMBER_COST, "money": items.money(uid)}
@@ -339,7 +365,7 @@ def remember(body: RememberIn, me=Depends(deps.current)):
         raise HTTPException(400, korean.natural(
             "%s은(는) %s을(를) 떠올릴 수 없습니다." % (name, kr)))
 
-    cost = 0 if body.move in pending else config.REMEMBER_COST
+    cost = 0 if body.move in pending or body.move == form_move(r, d)[0] else config.REMEMBER_COST
     have = items.money(uid)
     if cost > have:
         raise HTTPException(400, "골드가 부족합니다. %s원이 필요한데 %s원 있습니다."

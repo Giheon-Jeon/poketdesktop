@@ -516,6 +516,9 @@ class FightScene(object):
         first = self.fight is None
         self.fight = fight
         events = [e for e in (fight.get("events") or []) if isinstance(e, dict)] if replay else []
+        if events:
+            from . import battle_fx as FX
+            FX.annotate(events)               # 기술마다 다음 '맞음' 의 급소 · 효과 (연출의 세기, 1.13.2)
         if first and not events:
             self._sync(now)                  # 이미 진행 중인 판에 뒤늦게 들어왔다
         else:
@@ -862,7 +865,7 @@ class FightScene(object):
             self.fx_done = True
         try:
             self.fx = FX.Effect(_Stage(self), self.pane.find_move(ev), self.center(who), self.center(other),
-                                done, who=who)
+                                done, who=who, ev=ev)
             self.fx_until = now + FX_CAP_S
             self.fx.play()
             return True

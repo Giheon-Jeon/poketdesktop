@@ -115,6 +115,29 @@ def main():
     r = row(full)
     chk("기술 칸이 차 있으면 배우려고 기다린다", "LEAFSTORM" in json.loads(r["pending"]), r["pending"])
 
+    print("== 안 배운 폼 기술은 떠올리기로 되찾는다 (1.13.2, 게시판 #279)")
+    # 워시로토무로 바꿨는데 기술 칸이 차 있어서 '하이드로펌프를 배우겠습니까' 가 떴고, 실수로 안 배웠다. 그러면
+    # 떠올리기에도 기술머신에도 안 떠서 되찾을 길이 없었다 (기술머신은 본가에서도 못 배운다 - 모습을 바꿀 때만).
+    from app import tm_routes as TR
+    me = {"user": {"id": uid}}
+    TR.learn(TR.LearnIn(pokemon=full, move="LEAFSTORM", skip=True), me)
+    chk("안 배우면 기다리던 것에서 빠진다", "LEAFSTORM" not in json.loads(row(full)["pending"]), row(full)["pending"])
+    got = {e["move"]: e for e in TR.remember_list(full, me)["remember"]}
+    chk("커트로토무: 떠올리기 목록에 리프스톰이 무료로 뜬다", (got.get("LEAFSTORM") or {}).get("free") is True,
+        got.get("LEAFSTORM"))
+    chk("  어느 모습의 기술인지 적는다", (got.get("LEAFSTORM") or {}).get("form") == "커트로토무", got.get("LEAFSTORM"))
+    chk("  다른 모습의 기술은 안 뜬다", not any(k in got for k in IR.ROTOM_SIGS if k != "LEAFSTORM"), sorted(got))
+    out = TR.remember(TR.RememberIn(pokemon=full, move="LEAFSTORM", forget="WILLOWISP"), me)
+    mv = json.loads(row(full)["moves"])
+    chk("  돈 없이 떠올린다 (가진 돈 0원)", out.get("ok") and out.get("cost") == 0 and "LEAFSTORM" in mv
+        and "WILLOWISP" not in mv, (out, mv))
+    chk("  알고 나면 목록에서 빠진다", "LEAFSTORM" not in [e["move"] for e in TR.remember_list(full, me)["remember"]])
+    names = [e["move"] for e in TR.remember_list(ro, me)["remember"]]
+    chk("원래 모습 로토무에게는 폼 기술이 안 뜬다", not any(k in names for k in IR.ROTOM_SIGS), names)
+    plain = {e["move"]: e for e in TR.remember_list(mkmon(uid, "PIKACHU", ["THUNDERSHOCK"], level=30), me)["remember"]}
+    chk("폼이 없는 포켓몬은 예전 그대로 (값을 받고, 폼 표시 없음)",
+        plain and not any(e.get("free") or e.get("form") for e in plain.values()), list(plain.values())[:2])
+
     print("== 꽃꿀")
     ori = mkmon(uid, "ORICORIO")
     use(uid, "PINKNECTAR", ori)

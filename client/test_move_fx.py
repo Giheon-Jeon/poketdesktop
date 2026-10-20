@@ -68,7 +68,7 @@ class StrictCanvas(PV.FakeCanvas):
     itemconfig = itemconfigure
 
 
-def run(move, flip=False, flat=False, cv=None, wrap=None, stop_at=None, more_ms=0):
+def run(move, flip=False, flat=False, cv=None, wrap=None, stop_at=None, more_ms=0, ev=None):
     """연출 하나를 돌린다. (stage, fx, 끝난 횟수, 걸린 ms) 를 돌려준다."""
     me, foe = (PV.FLAT_ME, PV.FLAT_FOE) if flat else (PV.ME, PV.FOE)
     stage = PV.FakeStage(cv=cv or StrictCanvas(), me=me, foe=foe)
@@ -79,7 +79,7 @@ def run(move, flip=False, flat=False, cv=None, wrap=None, stop_at=None, more_ms=
     k = getattr(stage.cv, "k", 1.0)
     done = []
     fx = FX.Effect(stage, move, (src[0] / k, src[1] / k), (dst[0] / k, dst[1] / k),
-                   lambda: done.append(stage.root.now), who="foe" if flip else "me")
+                   lambda: done.append(stage.root.now), who="foe" if flip else "me", ev=ev)
     fx.play()
     stage.stopped = False
     while stage.root.now < LIMIT_MS + 600 and not done:
@@ -198,6 +198,44 @@ def main():
     chk("접촉기는 달려든다 (한 번)", st.lunges == 1, st.lunges)
     st, fx, n, took = run(kr("문포스"))
     chk("닿지 않는 기술은 안 달려든다", st.lunges == 0, st.lunges)
+
+    print("\n=== 2-1. 맞는 순간의 세기 · 컷인 (1.13.2) ===")
+    evs = [{"t": "move", "move": "10만볼트"}, {"t": "hit", "eff": 2.0, "crit": False},
+           {"t": "move", "move": "물대포"}, {"t": "hit", "eff": 0.5}, {"t": "hit", "eff": 1.0, "crit": True},
+           {"t": "move", "move": "칼춤"}, {"t": "msg"}]
+    FX.annotate(evs)
+    chk("annotate: 기술마다 다음 '맞음' 의 효과 · 급소 (여러 번이면 가장 센 것 · 한 번이라도 급소)",
+        evs[0]["_hit"] == {"crit": False, "eff": 2.0} and evs[2]["_hit"] == {"crit": True, "eff": 1.0}
+        and "_hit" not in evs[5], [e.get("_hit") for e in evs])
+    fx = FX.Effect(PV.FakeStage(), kr("10만볼트"), PV.ME, PV.FOE, None, ev=evs[0])
+    chk("  연출이 그걸 받는다", fx.eff == 2.0 and not fx.crit and not fx.zmove, (fx.eff, fx.crit, fx.zmove))
+    plain = FX.Effect(PV.FakeStage(), kr("10만볼트"), PV.ME, PV.FOE, None)
+    chk("  모르면 보통 (효과 1 · 급소 아님)", plain.eff == 1.0 and not plain.crit)
+    cut = lambda name, **kw: MF.wants_cutin(FX.Effect(PV.FakeStage(), kr(name), PV.ME, PV.FOE, None, **kw))  # noqa: E731
+    chk("컷인: 위력 %d 이상 공격기 (파괴광선 · 오버히트)" % MF.CUTIN_POWER, cut("파괴광선") and cut("오버히트"))
+    chk("  인파이트(120) · 10만볼트(90) · 변화기는 안 띄운다", not cut("인파이트") and not cut("10만볼트") and not cut("칼춤"))
+    chk("  Z기술은 늘", cut("전광석화", ev={"t": "move", "move": "울트라대시어택", "z": True}))
+    seen = set()
+    PV.play(kr("파괴광선"), flat=True,
+            on_frame=lambda stg: seen.update(o[2].get("text") for o in stg.cv.items.values() if o[0] == "text"))
+    chk("  컷인 띠에 기술 이름이 뜬다", "파괴광선" in seen, seen)
+    st, fx, n, took = run(kr("파괴광선"), flat=True, more_ms=400)
+    chk("  컷인이 있어도 끝까지 가고 찌꺼기가 없다", n == 1 and not st.raw.items, (n, len(st.raw.items)))
+    heavy, slow2 = [], []
+    for m in moves:
+        hint = {"t": "move", "move": m.get("kr"), "z": True, "_hit": {"crit": True, "eff": 2.0}}
+        try:
+            st, fx, n, took = run(m, ev=hint, more_ms=400)
+        except Exception as e:                               # noqa: BLE001
+            heavy.append((m["kr"], "%s: %s" % (type(e).__name__, e)))
+            continue
+        if n != 1 or st.raw.items or st.raw.peak > PEAK_MAX:
+            heavy.append((m["kr"], fx.style, n, len(st.raw.items), st.raw.peak))
+        if took > LIMIT_MS:
+            slow2.append((m["kr"], fx.style, took))
+    chk("가장 무겁게 (효과가 굉장하다 + 급소 + 컷인) 돌려도 끝까지 · 찌꺼기 없이 · 도형 %d개 안" % PEAK_MAX,
+        not heavy, heavy[:5])
+    chk("  %dms 안에 끝난다" % LIMIT_MS, not slow2, slow2[:5])
 
     print("\n=== 3. 중간에 멈춘다 ===")
     bad, cut = [], 0

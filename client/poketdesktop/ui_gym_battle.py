@@ -558,7 +558,7 @@ class GymBattleWindow(Z.Resizable):
             k = FX_SCALE * Z.K
             (sx, sy), (tx, ty) = self._center(who), self._center(other)
             self.fx = FX.Effect(_FxStage(self, k), self._find_move(ev), (sx / k, sy / k), (tx / k, ty / k),
-                                done, who=who)
+                                done, who=who, ev=ev)
             # 안전 타이머가 먼저 다음으로 넘기면 self.fx 는 비지만 연출은 아직 돈다.
             # 참조를 따로 들고 있어야 창을 닫을 때 멈출 수 있다 (안 멈추면 없어진
             # 캔버스를 지우려다 TclError 가 난다).
@@ -694,7 +694,7 @@ class GymBattleWindow(Z.Resizable):
     def play(self, events, data):
         self.busy = True
         self.hide_commands()
-        self.queue = list(events)
+        self.queue = FX.annotate(list(events))  # 기술마다 다음 '맞음' 의 급소 · 효과를 달아 둔다 (연출이 세기를 정한다, 1.13.2)
         self._pending_data = data
         self._next()
 

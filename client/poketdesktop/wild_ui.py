@@ -14,6 +14,8 @@ import random
 import time
 import tkinter as tk
 
+from common.korean import natural
+
 from . import ball_menu, config, effects, item_icons, sprite_cache, sprites
 from . import platform_os as PLAT
 from . import shiny_fx, walk_cache
@@ -949,6 +951,9 @@ class WildController(object):
         start = (x2 - 30, y2 - 10)
         target = (pet.x + pet.fw // 2, pet.y + pet.fh // 2)
 
+        # 볼이 떨어지는 자리 (야생 가운데 위). 잡았으면 여기에 '○○을 잡았다!' 를 띄운다 - 야생은 치우고 나서다.
+        spot = (pet.x + pet.fw / 2.0, pet.y - 6)
+
         def after():
             self.throwing = False
             if r.get("caught"):
@@ -962,6 +967,13 @@ class WildController(object):
                 if msgs:
                     text += "  " + " ".join(msgs)
                 self.app.notify(text)
+                # **잡았다고 화면에 적는다** (1.13.2, 게시판 #266 레드 36세). notify 는 화면에 안 뜨고 볼은 0.4초
+                # 반짝이고 사라져서, 잡혔는지 알 길이 없었다.
+                kr = info.get("species")
+                float_at = getattr(self.app, "float_at", None)
+                if float_at is not None:
+                    float_at(spot[0], spot[1], natural("%s을(를) 잡았다!" % kr) if kr else "잡았다!", "#ffd447",
+                             ms=1500)
                 got_tm = getattr(self.app, "got_tm", None)
                 if r.get("tmDrop") and got_tm:
                     got_tm()                 # 가방 탭에 새 기술머신 점 (1.11.0)

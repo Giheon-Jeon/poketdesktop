@@ -550,7 +550,7 @@ class RaidBattleWindow(Z.Resizable):
             (sx, sy), (tx, ty) = self._center(src), self._center(dst)
             self.fx = FX.Effect(_FxStage(self, k), self._find_move(ev),
                                 (sx / k, sy / k), (tx / k, ty / k), done,
-                                who="me" if src != BOSS else "foe")
+                                who="me" if src != BOSS else "foe", ev=ev)
             self.effects = [e for e in self.effects if not e.dead] + [self.fx]
             self.later(2400, done)
             self.fx.play()
@@ -570,7 +570,7 @@ class RaidBattleWindow(Z.Resizable):
     def play(self, events, data):
         self.busy = True
         self.hide_commands()
-        self.queue = list(events)
+        self.queue = FX.annotate(list(events))  # 기술마다 다음 '맞음' 의 급소 · 효과를 달아 둔다 (연출이 세기를 정한다, 1.13.2)
         self._pending = data
         self._next()
 

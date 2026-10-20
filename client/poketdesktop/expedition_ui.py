@@ -20,6 +20,7 @@ from common.korean import natural
 
 from . import config, effects
 from . import platform_os as PLAT
+from .fx_layer import screen_origin
 from . import ui_common as U
 from .ui_common import run_async
 
@@ -91,7 +92,9 @@ class Bundle(object):
             tk.Label(w, text=text, bg=U.TIP_BG, fg=U.GOOD, font=U.FONT_TIP, justify="center",
                      padx=7, pady=3).pack()
             w.update_idletasks()
-            w.geometry("+%d+%d" % (max(0, self.x + self.fw // 2 - w.winfo_width() // 2),
+            # 0 이 아니라 모니터 전부의 왼쪽 끝에서 자른다 - 왼쪽 모니터의 보따리 글이 주 화면으로 튀지 않게 (#268)
+            vx, _vy = screen_origin(self.desk.app.root)
+            w.geometry("+%d+%d" % (max(vx, self.x + self.fw // 2 - w.winfo_width() // 2),
                                    self.y - w.winfo_height() - 4))
             PLAT.raise_above(w)
             self.hint = w

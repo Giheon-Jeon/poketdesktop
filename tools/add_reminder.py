@@ -12,6 +12,11 @@
 **무엇을 넣나:** 알을 낳지 못하는 종(알 그룹 no-eggs) 가운데 **아기 포켓몬이 아닌 것**의 SV 알 기술 전부.
 아기 포켓몬(피츄 · 리오르 …)의 알 기술은 본가에서도 진화형의 교배로 물려받는 진짜 알 기술이라 넣지 않는다.
 
+**손으로 넣는 것 (MANUAL):** 본가에서도 교배로만 배우는데, 이 게임에서는 그 기술이 있어야 쓰는 것이 있어서
+빠지면 안 되는 기술. 피카츄의 볼트태클이 그렇다 - 피카츄Z(필살피카슛)의 바탕 기술이다 (2026-10-19 게시판 #277).
+기술이 있어야 쓰는 것(전용 Z크리스탈 · 기술 메가진화 · 기술 폼 · 기술 진화)은 server/test_move_needs.py 가 이
+게임에서 배울 수 있는지 본다 - 못 배우는 것이 생기면 그 검사가 떨어지고, 여기에 넣으면 된다.
+
 레벨업 표(moves)에는 넣지 않는다 - 거기 넣으면 새로 생기는 포켓몬(알 · 레이드 · 악당 전설)의 처음 기술이
 바뀐다. 기술 떠올리기(server/app/tm_routes.rememberable)만 이 칸을 본다.
 
@@ -36,6 +41,14 @@ def _rows(name):
         return list(csv.DictReader(f))
 
 
+# {종 내부 이름: [기술, ...]} - 위의 '손으로 넣는 것'.
+MANUAL = {
+    # 볼트태클: 본가에서는 전기구슬을 지닌 피카츄 · 라이츄로 교배한 피츄만 배우는 특별한 알 기술이다.
+    # 교배도 볼트태클 기술머신도 없는 이 게임에서는 어디서도 못 배워서, 상점에서 파는 피카츄Z 를 쓸 수 없었다.
+    "PIKACHU": ["VOLTTACKLE"],
+}
+
+
 def key(ident):
     return re.sub(r"[^A-Za-z0-9]", "", ident).upper()
 
@@ -58,6 +71,14 @@ def build(dex):
         lst = out.setdefault(sp["internal"], [])
         if mv not in lst:
             lst.append(mv)
+    names = set(s["internal"] for s in dex["species"])
+    for sp, mvs in MANUAL.items():
+        if sp not in names:
+            continue
+        lst = out.setdefault(sp, [])
+        for mv in mvs:
+            if mv in dex["moves"] and mv not in lst:
+                lst.append(mv)
     return dict((k, sorted(v)) for k, v in out.items())
 
 

@@ -366,7 +366,7 @@ def find_move(moves, name):
     raise SystemExit("기술을 못 찾았습니다: %s" % name)
 
 
-def play(move, flip=False, flat=False, limit_ms=4000, step_ms=FRAME_MS, on_frame=None, style=None):
+def play(move, flip=False, flat=False, limit_ms=4000, step_ms=FRAME_MS, on_frame=None, style=None, ev=None):
     """연출 하나를 끝까지 돌린다. (stage, 걸린 ms, 끝났나) 를 돌려준다."""
     from poketdesktop import battle_fx as FX
     me, foe = (FLAT_ME, FLAT_FOE) if flat else (ME, FOE)
@@ -379,7 +379,7 @@ def play(move, flip=False, flat=False, limit_ms=4000, step_ms=FRAME_MS, on_frame
         if state["done"] is None:
             state["done"] = stage.root.now
 
-    fx = FX.Effect(stage, move, src, dst, done, who=who)
+    fx = FX.Effect(stage, move, src, dst, done, who=who, ev=ev)
     if style:
         fx.style = style                                     # 갈래를 직접 골라 본다
     fx.play()
@@ -447,6 +447,10 @@ def main():
     ap.add_argument("--no-gif", action="store_true")
     ap.add_argument("--sheet", help="이어 붙인 그림을 이 이름 하나로 묶는다")
     ap.add_argument("--frames", type=int, default=10)
+    # 맞는 순간의 세기 (1.13.2): 배틀이 다음 '맞음' 사건을 보고 넘겨 주는 것을 흉내 낸다
+    ap.add_argument("--eff", type=float, default=1.0, help="효과 배율 (2 = 효과가 굉장하다)")
+    ap.add_argument("--crit", action="store_true", help="급소")
+    ap.add_argument("--z", action="store_true", help="Z기술 (컷인이 금빛)")
     a = ap.parse_args()
 
     from poketdesktop import battle_fx as FX
@@ -471,8 +475,10 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     rows = []
     for m, name in todo:
+        hint = {"t": "move", "move": m.get("kr"), "z": bool(a.z),
+                "_hit": {"crit": bool(a.crit), "eff": a.eff}}
         frames, fx, took = record(m, zoom=a.zoom, flip=a.flip, flat=a.flat,
-                                  style=a.style if m.get("kr") == a.style else None)
+                                  style=a.style if m.get("kr") == a.style else None, ev=hint)
         tag = "%s  [%s · %s · 위력 %s]  %s" % (
             m.get("kr"), fx.style, m.get("type"), m.get("power"),
             ("%dms" % took) if took is not None else "안 끝남!")

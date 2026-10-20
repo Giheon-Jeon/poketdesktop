@@ -134,6 +134,7 @@ class MiniApp(object):
     mega_menu_row = App.mega_menu_row
     toggle_mega_walk = App.toggle_mega_walk
     float_over_pet = App.float_over_pet
+    float_at = App.float_at
     look_num = App.look_num                  # 포켓몬 관리 창의 그림이 따르는 모습 (1.10.6)
     _box_look = App._box_look
 

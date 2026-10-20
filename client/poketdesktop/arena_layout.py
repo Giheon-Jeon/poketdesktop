@@ -27,6 +27,20 @@ R_MIN, R_MAX = 90, 220
 GROW = 1.25
 
 
+def work_for(area, screens, works):
+    """활동 영역이 있는 모니터의 작업 영역 (작업표시줄·독을 뺀 자리). 못 찾으면 None.
+
+    무대는 활동 영역의 **오른쪽 아래 모서리**를 붙박이로 두고 자라므로(stage_rect) 그 모서리가 든 화면을 본다.
+    예전에는 늘 주 화면의 작업 영역을 써서, 활동 영역이 왼쪽 모니터에 있으면 무대가 주 화면 왼쪽 끝의 좁은
+    자리로 끌려갔다 (게시판 #268, 듀얼 모니터). screens 와 works 는 같은 차례다 (PLAT.screens / screen_works).
+    """
+    x, y = area[2] - 1, area[3] - 1
+    for s, w in zip(screens or [], works or []):
+        if s and w and s[0] <= x < s[2] and s[1] <= y < s[3]:
+            return w
+    return None
+
+
 def stage_rect(area, work, grow=GROW, pad=STAGE_PAD):
     """투기장이 쓸 영역.
 

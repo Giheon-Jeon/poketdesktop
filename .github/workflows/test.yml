@@ -309,6 +309,9 @@ jobs:
       # 1.13.1: 랭크 시즌 보상 - 기술머신 뽑기권(타입 고르기) · 랭킹 탭 보상 표(관장 등록은 글로만)
       - name: 기술머신 뽑기권·랭크 보상 표 화면 (진짜 Tk)
         run: python client/test_reward_tickets.py
+      # 듀얼 모니터 (#268): 주 화면 왼쪽 모니터에서도 체력바 · 이름표가 보인다, 실시간 배틀 무대는 그 모니터 안
+      - name: 듀얼 모니터 이펙트 레이어 (진짜 Tk)
+        run: python client/test_dual_monitor.py
       - name: 게시판 화면 (진짜 Tk)
         run: python client/test_board_ui.py
       # 1.9.0: 마이페이지 (설정 탭 자리) - 내 기록, 칭호 줄바꿈, 톱니바퀴 = 설정
@@ -460,6 +463,9 @@ jobs:
       # 1.13.1: 랭크 시즌 보상 - 기술머신 뽑기권(타입 고르기) · 랭킹 탭 보상 표(관장 등록은 글로만)
       - name: 기술머신 뽑기권·랭크 보상 표 화면 (진짜 Tk)
         run: python client/test_reward_tickets.py
+      # 듀얼 모니터 (#268): 주 화면 왼쪽 모니터에서도 체력바 · 이름표가 보인다, 실시간 배틀 무대는 그 모니터 안
+      - name: 듀얼 모니터 이펙트 레이어 (진짜 Tk)
+        run: python client/test_dual_monitor.py
       - name: 게시판 화면 (진짜 Tk)
         run: python client/test_board_ui.py
       # 1.9.0: 마이페이지 (설정 탭 자리) - 내 기록, 칭호 줄바꿈, 톱니바퀴 = 설정
@@ -596,6 +602,7 @@ jobs:
           python test_forms.py           # 1.13: 폼 도구 (켜고 끄기·고르기·꽃꿀)
           python test_errors.py          # 1.13.1: 서버 오류 기록에 문구·역추적이 남는다
           python test_tm_ticket.py       # 1.13.1: 랭크 보상 - 기술머신 뽑기권
+          python test_move_needs.py      # 기술이 걸린 것(전용 Z · 기술 메가 · 기술 폼 · 기술 진화)을 배울 수 있다 (#277)
           python test_gimmick.py
           python test_season4.py
           python test_boss.py

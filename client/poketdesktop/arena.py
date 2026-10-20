@@ -218,7 +218,12 @@ class Arena(object):
         self._names_ov = ov
         ov.block_names()
         sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
-        self.work = work_area(sw, sh)
+        # 활동 영역이 있는 모니터의 작업 영역 (듀얼 모니터, #268). 모르면 주 화면의 것.
+        try:
+            self.work = L.work_for(ov.area(), PLAT.screens(sw, sh), PLAT.screen_works(sw, sh))
+        except Exception:                                   # noqa: BLE001
+            self.work = None
+        self.work = self.work or work_area(sw, sh)
         # 평소 걸어다니는 자리에서 싸운다. 화면 한가운데로 끌어오지 않는다.
         rect = L.stage_rect(ov.area(), self.work)
         self.ring = L.ring_of(rect, ov.settings["targetHeight"])
@@ -233,7 +238,7 @@ class Arena(object):
             self._name_plates()
         except Exception as e:                              # noqa: BLE001
             config.log("투기장 이름표를 못 그렸습니다: %s" % e)
-        self.queue = [e for e in evs if e.get("t") != "teams"]
+        self.queue = FX.annotate([e for e in evs if e.get("t") != "teams"])  # 기술마다 다음 '맞음' 의 급소 · 효과를 달아 둔다 (연출이 세기를 정한다, 1.13.2)
         self._pace()
         self.bar_job = None
         self._tick_bars()
@@ -576,7 +581,7 @@ class Arena(object):
             move = self.find_move(ev)
             self.fx = FX.Effect(self, move, self.center(src), self.center(dst),
                                 lambda: self.after(int(140 * self.scale), done),
-                                who=who)
+                                who=who, ev=ev)
             return self.fx.play()
         if t == "hit":
             side = self.active.get(ev.get("target"))

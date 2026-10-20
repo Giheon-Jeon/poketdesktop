@@ -118,6 +118,7 @@ class 가짜배틀(object):
         self.foe = 가짜도트(999)
         self.bars = (가짜바(), 가짜바())
         self.saved_home = (0, 0)
+        self.pending_ball = None   # 이번 턴 뒤에 던질 볼 (진짜 배틀은 늘 갖고 있다)
         self.예약 = []
         self.layer = self          # tick_bars 가 있는지만 본다
         self.root = self
@@ -241,6 +242,41 @@ def t_교체한_포켓몬이_아직_화면에_없으면_다시_찾는다():
             break
         d2.예약.pop()[1]()
     chk("끝내 못 찾으면 그때 접는다 (여섯 번 찾은 뒤)", 접음2 == ["다음 포켓몬을 화면에서 찾지 못했습니다."], 접음2)
+
+
+def t_날려가서_끝나면_까닭을_알린다():
+    """게시판 #266 (레드 36세, 10/19 14:44): 트래피더의 배대뒤치기에 갸라도스가 날려가 판이 끝났는데(본가와 같은
+    규칙), 화면은 아무것도 안 띄우고 '야생 포켓몬이 떠나버렸다.' 만 알려서 배틀이 증발한 것처럼 보였다."""
+    mine = 가짜도트(1)
+    d = 가짜배틀({"me": {"id": 1, "name": "갸라도스", "hp": 200, "maxhp": 250},
+                  "foe": {"id": 9, "name": "트래피더", "hp": 118, "maxhp": 250}}, {1: mine}, mine)
+    뜬글 = []
+    d.float_over = lambda pet, text, color: 뜬글.append((pet, text))
+    d.finish_cleanup = lambda: None
+    d.show_result = DB.DesktopBattle.show_result.__get__(d)
+    d.render = DB.DesktopBattle.render.__get__(d)
+    ev = [{"t": "move", "who": "me", "text": "갸라도스 의 깨물어부수기!"},
+          {"t": "move", "who": "foe", "text": "트래피더 의 배대뒤치기!"},
+          {"t": "flee", "who": "me", "text": "갸라도스 은(는) 날려가 버렸다!"}]
+    끝 = []
+    d.render(ev[-1], lambda: 끝.append(1))
+    chk("날려간 포켓몬 머리 위에 '날려가 버렸다!'", 뜬글 == [(mine, "날려가 버렸다!")], 뜬글)
+    chk("  읽을 틈을 준다 (0.9초 뒤에 다음으로)", d.예약 and d.예약[-1][0] == 900 and not 끝, d.예약)
+    d.예약[-1][1]()
+    chk("  그다음 사건으로 넘어간다", 끝 == [1])
+    d.show_result({"battle": {"over": True, "result": "fled"}, "events": ev})
+    chk("알림은 무엇이 판을 끝냈는지: 기술 + 날려갔다",
+        d.app.말 and d.app.말[-1] == "트래피더의 배대뒤치기! 갸라도스는 날려가 버렸다!", d.app.말)
+    d.show_result({"battle": {"over": True, "result": "fled"},
+                   "events": [{"t": "flee", "who": "foe", "text": "야생 고라파덕 은(는) 흥미를 잃고 떠나버렸다."}]})
+    chk("  흥미를 잃고 떠났으면 그 말 (기술은 안 붙인다)", d.app.말[-1] == "야생 고라파덕은 흥미를 잃고 떠나버렸다.", d.app.말[-1])
+    d.show_result({"battle": {"over": True, "result": "fled"}})
+    chk("  끝낸 사건이 없으면 예전 말 그대로", d.app.말[-1] == "야생 포켓몬이 떠나버렸다.", d.app.말[-1])
+    mine.win.보임 = 0
+    뜬글.clear()
+    끝.clear()
+    d.render(ev[-1], lambda: 끝.append(1))
+    chk("  도트가 숨어 있으면 허공에 안 띄운다 (바로 다음으로)", not 뜬글, 뜬글)
 
 
 def t_숨은_도트의_체력바는_안_그린다():
@@ -762,7 +798,7 @@ class 잡기판(object):
 
     for _name in ("next_turn", "play", "turn_done", "start_hold", "_hint", "_cancel_hold_jobs",
                   "fight_on", "_menu_opened", "_menu_closed", "throw_ball", "_do_throw",
-                  "after_ball", "after", "_safe", "abort"):
+                  "after_ball", "after", "_safe", "abort", "_late_ball"):
         locals()[_name] = getattr(DB.DesktopBattle, _name)
 
     def render(self, ev, done):
@@ -771,7 +807,7 @@ class 잡기판(object):
     def sync_bars(self, snap=False):
         pass
 
-    def float_over(self, pet, text, color):
+    def float_over(self, pet, text, color, ms=None):
         self.떠오른글씨.append(text)
 
     def show_result(self, result):
@@ -967,8 +1003,69 @@ def t_잡으면_끝낸다():
         d.next_turn()
         d._do_throw("POKEBALL")
         d.root.advance(1000)
+        chk("  '잡았다!' 를 읽을 틈을 두고 (1초 뒤에는 아직)", not d.closed, d.closed)
+        d.root.advance(1000)
         chk("잡으면 배틀을 정리한다", d.closed, d.closed)
+        chk("  연출이 터져서 접은 것이 아니다", not any("멈췄습니다" in m for m in d.app.말), d.app.말)
+        chk("  내 포켓몬 위에 '잡았다!' (notify 는 화면에 안 뜬다, 1.13.2 게시판 #266)", "잡았다!" in d.떠오른글씨,
+            d.떠오른글씨)
         chk("잡은 뒤에는 턴을 안 보낸다", len(d.app.api.moves) == 1, d.app.api.moves)
+    finally:
+        undo()
+
+
+def t_볼을_기다리던_턴에_판이_끝나면_말없이_버리지_않는다():
+    """게시판 #280 (니뉴, 10/19 18:54 · 18:59): 배틀이 시작되자마자 볼을 골랐는데, 이미 보낸 첫 턴에 메가망나뇽이
+    한 방에 쓰러뜨렸다 (이미 잡은 종이라 잡기 모드 '아직 안 잡은 포켓몬만' 이 안 걸린다 - 그건 본래 규칙). 이번 턴
+    뒤에 던지려던 볼은 말없이 버려졌고, app.notify 는 화면에 안 뜨니 '볼을 던지자 포켓몬이 증발했다' 로 보였다."""
+    def 준비():
+        d, menus, undo = 잡기_준비()
+        d.show_result = DB.DesktopBattle.show_result.__get__(d)
+        d.뜬글 = []
+        d.app.float_over_pet = lambda pid, text, color="", ms=0: d.뜬글.append((pid, text))
+        d.b = {"id": 7, "over": False, "me": {"id": 1, "name": "망나뇽"}}
+        return d, menus, undo
+
+    d, menus, undo = 준비()
+    try:
+        d.busy = True                                   # 첫 턴을 보내 놓고 답을 기다리는 중
+        d.throw_ball(이벤트())                          # 오른쪽 클릭 -> 볼 메뉴
+        menus[-1][0]("POKEBALL")                        # 몬스터볼을 고른다
+        menus[-1][1]()                                  # 메뉴가 닫힌다
+        chk("(답을 기다리는 중이라 볼은 예약만 - 검사 전제)", d.pending_ball == "POKEBALL" and not d.app.api.balls,
+            (d.pending_ball, d.app.api.balls))
+        d.busy = False
+        d.turn_done({"battle": {"id": 7, "over": True, "result": "won", "foe": {"name": "아이스크"},
+                                "me": {"id": 1, "name": "망나뇽"}}})
+        d.root.advance(4000)
+        chk("볼은 서버에 안 갔다 (줄지 않는다)", d.app.api.balls == [], d.app.api.balls)
+        chk("배틀이 끝난 뒤 내 포켓몬 머리 위에 '볼을 던지기 전에 쓰러뜨렸다'",
+            d.closed and (1, "볼을 던지기 전에 쓰러뜨렸다") in d.뜬글, (d.closed, d.뜬글))
+        chk("  예약은 비운다", d.pending_ball is None, d.pending_ball)
+        chk("  기록에는 볼이 그대로라는 것과 잡기 모드 안내까지",
+            any("볼은 그대로" in m and "항상" in m for m in d.app.말), d.app.말)
+    finally:
+        undo()
+
+    d, menus, undo = 준비()
+    try:
+        d.throw_ball(이벤트())
+        d.closed = True                                 # 메뉴가 열린 사이에 판이 끝났다 (맥은 메뉴가 열려도 턴이 돈다)
+        menus[-1][0]("ULTRABALL")
+        chk("메뉴가 열린 사이에 끝났으면 고른 볼도 말없이 버리지 않는다",
+            (1, "배틀이 끝나서 볼을 던지지 않았다") in d.뜬글 and d.app.api.balls == [], (d.뜬글, d.app.api.balls))
+    finally:
+        undo()
+
+    d, menus, undo = 준비()
+    try:
+        나옴 = []
+        d.switch_to = lambda mon: 나옴.append(mon)
+        d.pending_ball = "POKEBALL"
+        d.turn_done({"battle": {"id": 7, "over": True, "result": "lost", "me": {"id": 1, "name": "망나뇽"}},
+                     "canSwitch": True, "party": [{"id": 2}]})
+        chk("내 포켓몬이 쓰러져 다음 포켓몬이 나오면 판은 이어진다 - 볼 예약도 그대로",
+            나옴 == [{"id": 2}] and d.pending_ball == "POKEBALL" and not d.뜬글, (나옴, d.pending_ball, d.뜬글))
     finally:
         undo()
 
@@ -1120,6 +1217,7 @@ def t_볼_메뉴를_열면_예약해_둔_배틀을_취소한다():
 
 def main():
     for fn in (t_체력을_그대로_반영한다, t_교체하면_새_포켓몬_체력으로_바뀐다, t_교체한_포켓몬이_아직_화면에_없으면_다시_찾는다,
+               t_날려가서_끝나면_까닭을_알린다,
                t_숨은_도트의_체력바는_안_그린다, t_맞는_순간_그_쪽만_준다,
                t_틱은_창_순서를_안_올린다, t_투기장_틱도_창_순서를_안_올린다,
                t_배틀_동안_이름표를_막고_끝나면_한_번_푼다,
@@ -1131,7 +1229,7 @@ def main():
                t_왼쪽_클릭하면_바로_싸운다, t_볼_메뉴가_열린_동안은_싸우지_않는다,
                t_바쁠_때_던진_볼은_턴이_끝나고_던진다, t_멈춘_채_던졌다가_놓치면_10초를_새로_센다,
                t_볼이_흔들리는_동안_왼쪽_클릭은_싸우기가_아니다, t_두_번_클릭의_두_번째_뗌은_싸우기가_아니다,
-               t_잡으면_끝낸다, t_상대_이름표는_두_줄이다,
+               t_잡으면_끝낸다, t_볼을_기다리던_턴에_판이_끝나면_말없이_버리지_않는다, t_상대_이름표는_두_줄이다,
                t_배틀이_걸려_있으면_배틀_안에서_던진다, t_볼_메뉴를_열면_예약해_둔_배틀을_취소한다):
         print("-- %s" % fn.__name__[2:])
         fn()

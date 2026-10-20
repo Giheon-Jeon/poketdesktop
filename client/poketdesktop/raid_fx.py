@@ -20,6 +20,7 @@ import tkinter as tk
 
 from . import effects
 from . import platform_os as PLAT
+from .fx_layer import screen_origin
 from . import ui_common as U
 
 # 기둥이 비치는 정도. 1.0 이면 바탕화면을 가리는 색판이 된다.
@@ -129,7 +130,8 @@ class RaidPillar(object):
             bw = self.badge.winfo_reqwidth()
             bx = self.x + (self.w - bw) // 2
             by = self.y + self.h - U.h(6)
-            self.badge.geometry("+%d+%d" % (max(0, bx), max(0, by)))
+            vx, vy = screen_origin(self.badge)       # 0 이 아니라 모니터 전부의 왼쪽 위 (듀얼 모니터, #268)
+            self.badge.geometry("+%d+%d" % (max(vx, bx), max(vy, by)))
         except tk.TclError:
             pass
 

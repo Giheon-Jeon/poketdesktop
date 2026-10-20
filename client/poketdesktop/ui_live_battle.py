@@ -648,7 +648,7 @@ class LiveBattleWindow(Z.Resizable):
             k = FX_SCALE * Z.K
             (sx, sy), (tx, ty) = self._center(who), self._center(other)
             self.fx = FX.Effect(_FxStage(self, k), self._find_move(ev),
-                                (sx / k, sy / k), (tx / k, ty / k), done, who=who)
+                                (sx / k, sy / k), (tx / k, ty / k), done, who=who, ev=ev)
             self.effects = [e for e in self.effects if not e.dead] + [self.fx]
             self.later(2600, done)
             self.fx.play()
@@ -668,7 +668,7 @@ class LiveBattleWindow(Z.Resizable):
     def play(self, events, data):
         self.busy = True
         self.hide_commands()
-        self.queue = list(events)
+        self.queue = FX.annotate(list(events))  # 기술마다 다음 '맞음' 의 급소 · 효과를 달아 둔다 (연출이 세기를 정한다, 1.13.2)
         self._pending = data
         self._next()
 
@@ -986,7 +986,7 @@ class LiveBattleWindow(Z.Resizable):
                                 "시간을 넘기면 서버가 대신 골라 줍니다.")
             lab.pack(fill="x")
             U.wrap_to_width(lab)
-            self.say("고른 것을 보냈습니다.")
+            self.say("상대를 기다리는 중...")
             return
         if self.view.get("phase") == "switch":
             return self.open_switch(forced=True)

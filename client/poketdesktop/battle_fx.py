@@ -57,6 +57,30 @@ DEFAULT_FX = ("#f0f0f0", "#9a9a9a")
 DEBUG = False
 
 
+def annotate(events):
+    """사건 줄의 '기술' 마다 그 뒤 '맞음' 의 급소 · 효과를 달아 둔다 (ev['_hit'], 1.13.2).
+
+    연출(Effect)은 기술 사건 하나만 받아서, 이 한 방이 급소였는지 효과가 굉장했는지 몰랐다. 맞는 순간
+    (move_fx.impact)을 그만큼 세게 그리려고 배틀 화면이 사건 줄을 받을 때 한 번 훑어 둔다. 여러 번
+    때리는 기술은 가장 센 효과, 한 번이라도 급소면 급소다. 다음 기술이 나오면 거기서 끊는다.
+    """
+    cur = None
+    for e in events or []:
+        if not isinstance(e, dict):
+            continue
+        t = e.get("t")
+        if t == "move":
+            cur = e
+        elif t == "hit" and cur is not None:
+            got = cur.setdefault("_hit", {"crit": False, "eff": 0.0})
+            got["crit"] = got["crit"] or bool(e.get("crit"))
+            try:
+                got["eff"] = max(got["eff"], float(e.get("eff") if e.get("eff") is not None else 1.0))
+            except (TypeError, ValueError):
+                pass
+    return events
+
+
 def colors(mtype):
     return TYPE_FX.get(mtype, DEFAULT_FX)
 
@@ -334,7 +358,7 @@ def fang_rows(tx, ty, gap=0):
 class Effect(object):
     """캔버스 위에서 도는 연출 하나. root.after 로 스스로 굴러간다."""
 
-    def __init__(self, stage, move, src, dst, on_done, who="me"):
+    def __init__(self, stage, move, src, dst, on_done, who="me", ev=None):
         self.st = stage
         self.who = who
         self.cv = stage.cv
@@ -351,6 +375,13 @@ class Effect(object):
         self.items = []
         self.jobs = []
         self.dead = False
+        # 그 기술 사건 (1.13.2). 급소 · 효과(annotate 가 달아 둔 것)와 Z기술인지를 본다 - 없으면 보통으로 그린다.
+        ev = ev if isinstance(ev, dict) else {}
+        hit = ev.get("_hit") or {}
+        self.crit = bool(hit.get("crit"))
+        self.eff = float(hit.get("eff") or 1.0)
+        self.zmove = bool(ev.get("z"))
+        self.label = ev.get("move") or self.move.get("kr") or ""
 
     # ---- 도구 ----
     def after(self, ms, fn):
@@ -397,12 +428,22 @@ class Effect(object):
         from . import move_fx
         sig = move_fx.STYLES.get(self.style)
         fn = (lambda: sig(self)) if sig else (getattr(self, "_" + self.style, None) or self._beam)
-        try:
-            fn()
-        except Exception:
-            if DEBUG:
-                raise
-            self.finish()
+
+        def go():
+            try:
+                fn()
+            except Exception:
+                if DEBUG:
+                    raise
+                self.finish()
+        # Z기술 · 아주 센 기술은 쓰기 직전에 띠가 번쩍 지나가며 기술 이름이 뜬다 (move_fx.cutin, 1.13.2)
+        if move_fx.wants_cutin(self):
+            try:
+                return move_fx.cutin(self, go)
+            except Exception:
+                if DEBUG:
+                    raise
+        go()
 
     # ---- 각 연출 ----
     def _beam(self):
@@ -726,10 +767,12 @@ class Effect(object):
         self._arrows(self.dst, False, "#ff9d9d")
 
     def _contact(self):
-        self.st.lunge(self.src_side(), lambda: self.slash())
+        from . import move_fx
+        move_fx.rush(self, lambda: self.slash())          # 달려가는 길에 궤적 (1.13.2)
 
     def _bite(self):
-        self.st.lunge(self.src_side(), lambda: self.fangs())
+        from . import move_fx
+        move_fx.rush(self, lambda: self.fangs())          # 달려가는 길에 궤적 (1.13.2)
 
     def src_side(self):
         return self.who

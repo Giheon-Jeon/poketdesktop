@@ -29,8 +29,11 @@ import random
 import re
 
 from . import battle_fx as FX
+from . import ui_common as U
 
 WHITE = "#ffffff"
+GOLD = "#ffd447"                # 급소 섬광 · Z기술 이름
+CUT_BG = "#0e1018"              # 컷인 띠 (바탕화면 레이어의 투명색 #fe01fe 와 멀다)
 MS = 30                         # 한 프레임
 
 
@@ -426,32 +429,149 @@ def scatter(fx, sp, x, y, k=1.0, typ=None, n=None):
 
 
 def impact(fx, at=None, done=None, size=1.0, typ=None):
-    """맞는 순간. 흰 별이 번쩍하고, 고리가 퍼지고, 타입에 맞는 조각이 튄다."""
+    """맞는 순간. 모든 연출이 이걸로 끝난다 (1.13.2 에 키웠다 - 예전에는 흰 별 한 번 · 고리 하나였다).
+
+      · 번쩍       타입의 어두운 색 · 밝은 색 · 흰 심, 세 겹 별
+      · 집중선     몸에서 바깥으로 뻗는 선 열 줄 - 힘이 실린 게 보인다
+      · 충격파     두 겹 고리가 퍼지며 가늘어진다
+      · 조각       타입에 맞는 것 (scatter), 그리고 잠깐 피어오르는 잔불
+      · 효과가 굉장하면 더 크게 터지고 금이 간다 (별로면 작게). 급소면 금빛 X 자 섬광.
+
+    효과 · 급소는 배틀 화면이 다음 '맞음' 사건을 보고 넘겨 준다 (battle_fx.annotate) - 모르면 보통으로.
+    """
     cv = fx.cv
     x, y = at or fx.dst
     light, dark = FX.colors(typ or fx.type)
-    k = size * fx.big
+    eff = getattr(fx, "eff", 1.0) or 1.0
+    crit = bool(getattr(fx, "crit", False))
+    strong, weak = eff > 1.0, eff < 1.0
+    k = size * fx.big * (1.22 if strong else 0.82 if weak else 1.0)
     cel = Cel(fx)
-    scatter(fx, Sparks(fx), x, y, k, typ=typ)
+    sp = Sparks(fx)
+    # 조각은 아홉 개까지 - 앞 연출의 작은 타격(mini) 조각이 아직 떠 있을 때 시작하는 연출(사우전드애로 ·
+    # 다이아스톰)이 있어서, 더 뿌리면 한때 떠 있는 도형이 상한(test_move_fx.PEAK_MAX)을 넘는다.
+    scatter(fx, sp, x, y, k, typ=typ, n=min(9, max(4, int(round((8 if strong else 7) * k)))))
     rot = random.uniform(0, math.pi)
+    rays = [rot + 2 * math.pi * j / 10 + random.uniform(-0.12, 0.12) for j in range(10)]
+    cracks = []
+    if strong:                                          # 효과가 굉장하다 - 몸에서 금이 뻗는다
+        for j in range(4):
+            a = rot + math.pi / 4 + j * math.pi / 2 + random.uniform(-0.3, 0.3)
+            rr = random.uniform(28, 40) * k
+            cracks.append(zig(x, y, x + math.cos(a) * rr, y + math.sin(a) * rr * 0.82, 5 * k, 4))
 
     def draw(i, t):
         cel.clear()
         if i < 3:                                       # 번쩍 - 맞는 프레임
-            cel.put(spike(cv, x, y, (30 - i * 6) * k, 8, WHITE, light, inner=0.4,
-                          rot=rot + i * 0.25, width=2))
-        r = (12 + 34 * ease_out(t)) * k
-        w = max(1, int(round(5 * (1 - t))))
+            r = (34 - i * 7) * k
+            cel.put(spike(cv, x, y, r, 10, dark, inner=0.36, rot=rot + i * 0.2))
+            cel.put(spike(cv, x, y, r * 0.72, 8, light, inner=0.4, rot=rot + 0.3 + i * 0.2))
+            rc = r * 0.3
+            cel.put(cv.create_oval(x - rc, y - rc, x + rc, y + rc, fill=WHITE, outline=""))
+        if i < 6:                                       # 집중선
+            e = ease_out(i / 6.0)
+            a0, a1 = (8 + 40 * e) * k, (24 + 74 * e) * k
+            w = 3 if i < 2 else 2 if i < 4 else 1
+            for j, a in enumerate(rays):
+                c, s_ = math.cos(a), math.sin(a) * 0.82
+                cel.put(cv.create_line(x + c * a0, y + s_ * a0, x + c * a1, y + s_ * a1,
+                                       fill=WHITE if j % 2 == 0 else light, width=w, capstyle="round"))
+        r = (12 + 46 * ease_out(t)) * k                 # 충격파
+        w = max(1, int(round(6 * (1 - t))))
         cel.put(cv.create_oval(x - r, y - r * 0.82, x + r, y + r * 0.82, outline=light, width=w))
         if i > 1:
-            r2 = r * 0.6
+            r2 = r * 0.62
             cel.put(cv.create_oval(x - r2, y - r2 * 0.82, x + r2, y + r2 * 0.82,
                                    outline=dark, width=max(1, w - 1)))
+        if strong and i > 3:
+            r3 = r * 1.2
+            cel.put(cv.create_oval(x - r3, y - r3 * 0.82, x + r3, y + r3 * 0.82, outline=WHITE, width=1))
+        if cracks and 1 <= i <= 8:
+            for pts in cracks:
+                cel.put(cv.create_line(*pts, fill=WHITE, width=3))
+        if crit and i < 6:                              # 급소 - 금빛 X 자
+            ln = (30 - i * 3) * k
+            th = max(1.0, 5 - i * 0.8)
+            for sg in (1, -1):
+                cel.put(rip(cv, x - ln, y - ln * sg * 0.9, x + ln, y + ln * sg * 0.9, th + 2, GOLD),
+                        rip(cv, x - ln * 0.8, y - ln * sg * 0.72, x + ln * 0.8, y + ln * sg * 0.72, th * 0.6, WHITE))
+        if i == 2:                                      # 잔불 - 맞은 자리에서 잠깐 피어오른다
+            for _j in range(5):
+                sp.add(lambda px, py, lk: glint(cv, px, py, (2 + 4 * lk) * k, WHITE if lk > 0.5 else light),
+                       x + random.uniform(-14, 14) * k, y + random.uniform(-6, 10) * k,
+                       random.uniform(-0.6, 0.6), random.uniform(-2.4, -1.2), life=8, drag=0.96)
 
     def end():
         cel.clear()
         (done or fx.finish)()
-    run(fx, 10, draw, end)
+    run(fx, 12, draw, end)
+
+
+# ---------------------------------------------------------------- 컷인 (1.13.2)
+# 이 위력부터 쓰기 직전에 컷인을 띄운다 (Z기술은 늘). 위력 130 = 오버히트 · 용성군 · 리프스톰 ... - 판마다 몇 번
+# 안 나오는 한 방이라 눈에 띄어도 거슬리지 않는다. 100 이나 120 으로 낮추면 인파이트 · 플레어드라이브처럼
+# 랜덤 배틀에서 늘 쓰는 기술마다 떠서 판이 늘어진다.
+CUTIN_POWER = 130
+
+
+def wants_cutin(fx):
+    """이 기술에 컷인을 띄우나 - Z기술, 또는 위력 CUTIN_POWER 이상인 공격기."""
+    if getattr(fx, "zmove", False):
+        return True
+    m = fx.move or {}
+    return (m.get("cat") or "status") != "status" and (m.get("power") or 0) >= CUTIN_POWER
+
+
+def cutin(fx, then):
+    """쓰기 직전에 두 포켓몬 사이로 비스듬한 띠가 열리고 기술 이름이 뜬다. 0.42초 뒤 then().
+
+    띠는 쓰는 쪽에서부터 열려서(누가 쓰는지 보인다) 잠깐 머물고, 위아래로 접히며 사라진다. 띠 안에는
+    반대쪽으로 흐르는 줄이 지나간다. Z기술은 이름이 금빛이다.
+    """
+    cv = fx.cv
+    g = Geo(fx)
+    light, dark = FX.colors(fx.type)
+    name = fx.label or (fx.move or {}).get("kr") or ""
+    zm = bool(getattr(fx, "zmove", False))
+    x1, x2 = min(g.sx, g.tx) - 70, max(g.sx, g.tx) + 70
+    cy = (g.sy + g.ty) / 2.0
+    hh = 17 * min(fx.big, 1.2)
+    slant = 14
+    left = g.sx <= g.tx                                 # 쓰는 쪽이 왼쪽이면 왼쪽부터 열린다
+    cel = Cel(fx)
+    font = (U.FAMILY, U.pt(15 if zm else 13), "bold")
+    # 흐르는 줄은 띠의 위 · 아래 가장자리 쪽으로만 지나간다 - 가운데의 기술 이름을 가로지르지 않게
+    streaks = [(random.uniform(0, 1), random.choice((-1, 1)) * random.uniform(0.55, 0.78)) for _ in range(6)]
+
+    def draw(i, t):
+        cel.clear()
+        if i <= 3:
+            open_ = ease_out(i / 3.0)
+            h = hh
+        elif i <= 10:
+            open_, h = 1.0, hh
+        else:
+            open_, h = 1.0, hh * (1 - (i - 10) / 4.0)
+        if h <= 1:
+            return
+        span = (x2 - x1) * open_
+        a, b = (x1, x1 + span) if left else (x2 - span, x2)
+        cel.put(cv.create_polygon(a + slant, cy - h, b + slant, cy - h, b - slant, cy + h, a - slant, cy + h,
+                                  fill=CUT_BG, outline=light, width=2))
+        cel.put(cv.create_line(a, cy + h * 0.62, b, cy + h * 0.62, fill=dark, width=2))
+        for u, v in streaks:                            # 띠 안을 반대쪽으로 흐르는 줄
+            px = a + ((u - t * 1.6 * (1 if left else -1)) % 1.0) * (b - a)
+            py = cy + v * h
+            cel.put(cv.create_line(px, py, px + (28 if left else -28), py, fill=light, width=1))
+        if 2 <= i <= 12 and name:
+            tx = (a + b) / 2.0
+            cel.put(cv.create_text(tx + 2, cy + 2, text=name, fill="#000000", font=font),
+                    cv.create_text(tx, cy, text=name, fill=GOLD if zm else WHITE, font=font))
+
+    def end():
+        cel.clear()
+        then()
+    run(fx, 14, draw, end)
 
 
 def mini(fx, x, y, k=0.7, typ=None):
@@ -465,30 +585,90 @@ def mini(fx, x, y, k=0.7, typ=None):
     def draw(i, t):
         cel.clear()
         if i < 3:
-            cel.put(spike(cv, x, y, (20 - i * 5) * k * fx.big, 6, WHITE, light, inner=0.4, rot=rot, width=2))
+            cel.put(spike(cv, x, y, (22 - i * 5) * k * fx.big, 6, WHITE, light, inner=0.4, rot=rot, width=2))
+        if i > 0:                                       # 한 대마다 작은 충격 고리 (1.13.2)
+            r = (8 + 9 * i) * k * fx.big
+            cel.put(cv.create_oval(x - r, y - r * 0.8, x + r, y + r * 0.8, outline=light, width=max(1, 4 - i)))
     run(fx, 3, draw, cel.clear)
 
 
 # ---------------------------------------------------------------- 접촉기
-def _smash(fx, done):
-    """달려든 쪽에서 날아와 꽂히는 굵은 줄 세 개."""
+def rush(fx, then):
+    """달려든다 (1.13.2). 몸이 달려가는 동안 그 길에 타입 색 궤적과 속도선이 남는다.
+
+    예전에는 몸만 움직여서 접촉기(121종)는 맞기 직전의 작은 자국 말고는 아무것도 없었다. 몸을 옮기는 것은
+    무대(fx.st.lunge)고, 여기는 그 길만 그린다 - 머리는 상대 몸 앞에서 멈추고, 꼬리가 뒤따라 줄어든다.
+    **닿는 순간(then) 궤적을 지운다** - 남겨 두면 맞는 연출(이빨 · 주먹 …)과 겹친다.
+    """
     cv = fx.cv
     g = Geo(fx)
-    light, _dark = FX.colors(fx.type)
+    light, dark = FX.colors(fx.type)
     cel = Cel(fx)
+    k = fx.big
+    reach = max(0.0, 1.0 - 34.0 / g.d)
+    offs = (-15, -7, 7, 15)
+    on = [True]
 
     def draw(i, t):
         cel.clear()
-        for j, off in enumerate((-13, 0, 13)):
-            far = 44 - i * 13
-            x1, y1 = g.tx - g.ux * (far + 26) + g.px * off * 1.5, g.ty - g.uy * (far + 26) + g.py * off * 1.5
-            x2, y2 = g.tx - g.ux * far * 0.3 + g.px * off * 0.5, g.ty - g.uy * far * 0.3 + g.py * off * 0.5
-            cel.put(rip(cv, x1, y1, x2, y2, 4 if j == 1 else 3, WHITE, light))
+        if not on[0]:
+            return
+        head = reach * ease_out(min(1.0, (i + 1) / 5.0))
+        tail = reach * ease_in(min(1.0, i / 7.0)) * 0.95
+        if head - tail < 0.04:
+            return
+        hx, hy = g.at(head)
+        bx, by = g.at(tail)
+        w = 9 * k * (1 - i / 9.0)
+        # 꼬리에서 가늘고 머리에서 굵은 물결 (어두운 겉 - 밝은 속)
+        cel.put(cv.create_polygon(bx, by, hx + g.px * w, hy + g.py * w, hx + g.ux * w * 0.8, hy + g.uy * w * 0.8,
+                                  hx - g.px * w, hy - g.py * w, fill=dark, outline=""))
+        w2 = w * 0.5
+        mx_, my_ = bx + (hx - bx) * 0.3, by + (hy - by) * 0.3
+        cel.put(cv.create_polygon(mx_, my_, hx + g.px * w2, hy + g.py * w2, hx + g.ux * w2, hy + g.uy * w2,
+                                  hx - g.px * w2, hy - g.py * w2, fill=light, outline=""))
+        for j, off in enumerate(offs):                  # 속도선
+            u0 = tail + (head - tail) * (0.15 + 0.1 * (j % 2))
+            u1 = head - 0.04
+            if u1 <= u0:
+                continue
+            x1, y1 = g.at(u0, off * k)
+            x2, y2 = g.at(u1, off * 0.6 * k)
+            cel.put(cv.create_line(x1, y1, x2, y2, fill=WHITE if j in (1, 2) else light,
+                                   width=2 if j in (1, 2) else 1))
+    def hit_now():
+        on[0] = False
+        cel.clear()
+        then()
+    run(fx, 8, draw, cel.clear, ms=26)
+    fx.st.lunge(fx.who, hit_now)
+
+
+def _smash(fx, done):
+    """달려든 쪽에서 날아와 꽂히는 굵은 자국 다섯 줄 (1.13.2 에 굵고 길게 - 예전에는 가는 흰 줄 셋)."""
+    cv = fx.cv
+    g = Geo(fx)
+    light, dark = FX.colors(fx.type)
+    cel = Cel(fx)
+    k = fx.big
+    offs = (-20, -10, 0, 10, 20)
+
+    def draw(i, t):
+        cel.clear()
+        far = 56 - i * 18
+        for j, off in enumerate(offs):
+            sc = 1.0 - abs(off) / 40.0
+            x1 = g.tx - g.ux * (far + 34) * sc + g.px * off * 1.4 * k
+            y1 = g.ty - g.uy * (far + 34) * sc + g.py * off * 1.4 * k
+            x2 = g.tx - g.ux * far * 0.25 + g.px * off * 0.4 * k
+            y2 = g.ty - g.uy * far * 0.25 + g.py * off * 0.4 * k
+            cel.put(rip(cv, x1, y1, x2, y2, (5 if j == 2 else 4) * k, dark),
+                    rip(cv, x1, y1, x2, y2, (2.5 if j == 2 else 1.8) * k, WHITE if j in (1, 2, 3) else light))
 
     def end():
         cel.clear()
         done()
-    run(fx, 2, draw, end, ms=26)
+    run(fx, 3, draw, end, ms=24)
 
 
 def _brawl(fx, done):
@@ -634,7 +814,7 @@ def hit(fx):
         if fx.dead:
             return
         (FLOURISH.get(fx.type) or _smash)(fx, lambda: impact(fx, size=1.15))
-    fx.st.lunge(fx.who, strike)
+    rush(fx, strike)
 
 
 def flurry(fx):
@@ -651,7 +831,7 @@ def flurry(fx):
             mini(fx, tx + math.cos(a) * 20, ty + math.sin(a) * 17, k=0.85)
             fx.after(66, lambda: one(i + 1))
         one(0)
-    fx.st.lunge(fx.who, strike)
+    rush(fx, strike)
 
 
 def dash(fx):
@@ -660,7 +840,7 @@ def dash(fx):
     g = Geo(fx)
     light, dark = FX.colors(fx.type)
     cel = Cel(fx)
-    fx.st.lunge(fx.who, lambda: None)                   # 몸도 같이 움찔한다
+    fx.st.lunge(fx.who, lambda: None)                   # 몸도 같이 움찔한다 (선공기 - 궤적은 dash 가 그린다)
 
     def draw(i, t):
         cel.clear()
@@ -724,7 +904,8 @@ def _sweep(fx, done, mirror=False, color=None, thick=15, span=2.5):
     light, dark = FX.colors(fx.type)
     col = color or light
     k = fx.big
-    r = 46 * k
+    r = 54 * k                                          # 1.13.2: 46 -> 54, 잔상 · 날 끝의 빛 · 섬광
+    thick = thick * 1.15
     tilt = (0.75 if mirror else -0.75) * g.face
     ang = g.ang + tilt
     cx, cy = g.tx - math.cos(ang) * r * 0.62, g.ty - math.sin(ang) * r * 0.62
@@ -737,12 +918,18 @@ def _sweep(fx, done, mirror=False, color=None, thick=15, span=2.5):
             lo, hi = hi, lo
         if i < 4:                                       # 그어지는 중
             a1 = lo + (hi - lo) * (i + 1) / 4.0
+            for q, (rr, th_) in enumerate(((r + 9 * k, 0.35), (r + 17 * k, 0.2))):     # 바깥으로 번지는 잔상
+                cel.put(blade(cv, cx, cy, rr, ang, span, thick * th_ * k, dark, a0=lo, a1=a1))
             cel.put(blade(cv, cx, cy, r, ang, span, thick * k, col, dark, a0=lo, a1=a1),
                     blade(cv, cx, cy, r - 1, ang, span, thick * 0.47 * k, WHITE, a0=lo, a1=a1))
-        else:                                           # 남은 자국이 가늘어진다
+            cel.put(glint(cv, cx + math.cos(a1) * r, cy + math.sin(a1) * r, 11 * k))   # 날 끝의 빛
+        else:                                           # 남은 자국이 가늘어진다 - 칼날을 따라 섬광이 미끄러진다
             th = (0.73, 0.4, 0.13)[min(2, i - 4)] * thick * k
             cel.put(blade(cv, cx, cy, r, ang, span, th, col, dark),
                     blade(cv, cx, cy, r - 1, ang, span, th * 0.45, WHITE))
+            u = (i - 3) / 3.0
+            a2 = lo + (hi - lo) * u
+            cel.put(glint(cv, cx + math.cos(a2) * r, cy + math.sin(a2) * r, 14 * k * (1 - u * 0.5)))
 
     def end():
         cel.clear()
@@ -763,7 +950,7 @@ def slash(fx):
         else:
             _sweep(fx, lambda: impact(fx, size=1.1))
     if "contact" in (fx.move.get("flags") or []):
-        fx.st.lunge(fx.who, cut)
+        rush(fx, cut)
     else:
         cut()
 
@@ -787,12 +974,14 @@ def blades(fx):
             tt = a / float(life)
             off = (-11, 9, 0)[j]
             x, y = g.at(tt, off * math.sin(math.pi * tt))
-            r = 17 * k
+            r = 21 * k                                  # 1.13.2: 17 -> 21, 잔상 둘
             wob = g.ang + 0.35 * math.sin(a * 1.1 + j)
             cx, cy = x - math.cos(wob) * r, y - math.sin(wob) * r
-            if a >= 1:                                  # 꼬리
-                bx, by = g.at(max(0.0, tt - 0.09), off * math.sin(math.pi * tt))
-                cel.put(blade(cv, bx - math.cos(wob) * r, by - math.sin(wob) * r, r, wob, 1.9, 3 * k, dark))
+            for q in (2, 1):                            # 꼬리 (잔상)
+                if a >= q:
+                    bx, by = g.at(max(0.0, tt - 0.08 * q), off * math.sin(math.pi * tt))
+                    cel.put(blade(cv, bx - math.cos(wob) * r, by - math.sin(wob) * r, r, wob, 1.9,
+                                  (4 - q) * k, dark))
             cel.put(blade(cv, cx, cy, r, wob, 2.2, 8 * k, light, dark),
                     blade(cv, cx, cy, r - 1, wob, 2.2, 3.5 * k, WHITE))
             if a == life:
@@ -811,7 +1000,7 @@ def claw(fx):
             return
         _rips(fx, lambda: impact(fx, size=1.1))
     if "contact" in (fx.move.get("flags") or []):
-        fx.st.lunge(fx.who, go)
+        rush(fx, go)
     else:
         go()
 
@@ -823,6 +1012,8 @@ def pulse(fx):
     cv = fx.cv
     g = Geo(fx)
     light, dark = FX.colors(fx.type)
+    if fx.type in ("DARK", "GHOST"):                    # 회보라는 어두운 바탕에 묻힌다 - 보랏빛을 섞어 띄운다
+        light = mix(light, "#c58bff", 0.5)
     cel = Cel(fx)
     sp = Sparks(fx)
     k = fx.big
@@ -832,16 +1023,23 @@ def pulse(fx):
     def draw(i, t):
         cel.clear()
         x, y = g.at(t)
+        if i < 4:                                       # 쏘는 순간 몸에서 큰 고리가 퍼진다 (1.13.2)
+            rr = (16 + i * 12) * k
+            cel.put(cv.create_oval(g.sx - rr, g.sy - rr * 0.8, g.sx + rr, g.sy + rr * 0.8, outline=dark,
+                                   width=max(1, 5 - i)))
         if i % 2 == 0:
             rings.append([x, y, 0])
-        for r in rings:
+        for r in rings:                                 # 지나간 자리의 고리 - 크고 두 겹으로 (1.13.2)
             r[2] += 1
             if r[2] > 7:
                 continue
-            rr = (5 + r[2] * 3.8) * k
-            cel.put(cv.create_oval(r[0] - rr * kx, r[1] - rr * ky, r[0] + rr * kx, r[1] + rr * ky,
-                                   outline=dark if r[2] > 4 else light, width=max(1, 5 - r[2] // 2 * 1)))
-        cel.put(orb(cv, x, y, 8 * k, light, dark))
+            rr = (8 + r[2] * 6) * k
+            w = max(1, 6 - r[2] // 2)
+            box = (r[0] - rr * kx, r[1] - rr * ky, r[0] + rr * kx, r[1] + rr * ky)
+            cel.put(cv.create_oval(*box, outline=dark, width=w + 3),
+                    cv.create_oval(*box, outline=light if r[2] < 5 else dark, width=w))
+        cel.put(spike(cv, x, y, 17 * k, 10, dark, inner=0.55, rot=i * 0.5))     # 심을 감싸고 도는 기운
+        cel.put(orb(cv, x, y, 10 * k, light, dark))
         if fx.type == "WATER" and i % 2:
             sp.add(lambda px, py, lk: FX._drop(cv, px, py, 2 + 2 * lk, light, dark),
                    x, y, random.uniform(-1.5, 1.5), -1.0, life=6, g=0.8)
@@ -853,7 +1051,10 @@ def pulse(fx):
 
 
 def ball(fx):
-    """구슬: 몸 앞에서 기운이 모여 뭉치고, 꼬리를 끌며 날아가 터진다."""
+    """구슬 (1.13.2 에 다시 그렸다): 기운이 휘감겨 모여 뭉치고, 테를 두른 채 혜성처럼 꼬리를 끌며 날아가 터진다.
+
+    길에는 빛 알갱이를 흘린다. 예전에는 작은 구슬 뒤에 점 세 개가 따라가는 것이 전부였다.
+    """
     cv = fx.cv
     g = Geo(fx)
     light, dark = FX.colors(fx.type)
@@ -861,35 +1062,48 @@ def ball(fx):
     if fx.type in ("GHOST", "DARK"):
         light, dark = mix(dark, light, 0.35), mix(dark, "#000000", 0.4)
     rim = core if core != WHITE else ""               # 어두운 구슬은 밝은 테가 있어야 보인다
+    ring = core if core != WHITE else light
     cel = Cel(fx)
+    sp = Sparks(fx)
     k = fx.big
     mx, my = g.mouth(20)
-    R = 12 * k
-    trail = []
+    R = 13 * k
     C, T = 7, 9
 
     def draw(i, t):
         cel.clear()
-        if i <= C:                                      # 모은다
+        if i <= C:                                      # 모은다 - 둘레에서 휘감겨 빨려 든다
             f = i / float(C)
-            for j in range(6):
-                a = j * math.pi / 3 + i * 0.5
-                rr = 38 * (1 - f)
-                px, py = mx + math.cos(a) * rr, my + math.sin(a) * rr
-                cel.put(cv.create_oval(px - 2.5, py - 2.5, px + 2.5, py + 2.5, fill=core, outline=""))
-            cel.put(orb(cv, mx, my, 3 + (R - 3) * ease_out(f), light, dark, core, rim))
+            for j in range(8):
+                a = j * math.pi / 4 + i * 0.55
+                rr = 42 * (1 - f) + 4
+                px, py = mx + math.cos(a) * rr, my + math.sin(a) * rr * 0.85
+                cel.put(cv.create_line(px, py, px + (mx - px) * 0.3, py + (my - py) * 0.3,
+                                       fill=core if j % 2 else light, width=2))
+            r = 3 + (R - 3) * ease_out(f)
+            cel.put(cv.create_oval(mx - r * 1.5, my - r * 1.5, mx + r * 1.5, my + r * 1.5, outline=ring, width=1))
+            cel.put(orb(cv, mx, my, r, light, dark, core, rim))
             return
         tt = ease_in((i - C) / float(T))                # 쏜다
         x, y = mx + (g.tx - mx) * tt, my + (g.ty - my) * tt
-        trail.append((x, y))
-        for j, (bx, by) in enumerate(trail[-4:-1]):
-            rr = R * (0.32 + 0.18 * j)
-            cel.put(cv.create_oval(bx - rr, by - rr, bx + rr, by + rr, fill=dark, outline=rim))
+        gone = math.hypot(x - mx, y - my)
+        tl = min(R * 4.2, gone + R * 0.5)               # 혜성 꼬리 (쏜 자리보다 뒤로는 안 간다)
+        if tl > R:
+            bx, by = x - g.ux * tl, y - g.uy * tl
+            cel.put(cv.create_polygon(bx, by, x + g.px * R * 0.95, y + g.py * R * 0.95,
+                                      x - g.px * R * 0.95, y - g.py * R * 0.95, fill=dark, outline=""))
+            bx2, by2 = x - g.ux * tl * 0.6, y - g.uy * tl * 0.6
+            cel.put(cv.create_polygon(bx2, by2, x + g.px * R * 0.5, y + g.py * R * 0.5,
+                                      x - g.px * R * 0.5, y - g.py * R * 0.5, fill=light, outline=""))
+        hr = R * 1.55                                   # 구슬을 감고 도는 테
+        for j in range(2):
+            cel.put(cv.create_arc(x - hr, y - hr, x + hr, y + hr, start=(i * 40 + j * 180) % 360, extent=110,
+                                  style="arc", outline=ring, width=2))
         cel.put(orb(cv, x, y, R * (1 + 0.08 * math.sin(i * 2.0)), light, dark, core, rim))
-        for j in range(2):                              # 구슬을 도는 빛
-            a = i * 0.9 + j * math.pi
-            px, py = x + math.cos(a) * (R + 5), y + math.sin(a) * (R + 5) * 0.6
-            cel.put(cv.create_oval(px - 2, py - 2, px + 2, py + 2, fill=core, outline=""))
+        if i % 2 == 0:                                  # 길에 흘리는 빛 알갱이
+            sp.add(lambda px, py, lk: glint(cv, px, py, (2 + 4 * lk) * k, core if lk > 0.5 else light),
+                   x - g.ux * R, y - g.uy * R, -g.ux * 0.6 + random.uniform(-0.6, 0.6),
+                   -g.uy * 0.6 + random.uniform(-0.6, 0.6), life=6, drag=0.9)
 
     def end():
         cel.clear()
@@ -920,8 +1134,12 @@ def leaf(fx):
             tt = a / float(life)
             x, y = g.at(tt, amps[j] * math.sin(math.pi * tt))
             if magical and a % 2 == 0:
-                cel.put(glint(cv, x - g.ux * 11, y - g.uy * 11, 5))
-            cel.put(FX._leaf_shape(cv, x, y, 8 * k, light, dark, tt * 620 + j * 47))
+                cel.put(glint(cv, x - g.ux * 13, y - g.uy * 13, 6))
+            if a >= 1:                                  # 돌면서 그리는 궤적 (1.13.2)
+                bx, by = g.at(max(0.0, tt - 0.14), amps[j] * math.sin(math.pi * max(0.0, tt - 0.14)))
+                mx_, my_ = g.at(max(0.0, tt - 0.07), amps[j] * math.sin(math.pi * max(0.0, tt - 0.07)) + 5)
+                cel.put(cv.create_line(bx, by, mx_, my_, x, y, fill=light, width=2, smooth=True))
+            cel.put(FX._leaf_shape(cv, x, y, 11 * k, light, dark, tt * 620 + j * 47))
             if a == life:
                 mini(fx, x, y, 0.6)
 
@@ -955,7 +1173,8 @@ def whip(fx):
 
 
 def psy(fx):
-    """염력: 머리에서 염파가 나가고, 맞는 쪽 둘레의 공간이 조여들며 일그러진다."""
+    """염력 (1.13.2 에 다시 그렸다): 이마가 번쩍이고 굵은 염파가 겹겹이 나간다. 맞는 쪽 둘레에 육각 문양이 돌며
+    조여들고, 공간이 일렁이고, 빛이 궤도를 돌다가 마지막에 한 점으로 찌그러진다."""
     cv = fx.cv
     g = Geo(fx)
     light, dark = FX.colors(fx.type)
@@ -965,29 +1184,53 @@ def psy(fx):
     A = 5
     B = 16 if (fx.move.get("power") or 0) >= 90 else 11
     deg = -math.degrees(g.ang)
+    hx, hy = g.sx, g.sy - 18 * k                        # 이마
+
+    def sigil(cx, cy, r, rot, col):
+        """육각 문양: 마주 놓인 세모 둘 + 테."""
+        out = []
+        for turn in (0.0, math.pi):
+            pts = []
+            for q in range(3):
+                a_ = rot + turn + q * 2 * math.pi / 3
+                pts += [cx + math.cos(a_) * r, cy + math.sin(a_) * r * 0.72]
+            out.append(cv.create_polygon(*pts, fill="", outline=col, width=2))
+        out.append(cv.create_oval(cx - r, cy - r * 0.72, cx + r, cy + r * 0.72, outline=col, width=1))
+        return out
 
     def draw(i, t):
         cel.clear()
-        if i <= A + 2:                                  # 염파
+        if i < 4:                                       # 이마가 번쩍
+            cel.put(spike(cv, hx, hy, (10 + i * 3) * k, 4, WHITE, violet, inner=0.25, rot=i * 0.4))
+        if i <= A + 2:                                  # 염파 (어두운 겉 위에 밝은 속)
             for j in range(3):
                 rr = 12 + (i - j) * 13
                 if 12 <= rr <= 90:
-                    cel.put(cv.create_arc(g.sx - rr, g.sy - rr, g.sx + rr, g.sy + rr, start=deg - 32,
-                                          extent=64, style="arc", outline=violet if j % 2 else light, width=3))
+                    box = (g.sx - rr, g.sy - rr, g.sx + rr, g.sy + rr)
+                    cel.put(cv.create_arc(*box, start=deg - 32, extent=64, style="arc", outline=dark, width=6),
+                            cv.create_arc(*box, start=deg - 32, extent=64, style="arc",
+                                          outline=violet if j % 2 else light, width=3))
         if i >= A:
-            b = i - A
+            b_ = i - A
+            f = b_ / float(B)
+            rr = (54 - 28 * ease_in(f)) * k
+            cel.put(sigil(g.tx, g.ty, rr, b_ * 0.35, violet))
             for j in range(3):                          # 일그러지는 공간
                 yy = g.ty - 16 * k + j * 16 * k
                 pts = []
-                for s in range(9):
-                    pts += [g.tx - 46 * k + s * 11.5 * k, yy + 5 * math.sin(s * 1.3 + b * 1.2 + j * 2)]
+                for q in range(9):
+                    pts += [g.tx - 46 * k + q * 11.5 * k, yy + 5 * math.sin(q * 1.3 + b_ * 1.2 + j * 2)]
                 cel.put(cv.create_line(*pts, fill=dark, width=2, smooth=True))
-            for j in range(3):                          # 조여드는 고리
-                rr = (58 - (b * 5 + j * 19) % 54) * k
-                cel.put(cv.create_oval(g.tx - rr, g.ty - rr * 0.72, g.tx + rr, g.ty + rr * 0.72,
-                                       outline=violet if j % 2 else light, width=3 if rr < 32 * k else 2))
-            if b % 2 == 0:
-                cel.put(glint(cv, g.tx + random.uniform(-32, 32) * k, g.ty + random.uniform(-24, 24) * k, 7))
+            for j in range(2):                          # 조여드는 고리
+                r2 = (50 - (b_ * 5 + j * 22) % 46) * k
+                cel.put(cv.create_oval(g.tx - r2, g.ty - r2 * 0.72, g.tx + r2, g.ty + r2 * 0.72,
+                                       outline=light if j else violet, width=3 if r2 < 30 * k else 2))
+            for j in range(3):                          # 궤도를 도는 빛
+                a_ = b_ * 0.6 + j * 2.09
+                cel.put(glint(cv, g.tx + math.cos(a_) * rr * 0.9, g.ty + math.sin(a_) * rr * 0.65, 7 * k,
+                              WHITE if j else light))
+            if b_ >= B - 3:                             # 한 점으로 찌그러진다
+                cel.put(orb(cv, g.tx, g.ty, (B - b_ + 1) * 4 * k, light, violet))
 
     def end():
         cel.clear()
@@ -1007,6 +1250,7 @@ def flame(fx):
     if fx.type in ("GHOST", "DARK"):
         light, dark = mix(dark, light, 0.4), mix(dark, "#000000", 0.35)
     cel = Cel(fx)
+    sp = Sparks(fx)
     k = fx.big
     p = fx.move.get("power") or 0
     emit = 8 if p < 70 else 12 if p < 100 else 16
@@ -1014,11 +1258,12 @@ def flame(fx):
     mx, my = g.mouth(14)
     spd = math.hypot(g.tx - mx, g.ty - my) / float(life)
     parts = []
+    G = 1.25                                            # 불씨 크기 (1.13.2: 줄이는 대신 키워서 셋 -> 둘)
 
     def draw(i, t):
         cel.clear()
         if i < emit:
-            for _ in range(3):
+            for _ in range(2):
                 v = spd * random.uniform(0.88, 1.08)
                 side = random.uniform(-1.3, 1.3)
                 parts.append([mx, my, g.ux * v + g.px * side, g.uy * v + g.py * side, 0])
@@ -1028,20 +1273,26 @@ def flame(fx):
             q[4] += 1
         parts[:] = [q for q in parts if q[4] <= life]
         for q in parts:                                 # 어두운 겉부터 깔고 밝은 속을 얹는다
-            r = (5 + 11.0 * q[4] / life) * k
+            r = (5 + 11.0 * q[4] / life) * k * G
             cel.put(cv.create_oval(q[0] - r, q[1] - r, q[0] + r, q[1] + r, fill=dark, outline=""))
-        for q in parts:
-            r = (5 + 11.0 * q[4] / life) * k * 0.62
+        for n_, q in enumerate(parts):
+            r = (5 + 11.0 * q[4] / life) * k * 0.62 * G
             cel.put(cv.create_oval(q[0] - r, q[1] - r, q[0] + r, q[1] + r, fill=light, outline=""))
+            if n_ % 3 == 0 and q[4] > 2:                # 줄기를 따라 핥아 오르는 불꽃 혀
+                cel.put(tongue(cv, q[0], q[1] - r * 0.6, r * 0.8, random.uniform(-3, 3), light, dark))
         for q in parts:
             if q[4] < life * 0.6:
-                r = (5 + 11.0 * q[4] / life) * k * 0.3
+                r = (5 + 11.0 * q[4] / life) * k * 0.3 * G
                 cel.put(cv.create_oval(q[0] - r, q[1] - r, q[0] + r, q[1] + r, fill=hot, outline=""))
-        if life - 1 <= i <= emit + life - 2:            # 불길에 휩싸인다
-            for j in range(3):
-                r = (9 + 5 * math.sin(i * 1.7 + j * 2.1)) * k
-                cel.put(tongue(cv, g.tx + (j - 1) * 13 * k, g.ty + 16 * k - r * 0.4, r,
-                               random.uniform(-5, 5), light, dark))
+        if life - 1 <= i <= emit + life - 2:            # 불기둥에 휩싸인다 (1.13.2: 혀 셋 -> 다섯, 가운데가 높다)
+            for j in range(5):
+                r = (11 + 6 * math.sin(i * 1.7 + j * 2.1)) * k * (1.25 - abs(j - 2) * 0.16)
+                cel.put(tongue(cv, g.tx + (j - 2) * 11 * k, g.ty + 18 * k - r * 0.4, r,
+                               random.uniform(-5, 5), light if j % 2 else hot, dark))
+            if i % 2 == 0:                              # 불티가 피어오른다
+                sp.add(lambda px, py, lk: glint(cv, px, py, (2 + 4 * lk) * k, hot if lk > 0.5 else light),
+                       g.tx + random.uniform(-24, 24) * k, g.ty - 6 * k, random.uniform(-0.8, 0.8),
+                       random.uniform(-3.2, -2.0), life=7, drag=0.95)
 
     def end():
         cel.clear()
@@ -1123,8 +1374,25 @@ def jet(fx):
         cel.put(cv.create_line(*pts, fill=dark, width=w + 5 + beat, smooth=True, capstyle="round"),
                 cv.create_line(*pts, fill=light, width=w + 1, smooth=True, capstyle="round"),
                 cv.create_line(*pts, fill=WHITE, width=max(2, w - 4), smooth=True, capstyle="round"))
-        if i >= n1 - 1:                                 # 맞은 자리
+        if p >= 100:                                    # 센 물기둥은 나선이 감긴다 (1.13.2)
+            for j, col in enumerate((light, WHITE)):
+                hp = []
+                for q in range(15):
+                    u = t0 + (t1 - t0) * q / 14.0
+                    off = math.sin(u * 14 - i * 1.6 + j * math.pi) * (w + 5)
+                    hp += [mx + (g.tx - mx) * u + g.px * off, my + (g.ty - my) * u + g.py * off]
+                cel.put(cv.create_line(*hp, fill=col, width=2, smooth=True))
+        if i >= n1 - 1:                                 # 맞은 자리 - 물왕관과 거품 고리 (1.13.2)
             rr = 7 + w * 0.5 + 3 * (i % 3)
+            cr = (16 + w + 4 * (i % 2)) * fx.big
+            crown = []
+            for q in range(15):
+                a_ = math.pi + math.pi * q / 14.0       # 위쪽 반원
+                rq = cr * (1.0 if q % 2 else 0.55)
+                crown += [g.tx + math.cos(a_) * rq, g.ty + 4 + math.sin(a_) * rq * 1.2]
+            cel.put(cv.create_polygon(*crown, fill=light, outline=dark, width=2),
+                    cv.create_oval(g.tx - cr * 1.2, g.ty + 4 - cr * 0.35, g.tx + cr * 1.2, g.ty + 4 + cr * 0.35,
+                                   outline=WHITE, width=2))
             cel.put(cv.create_oval(g.tx - rr, g.ty - rr, g.tx + rr, g.ty + rr, fill=WHITE, outline=light, width=2))
             spray(g.tx, g.ty)
             spray(g.tx, g.ty)
@@ -1300,8 +1568,13 @@ def pillars(fx):
     run(fx, 9, draw)
 
 
-def _rain(fx, make, n=6, gap=2, life=6, spread=30, lean=46, height=150, hit=0.7, final=1.2, streak=None):
-    """위에서 쏟아진다 (돌·화살·유성·동전·고드름). make(x, y, 각도, 번호, 나이)."""
+def _rain(fx, make, n=6, gap=2, life=6, spread=30, lean=46, height=150, hit=0.7, final=1.2, streak=None,
+          mini_every=1):
+    """위에서 쏟아진다 (돌·화살·유성·동전·고드름). make(x, y, 각도, 번호, 나이).
+
+    mini_every 개 중 하나만 꽂힐 때 작은 타격(mini)을 그린다 - 많이 쏟아지는 것(사우전드애로 열 발)은 조각이
+    쌓여 마지막 충격과 겹치면 한때 떠 있는 도형이 상한을 넘는다.
+    """
     cv = fx.cv
     g = Geo(fx)
     light, _dark = FX.colors(fx.type)
@@ -1325,7 +1598,7 @@ def _rain(fx, make, n=6, gap=2, life=6, spread=30, lean=46, height=150, hit=0.7,
             cel.put(cv.create_line(x - math.cos(ang) * 26, y - math.sin(ang) * 26, x, y,
                                    fill=streak or light, width=2))
             cel.put(make(x, y, ang, j, a))
-            if a == life:
+            if a == life and j % mini_every == 0:
                 mini(fx, x2, y2, hit)
 
     def end():
@@ -1349,7 +1622,7 @@ def arrows(fx):
         c, s = math.cos(ang), math.sin(ang)
         return [cv.create_line(x - c * 20, y - s * 20, x, y, fill=light, width=3),
                 shard(cv, x, y, 5, ang, WHITE, dark)]
-    _rain(fx, make, n=10, gap=1, life=5, spread=34, hit=0.55)
+    _rain(fx, make, n=10, gap=1, life=5, spread=34, hit=0.55, mini_every=2)
 
 
 def meteor(fx):
@@ -1542,11 +1815,19 @@ def zap(fx):
                              light, dark, 1))
         if i < wait:
             return
-        cel.put(bolt(cv, zig(mx, my, g.tx, g.ty, 11, 8), light, dark, int(round(3 * k))),
+        main = zig(mx, my, g.tx, g.ty, 11, 8)
+        cel.put(bolt(cv, main, light, dark, int(round(4 * k))),            # 1.13.2: 3 -> 4
                 cv.create_line(*zig(mx, my, g.tx, g.ty, 17, 7), fill=WHITE, width=1))
-        for _q in range(2):
+        for q in (2, 5):                                # 큰 번개에서 뻗는 갈래
+            bx, by = main[q * 2], main[q * 2 + 1]
+            a = g.ang + random.choice((-1, 1)) * random.uniform(0.6, 1.2)
+            ln = random.uniform(18, 30) * k
+            cel.put(bolt(cv, zig(bx, by, bx + math.cos(a) * ln, by + math.sin(a) * ln, 5, 3), light, dark, 1))
+        rr = (7 + (i % 2) * 2) * k                      # 쏘는 곳의 전기 구슬
+        cel.put(orb(cv, mx, my, rr, light, dark))
+        for _q in range(4):                             # 맞는 곳에서 사방으로 튄다
             a = random.uniform(0, 2 * math.pi)
-            r = random.uniform(16, 30)
+            r = random.uniform(18, 34) * k
             cel.put(cv.create_line(*zig(g.tx, g.ty, g.tx + math.cos(a) * r, g.ty + math.sin(a) * r, 5, 3),
                                    fill=light, width=2))
         r = 6 + (i % 3) * 3
@@ -1594,9 +1875,17 @@ def tornado(fx):
             cy = base - f * 66 * k * grow
             st = (b * 47 + j * 61) % 360
             cel.put(cv.create_arc(cx - rx, cy - ry, cx + rx, cy + ry, start=st, extent=210,
-                                  style="arc", outline=light, width=3),
+                                  style="arc", outline=light, width=4),
                     cv.create_arc(cx - rx, cy - ry, cx + rx, cy + ry, start=st + 220, extent=110,
-                                  style="arc", outline=dark, width=2))
+                                  style="arc", outline=dark, width=3))
+        dr = (38 + 6 * math.sin(b * 0.8)) * k * grow    # 밑동에 이는 먼지 고리 (1.13.2)
+        cel.put(cv.create_oval(g.tx - dr, base - dr * 0.22, g.tx + dr, base + dr * 0.22, outline=dark, width=2))
+        for j in range(3):                              # 휘말려 오르는 잔해
+            f = (b * 0.07 + j * 0.33) % 1.0
+            a = b * 1.1 + j * 2.1
+            rx = (9 + 30 * f) * k
+            cel.put(rock(cv, g.tx + math.cos(a) * rx, base - f * 66 * k + math.sin(a) * rx * 0.3, 4 * k,
+                         light, dark, j))
         for j in range(4):                              # 말려 올라가는 것들
             f = (b * 0.09 + j * 0.25) % 1.0
             a = b * 0.9 + j * 1.7
@@ -1660,7 +1949,8 @@ def daimonji(fx):
 
 
 def boom(fx):
-    """폭발: 번쩍하고 불덩이가 부풀었다 꺼지며 연기가 오른다. 대폭발은 쓰는 쪽에서 터진다."""
+    """폭발 (1.13.2 에 다시 그렸다): 포탄이 꼬리를 끌고 날아가, 섬광 기둥이 솟고 불덩이가 부풀며 양옆에서
+    2차 폭발이 터진다. 바닥을 쓸고 가는 충격파 뒤로 연기가 버섯구름처럼 오른다. 대폭발은 쓰는 쪽에서 터진다."""
     cv = fx.cv
     g = Geo(fx)
     light, dark = FX.colors(fx.type)
@@ -1673,48 +1963,75 @@ def boom(fx):
     x0, y0 = fx.src if at_self else fx.dst
     A = 0 if at_self else 5
     seeds = [random.uniform(0.75, 1.15) for _q in range(14)]
+    side = [(-26, -8, 2), (24, -14, 4)]                 # 2차 폭발 (옆으로, 위로, 터지는 박자)
 
-    def blob(r, rot):
+    def blob(cx, cy, r, rot):
         pts = []
         for q in range(14):
-            a = rot + 2 * math.pi * q / 14
+            a_ = rot + 2 * math.pi * q / 14
             rr = r * seeds[q] * (1.0 if q % 2 else 0.78)
-            pts += [x0 + math.cos(a) * rr, y0 + math.sin(a) * rr * 0.92]
+            pts += [cx + math.cos(a_) * rr, cy + math.sin(a_) * rr * 0.92]
         return pts
+
+    def fireball(cx, cy, r, b, white=True):
+        out = [cv.create_polygon(*blob(cx, cy, r, b * 0.2), fill=dark, outline="", smooth=True),
+               cv.create_polygon(*blob(cx, cy, r * 0.7, b * 0.2 + 0.4), fill=light, outline="", smooth=True)]
+        if white:
+            out.append(cv.create_polygon(*blob(cx, cy, r * 0.4, b * 0.2 + 0.9), fill=WHITE, outline="",
+                                         smooth=True))
+        return out
 
     def draw(i, t):
         cel.clear()
-        if i < A:                                       # 날아가는 포탄
+        if i < A:                                       # 날아가는 포탄 (꼬리를 끈다)
             tt = (i + 1) / float(A)
             x, y = g.at(tt)
-            bx, by = g.at(max(0.0, tt - 0.2))
-            cel.put(rip(cv, bx, by, x, y, 5, dark, light), orb(cv, x, y, 8 * k, light, dark))
+            bx, by = g.at(max(0.0, tt - 0.32))
+            cel.put(rip(cv, bx, by, x, y, 7 * k, dark), rip(cv, bx, by, x, y, 3.5 * k, light),
+                    orb(cv, x, y, 9 * k, light, dark))
             return
         b = i - A
         if b == 0:
-            scatter(fx, sp, x0, y0, k * 1.3)
-        if b < 11:
-            r = (14 + 34 * ease_out(min(1.0, b / 8.0))) * k
+            scatter(fx, sp, x0, y0, k * 1.5)
+        if b < 3:                                       # 섬광 기둥
+            hw, hh = (16 - b * 4) * k, (70 + b * 12) * k
+            cel.put(cv.create_oval(x0 - hw, y0 - hh, x0 + hw, y0 + hh * 0.3, fill=light, outline=""),
+                    cv.create_oval(x0 - hw * 0.45, y0 - hh * 0.95, x0 + hw * 0.45, y0 + hh * 0.25, fill=WHITE,
+                                   outline=""))
+        if b >= 2:                                      # 바닥을 쓸고 가는 충격파
+            rr = (24 + (b - 2) * 11) * k
+            w = max(1, 6 - (b - 2) // 2)
+            cel.put(cv.create_oval(x0 - rr, y0 + 14 * k - rr * 0.3, x0 + rr, y0 + 14 * k + rr * 0.3,
+                                   outline=light, width=w))
+            if b >= 4:
+                r2 = rr * 0.7
+                cel.put(cv.create_oval(x0 - r2, y0 + 14 * k - r2 * 0.3, x0 + r2, y0 + 14 * k + r2 * 0.3,
+                                       outline=dark, width=max(1, w - 1)))
+        if b < 11:                                      # 불덩이 (겉은 그대로, 속이 먼저 꺼진다)
+            r = (16 + 38 * ease_out(min(1.0, b / 8.0))) * k
             shrink = 1.0 if b < 5 else max(0.0, 1.0 - (b - 4) / 7.0)
-            cel.put(cv.create_polygon(*blob(r, b * 0.2), fill=dark, outline="", smooth=True),
-                    cv.create_polygon(*blob(r * 0.7 * shrink, b * 0.2 + 0.4), fill=light, outline="", smooth=True))
+            cel.put(cv.create_polygon(*blob(x0, y0, r, b * 0.2), fill=dark, outline="", smooth=True),
+                    cv.create_polygon(*blob(x0, y0, r * 0.7 * shrink, b * 0.2 + 0.4), fill=light, outline="",
+                                      smooth=True))
             if b < 6:
-                cel.put(cv.create_polygon(*blob(r * 0.4 * shrink, b * 0.2 + 0.9), fill=WHITE, outline="",
+                cel.put(cv.create_polygon(*blob(x0, y0, r * 0.4 * shrink, b * 0.2 + 0.9), fill=WHITE, outline="",
                                           smooth=True))
+        for ox, oy, at in side:                         # 2차 폭발
+            c = b - at
+            if 0 <= c < 6:
+                r = (10 + 16 * ease_out(min(1.0, c / 3.0))) * k * (1.0 - c / 7.0)
+                cel.put(fireball(x0 + ox * k, y0 + oy * k, r, b, c < 3))
         if b < 2:
-            cel.put(spike(cv, x0, y0, (26 + b * 22) * k, 10, WHITE, light, inner=0.5, rot=b * 0.3, width=2))
-        if b >= 3:                                      # 충격 고리
-            rr = (20 + (b - 3) * 9) * k
-            cel.put(cv.create_oval(x0 - rr, y0 - rr * 0.7, x0 + rr, y0 + rr * 0.7, outline=light,
-                                   width=max(1, 5 - (b - 3) // 2)))
-        if 4 <= b <= 11 and b % 2 == 0:                 # 연기
-            sp.add(lambda px, py, lk: puff(cv, px, py, 5 + 8 * lk, "#8b90a6", "#5c6074"),
-                   x0 + random.uniform(-18, 18) * k, y0 - 6, random.uniform(-1, 1), -2.4, life=7)
+            cel.put(spike(cv, x0, y0, (30 + b * 24) * k, 10, WHITE, light, inner=0.5, rot=b * 0.3, width=2))
+        if 3 <= b <= 13:                                # 버섯구름처럼 오르는 연기
+            sp.add(lambda px, py, lk: puff(cv, px, py, (6 + 9 * lk) * k, "#8b90a6", "#5c6074"),
+                   x0 + random.uniform(-14, 14) * k, y0 - 10 * k, random.uniform(-0.7, 0.7),
+                   -3.0 - (0.6 if b > 8 else 0), life=7, drag=0.97)
 
     def end():
         cel.clear()
         fx.finish()
-    run(fx, A + 15, draw, end)
+    run(fx, A + 16, draw, end)
 
 
 
@@ -1787,7 +2104,6 @@ def laser(fx):
     C, F, R = (10 if strong else 6), (11 if strong else 8), 3
     W = 6 if p < 80 else 8 if p < 120 else 11
     mx, my = g.mouth(18)
-    kx, ky = 0.4 + 0.6 * abs(g.uy), 0.4 + 0.6 * abs(g.ux)
 
     def beam(t1, wk):
         x2, y2 = mx + (g.tx - mx) * t1, my + (g.ty - my) * t1
@@ -1799,9 +2115,26 @@ def laser(fx):
             out.append(cv.create_line(mx, my, x2, y2, fill=WHITE, width=max(1, int(round(W * 0.4 * wk))),
                                       capstyle="round"))
             return out
-        for col, ww in ((dark, W + 7), (light, W + 2), (WHITE, max(2, W - 4))):
+        for col, ww in ((dark, W + 11), (light, W + 3), (WHITE, max(2, W - 3))):
             out.append(cv.create_line(mx, my, x2, y2, fill=col, width=max(1, int(round(ww * wk))),
                                       capstyle="round"))
+        return out
+
+    def helix(t1, b, wk):
+        """빔을 감고 도는 나선 두 가닥 (1.13.2) - 굵은 줄기 하나로는 밋밋했다."""
+        out = []
+        ln = math.hypot(g.tx - mx, g.ty - my) * t1
+        n = max(4, int(ln / 9))
+        amp = (W * 0.9 + 4) * wk
+        for j, col in enumerate((light, WHITE)):
+            pts = []
+            for q in range(n + 1):
+                u = q / float(n)
+                off = math.sin(u * 9.0 - b * 1.3 + j * math.pi) * amp
+                x = mx + (g.tx - mx) * t1 * u + g.px * off
+                y = my + (g.ty - my) * t1 * u + g.py * off
+                pts += [x, y]
+            out.append(cv.create_line(*pts, fill=col, width=2, smooth=True))
         return out
 
     def draw(i, t):
@@ -1821,12 +2154,15 @@ def laser(fx):
             return
         t1 = min(1.0, (b + 1) / 2.0)
         cel.put(beam(t1, 1.18 if b % 2 else 1.0))
-        for j in range(2):                              # 줄기를 타고 가는 고리
-            u = (b * 0.19 + j * 0.5) % 1.0
+        if not rainbow:
+            cel.put(helix(t1, b, 1.0))
+        for j in range(3):                              # 줄기를 타고 달리는 빛
+            u = (b * 0.27 + j / 3.0) % 1.0
             if u < t1:
                 x, y = mx + (g.tx - mx) * u, my + (g.ty - my) * u
-                rr = W + 4
-                cel.put(cv.create_oval(x - rr * kx, y - rr * ky, x + rr * kx, y + rr * ky, outline=WHITE, width=2))
+                cel.put(cv.create_line(x - g.ux * 14, y - g.uy * 14, x + g.ux * 6, y + g.uy * 6,
+                                       fill=WHITE, width=3, capstyle="round"))
+        cel.put(spike(cv, mx, my, (W + 12) * (1.1 if b % 2 else 1.0), 8, light, inner=0.45, rot=b * 0.4))
         cel.put(orb(cv, mx, my, (W + 3) * (1.1 if b % 2 else 1.0), light, dark))
         if t1 >= 1.0:
             r = W + 6 + 3 * (b % 2)
@@ -2018,7 +2354,8 @@ def blizzard(fx):
             for s in range(5):
                 u = u0 + 0.3 * s / 4.0
                 pts += list(g.at(u, off + 5 * math.sin(u * 7 + j)))
-            cel.put(cv.create_line(*pts, fill=light, width=2, smooth=True))
+            cel.put(cv.create_line(*pts, fill=WHITE if j in (1, 2) else light, width=3 if j in (1, 2) else 2,
+                                   smooth=True))
         if i < n - life:
             for _q in range(4):
                 parts.append([0, random.uniform(-34, 34), random.random() < 0.3, random.uniform(0, 6.28)])
@@ -2033,6 +2370,12 @@ def blizzard(fx):
             else:
                 r = 1.5 + q[3] % 2.0
                 cel.put(cv.create_oval(x - r, y - r, x + r, y + r, fill=WHITE, outline=""))
+        if i >= 9:                                      # 맞는 쪽 둘레에 돋아나는 얼음 조각 (1.13.2)
+            gr = min(1.0, (i - 8) / 4.0)
+            for j in range(8):
+                a = j * math.pi / 4 + 0.2
+                rr = 30 * k
+                cel.put(shard(cv, g.tx + math.cos(a) * rr, g.ty + math.sin(a) * rr * 0.75, 9 * k * gr, a, light, dark))
         if i >= 7:                                      # 눈 결정
             ln = min(24.0, (i - 6) * 3.0) * k
             for j in range(6):
@@ -2067,8 +2410,11 @@ def sludge(fx):
             a = 2 * math.pi * q / 8
             rr = r * (0.85 + 0.25 * math.sin(seeds[q] + i * 1.1))
             pts += [x + math.cos(a) * rr, y + math.sin(a) * rr]
+        bub = r * 0.2                                   # 표면에 이는 독 거품 (1.13.2)
+        bx, by = x + r * 0.35 * math.cos(i * 0.9), y + r * 0.3 * math.sin(i * 0.9)
         return [cv.create_polygon(*pts, fill=dark, outline=light, width=2, smooth=True),
-                cv.create_oval(x - r * 0.45, y - r * 0.5, x - r * 0.05, y - r * 0.1, fill=light, outline="")]
+                cv.create_oval(x - r * 0.45, y - r * 0.5, x - r * 0.05, y - r * 0.1, fill=light, outline=""),
+                cv.create_oval(bx - bub, by - bub, bx + bub, by + bub, fill="", outline=light, width=2)]
 
     def drip(x, y, vy):
         sp.add(lambda px, py, lk: FX._drop(cv, px, py, 2 + 2.5 * lk, light, dark), x, y, 0.0, vy, life=7, g=0.5)
@@ -2079,12 +2425,14 @@ def sludge(fx):
             tt = i / float(A)
             x, y = g.at(tt)
             y -= 34 * math.sin(math.pi * tt)
-            cel.put(gob(x, y, 13 * k, i))
-            if i % 2:
-                drip(x, y + 6, 1.5)
+            cel.put(gob(x, y, 16 * k, i))
+            drip(x, y + 6, 1.5)
             return
         b = i - A
-        r = (16 + 14 * ease_out(min(1.0, b / 3.0))) * k
+        r = (20 + 18 * ease_out(min(1.0, b / 3.0))) * k
+        if 1 <= b <= 5:                                 # 독구름이 피어오른다 (1.13.2)
+            sp.add(lambda px, py, lk: puff(cv, px, py, (5 + 8 * lk) * k, dark, light),
+                   g.tx + random.uniform(-22, 22) * k, g.ty - 8 * k, random.uniform(-0.6, 0.6), -2.2, life=6)
         pts = []
         for q in range(16):                             # 철퍽
             a = 2 * math.pi * q / 16
@@ -2232,7 +2580,7 @@ def multi(fx):
             mini(fx, g.tx + math.cos(a) * 16, g.ty + math.sin(a) * 13, 0.9)
             fx.after(75, lambda: one(i + 1))
         one(0)
-    fx.st.lunge(fx.who, strike)
+    rush(fx, strike)
 
 
 def rocks(fx):
@@ -2250,10 +2598,14 @@ def recoil(fx):
 
     def draw(i, t):
         cel.clear()
-        for j in range(5):
-            ph = i * 0.9 + j * 1.26
-            r = (8 + 4 * math.sin(i * 1.3 + j)) * k * min(1.0, (i + 2) / 5.0)
-            cel.put(tongue(cv, sx + math.cos(ph) * 18, sy + 20 - r * 0.3, r, 4 * math.sin(ph), dark, light))
+        grow = min(1.0, (i + 2) / 5.0)
+        cel.put(spike(cv, sx, sy, (34 + 4 * math.sin(i * 1.7)) * k * grow, 12, dark, inner=0.62,
+                      rot=i * 0.3))                     # 가시 오라 (1.13.2)
+        for j in range(8):                              # 몸을 휘감고 타오르는 기운
+            ph = i * 0.9 + j * 0.785
+            r = (9 + 4 * math.sin(i * 1.3 + j)) * k * grow
+            cel.put(tongue(cv, sx + math.cos(ph) * 20, sy + 14 + math.sin(ph) * 8 - r * 0.3, r,
+                           4 * math.sin(ph), dark if j % 2 else light, light if j % 2 else WHITE))
         rr = 32 - i * 2.4
         cel.put(cv.create_oval(sx - rr, sy - rr * 0.8, sx + rr, sy + rr * 0.8, outline=light, width=2))
 
@@ -2265,7 +2617,7 @@ def recoil(fx):
                 return
             scatter(fx, Sparks(fx), sx, sy, 0.6, n=4)   # 반동
             impact(fx, size=1.45)
-        fx.st.lunge(fx.who, strike)
+        rush(fx, strike)
     run(fx, 8, draw, go)
 
 
@@ -2286,18 +2638,25 @@ def punch(fx):
         def rot(x, y, dx, dy):
             return [x + dx * c - dy * s, y + dx * s + dy * c]
 
-        def draw(i, t):
-            cel.clear()
-            back = (26, 10, 0)[min(i, 2)]
-            x, y = g.tx - g.ux * back, g.ty - g.uy * back
-            r = (11 + 3 * min(i, 2)) * k
-            for off in (-8, 0, 8):                      # 뒤로 뻗는 줄
-                cel.put(cv.create_line(*(rot(x, y, -r - 28, off) + rot(x, y, -r - 2, off)),
-                                       fill=light, width=3, capstyle="round"))
+        def fist(x, y, r, fill, edge):
             pts = []
             for dx, dy in ((-1, -1), (0, -1.08), (1, -1), (1.1, 0), (1, 1), (0, 1.08), (-1, 1), (-1.05, 0)):
                 pts += rot(x, y, dx * r, dy * r)
-            cel.put(cv.create_polygon(*pts, fill=light, outline=dark, width=2, smooth=True))
+            return cv.create_polygon(*pts, fill=fill, outline=edge, width=2, smooth=True)
+
+        def draw(i, t):
+            cel.clear()
+            back = (30, 12, 0)[min(i, 2)]
+            x, y = g.tx - g.ux * back, g.ty - g.uy * back
+            r = (13 + 4 * min(i, 2)) * k
+            for off in (-14, -7, 0, 7, 14):             # 뒤로 길게 뻗는 속도선
+                cel.put(cv.create_line(*(rot(x, y, -r - 40 + abs(off), off) + rot(x, y, -r - 2, off)),
+                                       fill=WHITE if off == 0 else light, width=3 if off == 0 else 2,
+                                       capstyle="round"))
+            for q, sc in ((2, 0.62), (1, 0.8)):          # 잔상 (뒤에 남은 주먹)
+                gx, gy = x - g.ux * r * 1.1 * q, y - g.uy * r * 1.1 * q
+                cel.put(fist(gx, gy, r * sc, dark, ""))
+            cel.put(fist(x, y, r, light, dark))
             for off in (-0.45, 0.0, 0.45):              # 손가락 마디
                 cel.put(cv.create_line(*(rot(x, y, r * 0.35, off * r) + rot(x, y, r * 0.95, off * r)),
                                        fill=dark, width=2))
@@ -2306,7 +2665,7 @@ def punch(fx):
             cel.clear()
             impact(fx, size=1.15)
         run(fx, 3, draw, end, ms=28)
-    fx.st.lunge(fx.who, strike)
+    rush(fx, strike)
 
 
 def kick(fx):
@@ -2315,7 +2674,7 @@ def kick(fx):
         if fx.dead:
             return
         _sweep(fx, lambda: impact(fx, size=1.15), mirror=True, thick=22, span=2.1)
-    fx.st.lunge(fx.who, strike)
+    rush(fx, strike)
 
 
 def stab(fx):
@@ -2333,17 +2692,27 @@ def stab(fx):
             cel.clear()
             tip = (-22, 2, 14)[min(i, 2)]
             x, y = g.tx + g.ux * (tip - 30 * k), g.ty + g.uy * (tip - 30 * k)
-            for off in (-9, 9):
-                cel.put(cv.create_line(x - g.ux * 40 + g.px * off, y - g.uy * 40 + g.py * off,
-                                       x - g.ux * 8 + g.px * off, y - g.uy * 8 + g.py * off, fill=light, width=2))
-            cel.put(shard(cv, x, y, 20 * k, g.ang, light, dark), shard(cv, x, y, 9 * k, g.ang, WHITE))
+            for off in (-11, 0, 11):                    # 뒤로 뻗는 속도선
+                cel.put(cv.create_line(x - g.ux * 52 + g.px * off, y - g.uy * 52 + g.py * off,
+                                       x - g.ux * 8 + g.px * off, y - g.uy * 8 + g.py * off,
+                                       fill=WHITE if off == 0 else light, width=2))
+            hp = []                                     # 자루를 감는 드릴 나선 (1.13.2)
+            for q in range(9):
+                u = q / 8.0
+                off = math.sin(u * 12 + i * 2.0) * 7 * k
+                hp += [x - g.ux * (8 + 40 * u) + g.px * off, y - g.uy * (8 + 40 * u) + g.py * off]
+            cel.put(cv.create_line(*hp, fill=dark, width=2, smooth=True))
+            cel.put(shard(cv, x, y, 24 * k, g.ang, light, dark), shard(cv, x, y, 11 * k, g.ang, WHITE))
+            if i >= 2:                                  # 꿰뚫은 끝이 뒤로 삐져나온다
+                ex, ey = g.tx + g.ux * 24 * k, g.ty + g.uy * 24 * k
+                cel.put(shard(cv, ex, ey, 12 * k, g.ang, WHITE, light))
 
         def end():
             cel.clear()
             impact(fx, size=1.1)
         run(fx, 3, draw, end, ms=28)
     if "contact" in (fx.move.get("flags") or []):
-        fx.st.lunge(fx.who, thrust)
+        rush(fx, thrust)
     else:
         thrust()
 
@@ -2360,21 +2729,40 @@ def drain(fx):
     amps = [(-1 if j % 2 else 1) * random.uniform(8, 22) for j in range(n)]
     mini(fx, g.tx, g.ty, 1.0)
 
+    heal = "#9dffc0"
+
     def draw(i, t):
         cel.clear()
-        if i < 5:                                       # 빨려 나오는 자리
-            r = 26 - i * 4
-            cel.put(cv.create_oval(g.tx - r, g.ty - r * 0.8, g.tx + r, g.ty + r * 0.8, outline=light, width=2))
+        if i < 8:                                       # 빨려 나오는 자리 - 기운이 쪼그라든다 (1.13.2)
+            r = 30 - i * 3
+            cel.put(spike(cv, g.tx, g.ty, r * 1.2, 10, "", dark, inner=0.62, rot=i * 0.4, width=2),
+                    cv.create_oval(g.tx - r, g.ty - r * 0.8, g.tx + r, g.ty + r * 0.8, outline=light, width=2))
+        if 2 <= i <= 2 + (n - 1) * gap + life - 3:      # 흘러드는 두 가닥
+            for j in range(2):
+                pts = []
+                for q in range(11):
+                    u = q / 10.0
+                    pts += list(g.at(1 - u, (16 if j else -16) * math.sin(math.pi * u) * math.cos(i * 0.4 + j)))
+                cel.put(cv.create_line(*pts, fill=light if j else dark, width=2, smooth=True))
         for j in range(n):
             a = i - 2 - j * gap
             if a < 0 or a > life:
                 continue
             tt = a / float(life)
             x, y = g.at(1 - tt, amps[j] * math.sin(math.pi * tt))
-            cel.put(heart(cv, x, y, 6, light, dark) if kiss else orb(cv, x, y, 5, light, dark))
-            if a == life:                               # 내 몸에 스며든다
-                sp.add(lambda px, py, lk: glint(cv, px, py, 3 + 6 * lk, "#9dffc0"),
+            if kiss:
+                cel.put(heart(cv, x, y, 7, light, dark))
+            else:
+                cel.put(cv.create_oval(x - 9, y - 9, x + 9, y + 9, outline=light, width=1),
+                        orb(cv, x, y, 6, light, dark))
+            if a == life:                               # 내 몸에 스며든다 - '+' 가 피어오른다
+                sp.add(lambda px, py, lk: [cv.create_line(px - 4 * lk - 2, py, px + 4 * lk + 2, py, fill=heal, width=3),
+                                           cv.create_line(px, py - 4 * lk - 2, px, py + 4 * lk + 2, fill=heal, width=3)],
                        g.sx + random.uniform(-14, 14), g.sy + random.uniform(-4, 16), 0.0, -1.6, life=7)
+        a0 = i - 2 - gap                                # 회복 고리 (처음 기운이 닿은 뒤)
+        if a0 >= life:
+            r = (14 + (a0 - life) * 6) % 46 + 10
+            cel.put(cv.create_oval(g.sx - r, g.sy - r * 0.8, g.sx + r, g.sy + r * 0.8, outline=heal, width=2))
 
     def end():
         cel.clear()
@@ -2382,7 +2770,136 @@ def drain(fx):
     run(fx, 2 + (n - 1) * gap + life, draw, end)
 
 
+def wind(fx):
+    """바람 (1.13.2 에 새로 그렸다 - 예전에는 battle_fx 의 점선 네 줄이 지나갔다).
+
+    날개 · 깃털로 몸을 부딪는 기술(닿는 기술)은 달려들어 날개 자국 두 줄을 X 자로 긋고 깃털이 흩날린다. 나머지는
+    소용돌이치는 바람 줄기를 타고 바람 칼날 셋이 날아가 꽂힌다. 변화기(깃털댄스 · 순풍 …)는 깃털만 흩날리고 끝난다.
+    """
+    cv = fx.cv
+    g = Geo(fx)
+    light, dark = FX.colors(fx.type)
+    k = fx.big
+    cel = Cel(fx)
+    sp = Sparks(fx)
+    status = (fx.move.get("cat") or "status") == "status"
+
+    def feathers(x, y, n):
+        for _q in range(n):
+            a_ = random.uniform(0, 2 * math.pi)
+            v = random.uniform(1.5, 3.5)
+            sp.add(lambda px, py, lk, ph=a_: FX._leaf_shape(cv, px, py, (3 + 4 * lk) * k, WHITE, light,
+                                                            math.degrees(ph) + lk * 300),
+                   x, y, math.cos(a_) * v, math.sin(a_) * v - 1.0, life=10, g=0.12, drag=0.9)
+
+    if not status and "contact" in (fx.move.get("flags") or []):
+        def strike():
+            if fx.dead:
+                return
+            feathers(g.tx, g.ty, 5)
+            _sweep(fx, lambda: None, span=2.0)
+            fx.after(70, lambda: _sweep(fx, lambda: impact(fx, size=1.1), mirror=True, span=2.0))
+        return rush(fx, strike)
+
+    n, gap, life = 3, 3, 9
+
+    def draw(i, t):
+        cel.clear()
+        for j in range(3):                              # 소용돌이치는 바람 줄기
+            pts = []
+            for q in range(13):
+                u = q / 12.0
+                off = math.sin(u * 7 - i * 0.9 + j * 2.1) * (10 + 6 * j) * k * min(1.0, u * 3)
+                pts += list(g.at(u, off))
+            cel.put(cv.create_line(*pts, fill=WHITE if j == 0 else light, width=3 if j == 0 else 2, smooth=True))
+        for j in range(n):                              # 바람 칼날
+            a_ = i - j * gap
+            if a_ < 0 or a_ > life:
+                continue
+            tt = ease_in(a_ / float(life))
+            off = (-12, 12, 0)[j]
+            x, y = g.at(tt, off * math.sin(math.pi * tt))
+            r = 25 * k
+            wob = g.ang + 0.3 * math.sin(a_ + j)
+            cx, cy = x - math.cos(wob) * r, y - math.sin(wob) * r
+            cel.put(blade(cv, cx, cy, r, wob, 2.2, 10 * k, light, dark), blade(cv, cx, cy, r - 1, wob, 2.2, 4 * k, WHITE))
+            if a_ == life:
+                if not status:
+                    mini(fx, x, y, 0.7)
+                feathers(x, y, 2)
+
+    def end():
+        cel.clear()
+        if status:
+            return fx.after(200, fx.finish)
+        impact(fx, size=1.15)
+    run(fx, (n - 1) * gap + life, draw, end, ms=30)
+
+
+def sound(fx):
+    """소리 (1.13.2 에 새로 그렸다 - 예전에는 battle_fx 의 가는 활 모양 하나씩이었다).
+
+    입에서 굵은 음파가 겹겹이 퍼져 나간다. 공격기는 맞은 쪽 둘레가 떨리고 끝에 크게 맞는다. 노래 · 울음소리 같은
+    변화기는 음표가 춤추며 날아가 상대 둘레에서 반짝이고 끝난다 (공격처럼 터지지 않는다).
+    """
+    cv = fx.cv
+    g = Geo(fx)
+    light, dark = FX.colors(fx.type)
+    k = fx.big
+    status = (fx.move.get("cat") or "status") == "status"
+    mx, my = g.mouth(16)
+    deg = -math.degrees(g.ang)
+    reach = math.hypot(g.tx - mx, g.ty - my)
+    cel = Cel(fx)
+    N, GAP, LIFE = 5, 2, 8
+    font = (U.FAMILY, U.pt(14), "bold")
+    # 한글 글꼴(맑은 고딕 · 애플 SD 고딕)에 확실히 있는 음표만 쓴다 - ♫ 는 없는 글꼴이 있어 네모로 깨진다
+    notes = ("♪", "♩", "♪")
+
+    def draw(i, t):
+        cel.clear()
+        for j in range(N):                              # 음파
+            a_ = i - j * GAP
+            if a_ < 0 or a_ > LIFE:
+                continue
+            rr = 12 + a_ * reach / float(LIFE) * 0.95
+            box = (mx - rr, my - rr, mx + rr, my + rr)
+            w = max(1, 7 - a_ // 2)
+            cel.put(cv.create_arc(*box, start=deg - 36, extent=72, style="arc", outline=dark, width=w + 3),
+                    cv.create_arc(*box, start=deg - 36, extent=72, style="arc", outline=light, width=w))
+            if a_ < 3:
+                cel.put(cv.create_arc(*box, start=deg - 20, extent=40, style="arc", outline=WHITE, width=1))
+        if status:                                      # 음표가 춤추며 날아간다
+            for j, ch in enumerate(notes):
+                u = min(1.0, max(0.0, (i - j * 2) / 12.0))
+                if u <= 0:
+                    continue
+                x, y = g.at(u, math.sin(u * 9 + j) * 14)
+                y -= 10 + 6 * math.sin(i * 0.8 + j)
+                cel.put(cv.create_text(x + 1, y + 1, text=ch, fill=dark, font=font),
+                        cv.create_text(x, y, text=ch, fill=WHITE if j % 2 else light, font=font))
+        elif i >= GAP * 2 + 2:                          # 맞은 쪽이 떨린다
+            sh = 3 if i % 2 else -3
+            for j, rr in enumerate((24 * k, 36 * k)):
+                cel.put(cv.create_oval(g.tx - rr + sh, g.ty - rr * 0.75, g.tx + rr + sh, g.ty + rr * 0.75,
+                                       outline=light if j else WHITE, width=2))
+            for side in (-1, 1):
+                x = g.tx + side * 42 * k
+                for q in range(3):
+                    yy = g.ty - 10 * k + q * 10 * k
+                    cel.put(cv.create_line(x - sh, yy - 4, x + sh, yy + 4, fill=light, width=2))
+
+    def end():
+        cel.clear()
+        if status:
+            mini(fx, g.tx, g.ty - 8, 0.6)
+            return fx.after(150, fx.finish)
+        impact(fx, size=1.1 + 0.2 * (fx.big > 1.1))
+    run(fx, (N - 1) * GAP + LIFE + 2, draw, end)
+
+
 STYLES = {
+    "sound": sound, "wind": wind,
     "hit": hit, "flurry": flurry, "dash": dash, "phantom": phantom,
     "slash": slash, "blades": blades, "claw": claw,
     "pulse": pulse, "ball": ball, "leaf": leaf, "whip": whip, "psy": psy,

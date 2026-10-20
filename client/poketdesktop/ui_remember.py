@@ -45,7 +45,9 @@ def won(n):
 def tag_text(entry):
     """줄 오른쪽 꼬리표. 언제 배우는 기술인지와 공짜인지."""
     lv = entry.get("level")
-    if lv is None:
+    if entry.get("form"):
+        when = entry["form"]          # 그 모습이 될 때 배우는 기술 (워시로토무 - 하이드로펌프, 게시판 #279)
+    elif lv is None:
         when = "배우려던 기술"
     elif int(lv) == 0:
         when = "진화"
@@ -96,7 +98,10 @@ class RememberAsk(ForgetAsk):
             justify="left")
         self.wallet.pack(anchor="w", pady=(4, 0))
         if any(e.get("free") for e in entries):
-            tk.Label(f, text="레벨업 때 자리가 없어 못 배운 기술은 무료입니다.",
+            note = "레벨업 때 자리가 없어 못 배운 기술은 무료입니다."
+            if any(e.get("form") for e in entries):
+                note = "지금 모습의 기술과 레벨업 때 자리가 없어 못 배운 기술은 무료입니다."
+            tk.Label(f, text=note,
                      bg=U.BG, fg=U.GOOD, font=U.FONT_XS, wraplength=W - 60,
                      justify="left").pack(anchor="w", pady=(2, 0))
         tk.Frame(f, bg=U.BG, height=U.h(10)).pack(fill="x")

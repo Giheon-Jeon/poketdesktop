@@ -385,7 +385,10 @@ class TrainerBattle(object):
 
     def _pool(self, f):
         pool = self.bt.usable(f)
-        return H.lock_pool(f, pool) if f.held else pool
+        if not f.held:
+            return pool
+        # 구애 도구: 처음 쓴 기술만, 아직 안 묶였으면 변화기는 안 고른다 (게시판 #284)
+        return H.choice_pool(f, H.lock_pool(f, pool), lambda k: MC.attacks(self.bt.move_of(k)))
 
     def _best(self, user, target):
         """(명중률을 곱한 데미지, 기술) — user 가 target 에게 쓸 가장 아픈 기술."""

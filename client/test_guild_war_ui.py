@@ -431,6 +431,32 @@ def main():
     w.close()
     root.update()
 
+    # 1.13.1 까지는 칸을 apply·war·done 에만 냈다 - 'plan' 이 빠져서 전략 기간(2026-10-20 0시 ~ 10-24 0시) 내내
+    # 길드장까지 모두에게 '길드전' 칸이 사라졌다. 아래 검사들은 신청 단계에서 칸을 열어 둔 채 단계만 바꿔서
+    # 그 경우를 한 번도 안 봤다. 그래서 단계마다 길드 창을 새로 연다.
+    print("\n=== 단계마다 길드 창을 새로 열면 '길드전' 칸 (1.13.2, 전략 기간에 사라졌다) ===")
+    for ph in ("apply", "plan", "war", "done"):
+        srv.war.phase = ph
+        w = ui_guild.GuildWindow(app)
+        w.win.winfo_toplevel().deiconify()
+        TG.wait(root, lambda: w.data is not None and w.mode == "guild")
+        TG.settle(root)
+        got = [lb.cget("text") for lb in w.seg.cells.values()]
+        chk("%s: 미션 다음에 '길드전'" % ph, got == ["채팅", "길드원", "미션", "길드전", "코인 상점", "다른 길드", "관리"],
+            got)
+        w.close()
+        root.update()
+    srv.war.phase = "plan"
+    member = ui_guild.GuildWindow(App(root, Api(srv, 2)))
+    member.win.winfo_toplevel().deiconify()
+    TG.wait(root, lambda: member.data is not None and member.mode == "guild")
+    TG.settle(root)
+    got = [lb.cget("text") for lb in member.seg.cells.values()]
+    chk("전략 기간에 일반 길드원도 '길드전' 칸이 보인다", "길드전" in got, got)
+    member.close()
+    root.update()
+    srv.war.phase = None
+
     print("\n=== 신청 단계 (마스터) ===")
     srv.war.phase = "apply"
     w = ui_guild.GuildWindow(app)

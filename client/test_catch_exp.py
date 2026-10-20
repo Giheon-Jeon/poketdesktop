@@ -66,7 +66,7 @@ class Root(object):
 class App(object):
     def __init__(self):
         self.root = Root()
-        self.notes, self.learn, self.floats = [], [], []
+        self.notes, self.learn, self.floats, self.ats = [], [], [], []
         self.synced = 0
         self.box_window = None
         self.balls = 5
@@ -80,6 +80,10 @@ class App(object):
 
     def float_over_pet(self, pid, text, color="#7bffa0", ms=1100):
         self.floats.append((pid, text))
+        return True
+
+    def float_at(self, sx, sy, text, color="#7bffa0", ms=1100):
+        self.ats.append((sx, sy, text))
         return True
 
     def request_sync(self):
@@ -129,14 +133,17 @@ def battle_part():
     app = App()
     b = object.__new__(DB.DesktopBattle)
     b.app, b.closed, b.mine, b.foe = app, False, Pet(), object()
+    b.b = {"foe": {"name": "꼬렛"}}
     b.pending_evolve = None
     floats, waits = [], []
-    b.float_over = lambda pet, text, color: floats.append(text)
+    b.float_over = lambda pet, text, color, ms=None: floats.append(text)
     b.after = lambda ms, fn: waits.append((ms, fn))
     b.after_ball({"caught": True, "message": "신난다! 꼬렛을 잡았다!", "exp": GRANTS})
     chk("잡았다는 말에 레벨업을 붙여 알린다", app.notes and "꼬렛을 잡았다" in app.notes[0]
         and "리자드 레벨 36" in app.notes[0], app.notes)
-    chk("내 포켓몬 위에 받은 경험치", floats == ["+240 exp"], floats)
+    # 잡았다는 말(notify)은 화면에 안 뜬다 - 볼이 0.4초 반짝이고 사라져서 '잡힌 것 같았는데 증발했다' 로 보였다
+    # (1.13.2, 게시판 #266 레드 36세 · #280 니뉴). 내 포켓몬 머리 위에 띄운다.
+    chk("내 포켓몬 위에 '꼬렛을 잡았다!' 와 받은 경험치", floats == ["꼬렛을 잡았다!", "+240 exp"], floats)
     chk("진화는 정리가 끝난 뒤에 튼다", b.pending_evolve == [dict(GRANTS[0]["evolve"], pokemonId=7)])
     chk("글씨가 뜰 시간을 두고 정리한다", waits and waits[0][0] >= 1000
         and waits[0][1] == b.finish_cleanup, waits and waits[0][0])
@@ -146,12 +153,14 @@ def battle_part():
     app2 = App()
     b2 = object.__new__(DB.DesktopBattle)
     b2.app, b2.closed, b2.mine, b2.foe = app2, False, Pet(), object()
+    b2.b = {"foe": {"name": "꼬렛"}}
     floats2, waits2 = [], []
-    b2.float_over = lambda pet, text, color: floats2.append(text)
+    b2.float_over = lambda pet, text, color, ms=None: floats2.append(text)
     b2.after = lambda ms, fn: waits2.append((ms, fn))
     b2.after_ball({"caught": True, "message": "잡았다!"})        # 옛 서버: exp 가 없다
-    chk("경험치가 안 온 답은 예전처럼 (바로 정리)", app2.notes == ["잡았다!"] and floats2 == []
-        and waits2[0][0] == 500 and b2.pending_evolve == [], (app2.notes, waits2[0][0]))
+    chk("경험치가 안 온 답(옛 서버)도 '잡았다!' 는 띄우고, 읽을 틈을 두고 정리한다",
+        app2.notes == ["잡았다!"] and floats2 == ["꼬렛을 잡았다!"] and waits2[0][0] >= 1000
+        and b2.pending_evolve == [], (app2.notes, floats2, waits2[0][0]))
 
 
 def wild_part():
@@ -170,10 +179,13 @@ def wild_part():
     DB.play_evolutions = lambda a, infos: played.append(list(infos))
     try:
         w.play_throw({"caught": True, "shakes": 4, "message": "신난다! 구구를 잡았다!",
-                      "pokemon": {"info": {}}, "exp": GRANTS})
+                      "pokemon": {"info": {"species": "구구", "name": "구구"}}, "exp": GRANTS})
         chk("잡았다는 말에 레벨업을 붙여 알린다", app.notes and "구구를 잡았다" in app.notes[0]
             and "리자드 레벨 36" in app.notes[0], app.notes)
         chk("파티 맨 앞 포켓몬 위에 받은 경험치", app.floats == [(7, "+240 exp")], app.floats)
+        # 잡았다는 말(notify)은 화면에 안 뜬다 - 볼이 0.4초 반짝이고 사라져서 '잡힌 것 같았는데 증발했다' 로
+        # 보였다 (1.13.2, 게시판 #266 레드 36세). 볼이 떨어진 자리(야생 가운데 위)에 띄운다.
+        chk("볼이 떨어진 자리에 '구구를 잡았다!'", app.ats == [(120.0, 94, "구구를 잡았다!")], app.ats)
         chk("배울 기술을 줄 세운다", app.learn == [(8, "피카츄")])
         chk("진화 연출을 예약한다 (볼 연출이 끝난 뒤에)", len(app.root.jobs) == 1
             and app.root.jobs[0][0] >= 500, app.root.jobs)
@@ -188,14 +200,16 @@ def wild_part():
         w.play_throw({"caught": True, "shakes": 4, "message": "잡았다!",
                       "exp": [dict(GRANTS[1])]})
         chk("진화가 없으면 바로 동기화한다", app3.synced == 1 and app3.root.jobs == [])
-        chk("  나눠 받기만 했으면 글씨는 안 띄운다", app3.floats == [])
+        chk("  나눠 받기만 했으면 경험치 글씨는 없고 '잡았다!' 만 (이름을 모르면 그냥)",
+            app3.floats == [] and [t for _x, _y, t in app3.ats] == ["잡았다!"], (app3.floats, app3.ats))
 
         app4 = App()
         w.app, w.throwing = app4, True
         w.pet = type("P", (), {"x": 100, "y": 100, "fw": 40, "fh": 40})()
         w.play_throw({"caught": True, "shakes": 4, "message": "잡았다!"})   # 옛 서버
-        chk("경험치가 안 온 답은 예전처럼", app4.notes == ["잡았다!"] and app4.synced == 1
-            and app4.floats == [] and app4.learn == [])
+        chk("경험치가 안 온 답(옛 서버)도 '잡았다!' 는 띄운다", app4.notes == ["잡았다!"] and app4.synced == 1
+            and app4.floats == [] and [t for _x, _y, t in app4.ats] == ["잡았다!"] and app4.learn == [],
+            (app4.floats, app4.ats))
     finally:
         wild_ui.BallThrow, DB.play_evolutions = real_ball, real_play
 

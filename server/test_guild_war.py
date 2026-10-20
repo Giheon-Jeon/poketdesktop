@@ -697,14 +697,21 @@ def main():
     clock(at(hours=2))
     GW.apply(a[0])
     GW.apply(b[0])
-    chk("신청 기간에는 할 일이 없다고 본다", GW.brief(a[2]) == {"phase": "apply", "todo": False})
+    chk("신청 기간에는 할 일이 없다고 본다", GW.brief(a[2]) == {"phase": "apply", "real": "apply", "todo": False},
+        GW.brief(a[2]))
     clock(at(days=3, minutes=5))
     GW.state(a[2])
-    chk("전략 기간에는 칠 수 없으니 할 일이 없다고 본다", GW.brief(a[2]) == {"phase": "plan", "todo": False}, GW.brief(a[2]))
+    chk("전략 기간에는 칠 수 없으니 할 일이 없다고 본다", GW.brief(a[2])["todo"] is False and GW.brief(a[2])["real"] == "plan",
+        GW.brief(a[2]))
+    # 1.13.1 까지의 화면은 apply·war·done 일 때만 '길드전' 칸을 냈다 (전략 기간에 모두에게 칸이 사라졌다, 2026-10-20)
+    chk("  옛 화면이 아는 단계로 보낸다 - 업데이트 안 한 길드원에게도 칸이 뜬다",
+        GW.brief(a[2])["phase"] in ("apply", "war", "done"), GW.brief(a[2]))
+    chk("  길드전 칸 안은 진짜 단계 (전략)", GW.state(a[2])["phase"] == "plan")
     clock(at(days=7, minutes=5))
-    chk("전쟁 중에 공격이 남았으면 할 일이 있다", GW.brief(a[2]) == {"phase": "war", "todo": True}, GW.brief(a[2]))
+    chk("전쟁 중에 공격이 남았으면 할 일이 있다", GW.brief(a[2]) == {"phase": "war", "real": "war", "todo": True},
+        GW.brief(a[2]))
     db.run("UPDATE guild_war_team SET used=attacks WHERE user_id=?", (a[2],))
-    chk("다 쓰면 없다", GW.brief(a[2]) == {"phase": "war", "todo": False})
+    chk("다 쓰면 없다", GW.brief(a[2]) == {"phase": "war", "real": "war", "todo": False})
     chk("길드가 없으면 없다", GW.brief(solo)["todo"] is False)
 
     print("\n" + "=" * 54)

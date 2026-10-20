@@ -412,12 +412,67 @@ def t_설명():
     chk("모르는 도구는 빈 글자", H.effect_note("NOPE") == "" and H.effect_note(None) == "")
 
 
+def t_구애_변화기(dex):
+    """구애 도구를 지닌 AI 는 변화기를 고르지 않는다 (1.13.2, 게시판 #284 하늬바람).
+
+    자동 배틀은 매 턴 15% 로 아무 기술이나 고르고, 점수로도 칼춤이 뽑힌다. 구애스카프를 지닌 채 첫 기술로 칼춤을
+    쓰면 그 기술에 묶여 쓰러질 때까지 칼춤만 썼다 (한카리아스 400판 중 12판, 4번 내리). 본가에서도 묶이는 것은
+    맞다 - 그래서 AI 가 묶이기 전에 변화기를 안 고른다. 트릭 · 체인지는 도구를 상대에게 넘기니 괜찮다.
+    """
+    print("-- 구애 도구를 지닌 AI 는 변화기에 묶이지 않는다 (#284)")
+    sets = ["SWORDSDANCE", "EARTHQUAKE", "DRAGONCLAW", "STONEEDGE"]
+
+    def mk(sp, moves, held, seed):
+        m = P.make_pokemon(dex.get(sp), 50, random.Random(seed))
+        m["moves"], m["held"] = list(moves), held
+        return m
+
+    def firsts(held, ai):
+        out = []
+        for s in range(200):
+            me = B.Fighter(dex, mk("GARCHOMP", sets, held, s))
+            foe = B.Fighter(dex, mk("SNORLAX", ["BODYSLAM", "REST", "CRUNCH", "EARTHQUAKE"], None, s + 999))
+            bt = B.Battle(dex, me, foe, random.Random(s), ai="trainer")
+            out.append(bt.choose_for(me, foe, ai))
+        return out
+
+    plain = firsts(None, "trainer")
+    chk("(도구가 없으면 200판 중 몇 판은 첫 기술이 칼춤 - 검사 전제)", "SWORDSDANCE" in plain, plain.count("SWORDSDANCE"))
+    for held in ("CHOICESCARF", "CHOICEBAND", "CHOICESPECS"):
+        for ai in ("trainer", "wild"):
+            got = firsts(held, ai)
+            chk("%s · %s: 첫 기술로 칼춤을 안 고른다" % (held, ai), "SWORDSDANCE" not in got, got.count("SWORDSDANCE"))
+    f = B.Fighter(dex, mk("GARCHOMP", ["TRICK", "SWORDSDANCE", "EARTHQUAKE", "PROTECT"], "CHOICESCARF", 1))
+    is_hit = lambda k: k in ("EARTHQUAKE",)                                     # noqa: E731
+    chk("트릭은 남긴다 (구애 도구를 상대에게 넘긴다)",
+        H.choice_pool(f, ["TRICK", "SWORDSDANCE", "EARTHQUAKE", "PROTECT"], is_hit) == ["TRICK", "EARTHQUAKE"])
+    f.locked = "SWORDSDANCE"
+    chk("이미 묶였으면 (야생 배틀에서 사람이 골랐다) 그 기술 그대로",
+        H.choice_pool(f, ["SWORDSDANCE"], is_hit) == ["SWORDSDANCE"])
+    f.locked = None
+    chk("변화기만 있으면 그대로 (몸부림으로 빠지지 않게)",
+        H.choice_pool(f, ["SWORDSDANCE", "PROTECT"], is_hit) == ["SWORDSDANCE", "PROTECT"])
+    f.held = "LEFTOVERS"
+    chk("구애 도구가 아니면 그대로", H.choice_pool(f, ["SWORDSDANCE", "EARTHQUAKE"], is_hit) == ["SWORDSDANCE", "EARTHQUAKE"])
+
+    # 관장 · 악당 · 길드전 AI (trainer_battle) 도 같은 규칙. 상대 쪽이 구애스카프 한카리아스.
+    from common import trainer_battle as TB
+    got = []
+    for s in range(60):
+        mine = [mk("SNORLAX", ["BODYSLAM", "REST", "CRUNCH", "EARTHQUAKE"], None, s)]
+        t = {"name": "검사", "team": [{"species": "GARCHOMP", "level": 50, "moves": sets, "held": "CHOICESCARF"}]}
+        tb = TB.TrainerBattle(dex, mine, t, random.Random(s))
+        got.append(tb._foe_move())
+    chk("관장 AI 도 구애스카프면 칼춤을 안 고른다 (60판)", "SWORDSDANCE" not in got and got, got.count("SWORDSDANCE"))
+
+
 def main():
     dex = load_dex()
     t_도구_없으면_그대로(dex)
     t_카탈로그와_맞는다()
     t_효과(dex)
     t_설명()
+    t_구애_변화기(dex)
     print()
     print("======================================================")
     print("  합계  OK %d   FAIL %d" % (OK, FAIL))

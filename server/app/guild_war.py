@@ -1327,8 +1327,22 @@ def state(uid, now=None):
     return out
 
 
+# 옛 화면(1.13.1 까지)은 길드 정보의 war.phase 가 apply·war·done 일 때만 '길드전' 칸을 냈다 - 'plan' 을 빠뜨려서
+# 전략 기간(시즌 4: 2026-10-20 0시 ~ 10-24 0시) 내내 길드장까지 모두에게 칸이 사라졌다. 업데이트하지 않은 사람도
+# 칸이 보이게, 전략 기간에는 phase 를 옛 화면이 아는 'apply' 로 보낸다. 칸 안은 /api/guild/war (state) 의 진짜
+# 단계로 그리므로(옛 화면도 'plan' 화면을 그릴 줄 안다) 칸만 뜨면 된다. 진짜 단계는 real 에 싣는다.
+TAB_PHASE = {"plan": "apply"}
+
+
 def brief(uid, now=None):
-    """길드 탭의 점이 볼 것: 지금 내가 할 일이 있나."""
+    """길드 탭의 점이 볼 것: 지금 내가 할 일이 있나. 화면은 phase 를 보고 '길드전' 칸을 낸다 (위 TAB_PHASE)."""
+    out = _brief(uid, now)
+    out["real"] = out["phase"]
+    out["phase"] = TAB_PHASE.get(out["phase"], out["phase"])
+    return out
+
+
+def _brief(uid, now=None):
     try:
         ph = phase(now)[0]
         m = guild.member(uid)

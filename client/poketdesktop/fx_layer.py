@@ -28,6 +28,19 @@ def make_click_through(win):
     return PLAT.make_click_through(win)
 
 
+def screen_origin(root):
+    """모니터 전부를 아우르는 사각형의 왼쪽 위 (x, y). 주 화면 왼쪽 · 위에 둔 화면이 있으면 음수다.
+
+    화면 안으로 창 자리를 맞출 때 **0 이 아니라 이것으로** 자른다 - 0 으로 자르면 왼쪽 모니터에
+    있어야 할 것이 주 화면 왼쪽 끝으로 끌려가거나 안 보인다 (게시판 #268).
+    """
+    try:
+        x1, y1, _x2, _y2 = PLAT.virtual_screen(root.winfo_screenwidth(), root.winfo_screenheight())
+        return int(x1), int(y1)
+    except Exception:                                       # noqa: BLE001
+        return 0, 0
+
+
 def open_layer(root, area):
     """이펙트 레이어를 연다. 클릭이 통과하지 않으면 None 을 돌려준다."""
     try:
@@ -49,20 +62,31 @@ class FxLayer(object):
         x1, y1, x2, y2 = area
         # 이펙트가 활동 영역 밖으로 조금 튀어도 잘리지 않게 넉넉히
         pad = 90
-        self.x = max(0, x1 - pad)
-        self.y = max(0, y1 - pad)
-        w = (x2 - x1) + pad * 2
-        h = (y2 - y1) + pad * 2
+        # **0 이 아니라 모니터 전부의 왼쪽 위에서 자른다** (게시판 #268, 듀얼 모니터). 주 화면 왼쪽(위)에 둔
+        # 화면은 좌표가 음수다. 예전에는 max(0, …) 이라 레이어가 주 화면 쪽으로 밀려나서, 왼쪽 화면의 포켓몬
+        # 위에 그리는 체력바 · '지금 던지세요' · 기술 이펙트 · 실시간 배틀 이름표가 레이어 밖이라 안 보였다.
+        vx, vy = screen_origin(root)
+        self.x = max(vx, x1 - pad)
+        self.y = max(vy, y1 - pad)
+        # 영역이 모니터 전부의 밖일 수도 있다 - 왼쪽 모니터를 뺀 직후 2초 동안은 영역을 기억해 둔 옛 자리
+        # (Overlay._drawn_area)가 남는다. 그때 폭이 0 아래가 되면 geometry 가 터진다. 1 로 막는다.
+        w = max(1, int((x2 + pad) - self.x))
+        h = max(1, int((y2 + pad) - self.y))
 
         self.win = tk.Toplevel(root)
-        self.win.overrideredirect(True)
-        bg = PLAT.transparent_window(self.win, KEY)
-        self.win.geometry("%dx%d+%d+%d" % (w, h, self.x, self.y))
-        # 여기는 도트(그림)가 아니라 선과 글자만 그린다. 맥에서도 캔버스
-        # 벡터는 투명 배경 위에 그대로 그려지므로 Canvas 를 그냥 쓴다.
-        self.cv = tk.Canvas(self.win, width=w, height=h, bg=bg,
-                            highlightthickness=0, bd=0)
-        self.cv.pack()
+        try:
+            self.win.overrideredirect(True)
+            bg = PLAT.transparent_window(self.win, KEY)
+            self.win.geometry("%dx%d+%d+%d" % (w, h, self.x, self.y))
+            # 여기는 도트(그림)가 아니라 선과 글자만 그린다. 맥에서도 캔버스
+            # 벡터는 투명 배경 위에 그대로 그려지므로 Canvas 를 그냥 쓴다.
+            self.cv = tk.Canvas(self.win, width=w, height=h, bg=bg,
+                                highlightthickness=0, bd=0)
+            self.cv.pack()
+        except Exception:
+            # 만들다 만 창을 남기지 않는다 - 투명한 빈 창이 화면에 떠서 클릭을 먹는다 (open_layer 는 None 을 준다)
+            self.destroy()
+            raise
         PLAT.raise_above(self.win)
         self.click_through = make_click_through(self.win)
         # 지금 떠 있는 짧은 글씨들. 새로 뜨는 것이 겹치지 않게 이걸 본다
@@ -149,6 +173,7 @@ class FloatText(object):
             layer.cv.create_text(x, y, text=text, fill=color,
                                  font=(U.FAMILY, U.pt(10), "bold")),
         ]
+        self._keep_inside(layer.cv)
         self.jobs = []
         self.ms = ms
         live.append(self)
@@ -156,6 +181,23 @@ class FloatText(object):
         # **첫 올라감은 한 틱 뒤에.** 여기서 바로 부르면 놓자마자 2px 이
         # 올라가 버려서, 방금 계산한 간격이 그만큼 어긋난다.
         self.jobs.append(layer.root.after(int(self.ms / 16.0), self._rise))
+
+    def _keep_inside(self, cv, margin=2):
+        """글씨가 캔버스 밖으로 나가면 가로로만 안쪽으로 민다 (1.13.2). 도트 가운데에 맞추므로 화면 끝에 붙은 도트
+        위의 긴 글씨('볼을 던지기 전에 쓰러뜨렸다', 게시판 #280)는 앞이나 뒤가 잘렸다. 글꼴은 줄이지 않는다."""
+        try:
+            w = int(cv.cget("width"))
+            boxes = [cv.bbox(i) for i in self.items]
+        except Exception:                                   # noqa: BLE001
+            return
+        boxes = [b for b in boxes if b]
+        if not boxes or w <= 0:
+            return
+        x1, x2 = min(b[0] for b in boxes), max(b[2] for b in boxes)
+        dx = (margin - x1) if x1 < margin else (w - margin - x2) if x2 > w - margin else 0
+        if dx:
+            for i in self.items:
+                cv.move(i, dx, 0)
 
     def y(self):
         """지금 떠 있는 높이 (화면 좌표). _rise 가 한 번에 2px 올린다."""

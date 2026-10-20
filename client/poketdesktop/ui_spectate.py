@@ -65,8 +65,19 @@ def corner(area, w, h, margin=MARGIN):
     return max(x1, x2 - w - margin), max(y1, y2 - h - margin)
 
 
-def work_area(win):
+def work_area(win, app=None):
+    """작업표시줄 · 독을 뺀 자리. app 을 주면 **포켓몬이 돌아다니는 영역이 있는 모니터**의 것이다 (듀얼 모니터,
+    #268 - 활동 영역이 왼쪽 모니터인데 구경 장면만 주 화면에 섰다). 못 찾으면 주 화면의 것."""
     sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+    ov = getattr(app, "overlay", None) if app is not None else None
+    if ov is not None:
+        try:
+            from . import arena_layout
+            got = arena_layout.work_for(ov.area(), PLAT.screens(sw, sh), PLAT.screen_works(sw, sh))
+            if got:
+                return tuple(got)
+        except Exception:                                   # noqa: BLE001
+            pass
     try:
         return tuple(PLAT.work_area(sw, sh))
     except Exception:                                       # noqa: BLE001
@@ -645,7 +656,7 @@ class DesktopDuel(object):
         self._gone = None             # 끝난 판을 닫을 때
         self._asked = 0.0
         self._dots = None             # 이름표에 찍어 둔 남은 마릿수
-        self.host = DS.SceneHost(self.app, self.root, work_area(self.root))
+        self.host = DS.SceneHost(self.app, self.root, work_area(self.root, self.app))
         self.scene = DS.FightScene(self.host, self.mid)
         self._plate(fight)
         # 막 열린 판(아직 첫 턴 전)이면 볼에서 나오는 것부터 보여 준다. 진행 중이던 판은 지금 모습 그대로.
@@ -684,7 +695,7 @@ class DesktopDuel(object):
         try:
             self.plate.update_idletasks()
             w, h = self.plate.winfo_reqwidth(), self.plate.winfo_reqheight()
-            area = work_area(self.plate)
+            area = work_area(self.plate, self.app)
             cx = (self.host.spot["a"][0] + self.host.spot["b"][0]) / 2.0
             x = int(max(area[0], min(area[2] - w - 4, cx - w / 2.0)))
             y = int(max(area[1], self.host.spot["a"][1] - PLATE_UP - h))

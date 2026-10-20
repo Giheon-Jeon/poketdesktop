@@ -2180,6 +2180,16 @@ class App(object):
         pet = ov.pets.get(pid) if ov else None
         if pet is None or not text:
             return False
+        return self.float_at(pet.x + pet.fw / 2.0, pet.y - 6, text, color, ms)
+
+    def float_at(self, sx, sy, text, color="#7bffa0", ms=1100):
+        """화면 좌표 (sx, sy) 에 글씨를 잠깐 띄운다 (배틀 밖에서). 층을 잠깐 열었다 닫는다.
+
+        포켓몬이 없는 자리에도 쓴다 - 싸우지 않고 잡았을 때 볼이 떨어진 자리의 '잡았다!' (1.13.2).
+        """
+        ov = self.overlay
+        if not ov or not text:
+            return False
         from .fx_layer import FloatText, open_layer
         try:
             layer = open_layer(self.root, ov.area())
@@ -2188,7 +2198,7 @@ class App(object):
         if not layer:
             return False
         try:
-            FloatText(layer, pet.x + pet.fw / 2.0, pet.y - 6, text, color, ms=ms)
+            FloatText(layer, sx, sy, text, color, ms=ms)
         except Exception:                                   # noqa: BLE001
             layer.destroy()
             return False

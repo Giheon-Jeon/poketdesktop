@@ -120,6 +120,16 @@ def dialog_checks(root, dex):
     chk("창이 화면 안에 있다", got["size"][1] <= root.winfo_screenheight(), got["size"])
     chk("그냥 닫으면 None", got["result"] is None, got["result"])
 
+    print("\n=== 떠올리기 창 - 지금 모습의 기술 (워시로토무 하이드로펌프, 1.13.2 게시판 #279)")
+    sig = dict(entry(dex, "HYDROPUMP", 1, free=True), form="워시로토무")
+    d = ui_remember.RememberAsk(root, "로토무", [sig, entry(dex, "THUNDERBOLT", 1)], 5000, 0, dex)
+    got = run_dialog(root, d, lambda d, b: d._cancel())
+    tx = got["texts"]
+    chk("꼬리표 '워시로토무 · 무료' (Lv.1 이 아니라)", "워시로토무 · 무료" in tx, [t for t in tx if "무료" in t])
+    chk("  안내가 모습의 기술도 무료라고 말한다", any("지금 모습의 기술" in t and "무료입니다" in t for t in tx),
+        [t for t in tx if "무료입니다" in t])
+    chk("  눌린 것이 없다", not got["sq"], got["sq"][:4])
+
     print("\n=== 떠올리기 창 - 기술이 스무 개 (화면을 꽉 채우지 않고 굴린다)")
     sp = dex.get("AMPHAROS")
     many = []
@@ -239,6 +249,7 @@ def dialog_checks(root, dex):
     chk("Lv.7", ui_remember.tag_text({"level": 7}) == "Lv.7")
     chk("진화", ui_remember.tag_text({"level": 0}) == "진화")
     chk("레벨 없음", ui_remember.tag_text({"level": None, "free": True}) == "배우려던 기술 · 무료")
+    chk("모습의 기술", ui_remember.tag_text({"level": 1, "free": True, "form": "워시로토무"}) == "워시로토무 · 무료")
 
 
 class Api(SB.FakeApi):

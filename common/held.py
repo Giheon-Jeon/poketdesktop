@@ -379,6 +379,24 @@ def lock_pool(f, pool):
     return pool
 
 
+# 구애 도구를 지닌 채 써도 되는 변화기 - 도구를 상대에게 넘기니 묶이지 않는다
+CHOICE_PASS = ("TRICK", "SWITCHEROO")
+
+
+def choice_pool(f, pool, attacks):
+    """구애 도구를 지녔고 아직 안 묶였으면, AI 는 공격 기술(과 트릭 · 체인지)만 고른다. attacks(기술) -> 공격기인가.
+
+    1.13.2 (게시판 #284): 자동 배틀은 매 턴 15% 로 아무 기술이나 고르고, 점수로도 칼춤이 뽑힌다. 구애스카프를
+    지닌 채 첫 기술로 칼춤을 쓰면 그 기술에 묶여 쓰러질 때까지 칼춤만 썼다. 묶이는 것은 본가 규칙이라 그대로
+    두고, AI 가 묶이기 전에 변화기를 안 고르게 한다. 이미 묶였으면(lock_pool 이 하나만 남겼다) 그대로 둔다.
+    공격 기술이 하나도 없으면 그대로 둔다 (몸부림으로 빠지지 않게).
+    """
+    if f.held not in CHOICE or len(pool) <= 1 or (f.locked and f.locked in pool):
+        return pool
+    out = [k for k in pool if k in CHOICE_PASS or attacks(k)]
+    return out or pool
+
+
 def force_move(f, key, ev, who):
     """사람이 고른 기술도 구애 잠금을 받는다 (야생 배틀). 바꿨으면 그 기술."""
     if f.held in CHOICE and f.locked and key != f.locked \

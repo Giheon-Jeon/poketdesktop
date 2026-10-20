@@ -41869,6 +41869,9 @@
    ],
    "num": 25,
    "prevo": 172,
+   "remind": [
+    "VOLTTACKLE"
+   ],
    "spawnable": true,
    "stage": 1,
    "types": [

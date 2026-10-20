@@ -39,6 +39,7 @@ APPROACH_GAP = 96          # 붙어 서는 간격 (가로)
 WALK_MS = 22               # 다가가는 속도
 TURN_GAP = 620             # 한 턴 끝나고 다음 턴까지
 RESULT_MS = 1100
+CAUGHT_MS = 1500           # 잡은 뒤 '○○을 잡았다!' · '+exp' 를 읽을 틈 (그 뒤 정리가 글씨를 치운다)
 HOLD_MS = 10000            # 잡기 모드로 멈췄다가 다시 싸우기까지
 HINT_MS = 2500             # 멈춘 동안 '지금 던지세요' 를 다시 띄우는 간격
 
@@ -57,6 +58,29 @@ def on_screen(pet):
         return bool(pet.win.winfo_viewable())
     except Exception:                                       # noqa: BLE001
         return False
+
+
+def flee_news(events):
+    """판이 '도망' 으로 끝난 까닭 한 줄. 끝낸 사건이 없으면 None (게시판 #266).
+
+    야생이 배대뒤치기 · 날려버리기 · 울부짖기 · 드래곤테일로 내 포켓몬을 날려 보내거나 순간이동으로 사라지면
+    판이 끝난다 (본가와 같다, battle.request_switch). 예전에는 그 사건의 글을 어디에도 안 띄우고 '야생 포켓몬이
+    떠나버렸다.' 만 알려서, 내 포켓몬이 날려간 판도 배틀이 까닭 없이 증발한 것처럼 보였다.
+
+    기술 때문이면 그 기술 글을 앞에 붙인다 - '트래피더의 배대뒤치기! 갸라도스는 날려가 버렸다!'
+    """
+    evs = list(events or [])
+    for i in range(len(evs) - 1, -1, -1):
+        e = evs[i]
+        if e.get("t") != "flee" or not e.get("text"):
+            continue
+        text = e["text"]
+        if "날려" in text or "순간이동" in text:
+            mv = next((p for p in reversed(evs[:i]) if p.get("t") == "move" and p.get("text")), None)
+            if mv:
+                text = "%s %s" % (mv["text"], text)
+        return natural(text.replace(" 의 ", "의 "))
+    return None
 
 
 class DesktopBattle(object):
@@ -307,7 +331,7 @@ class DesktopBattle(object):
 
     def play(self, events, result):
         self.playing = True
-        q = list(events)
+        q = FX.annotate(list(events))  # 기술마다 다음 '맞음' 의 급소 · 효과를 달아 둔다 (연출이 세기를 정한다, 1.13.2)
 
         def nxt():
             if self.closed:
@@ -327,7 +351,7 @@ class DesktopBattle(object):
         if t == "move" and src and dst and self.layer:
             move = self.find_move(ev)
             self.fx = FX.Effect(self, move, self.center(src), self.center(dst),
-                                lambda: self.after(140, done), who=who)
+                                lambda: self.after(140, done), who=who, ev=ev)
             return self.fx.play()
         if t == "hit":
             side = self.mine if ev.get("target") == "me" else self.foe
@@ -353,6 +377,13 @@ class DesktopBattle(object):
             side = self.mine if who == "me" else self.foe
             if side:
                 self.float_over(side, "효과가 없다...", "#9a9ab0")
+        if t == "flee":
+            # 판을 끝낸 사건 (날려갔다 · 순간이동 · 흥미를 잃었다). 그 포켓몬 머리 위에 띄우고 읽을 틈을 준다 -
+            # 예전에는 아무것도 안 띄워서 배틀이 증발한 것처럼 보였다 (게시판 #266). 알림은 show_result 가 한다.
+            side = self.mine if who == "me" else self.foe
+            if side and on_screen(side) and ev.get("text"):
+                self.float_over(side, ev["text"].split(" 은(는) ")[-1], "#9ad0ff")
+                return self.after(900, done)
         if t == "mega":
             # 무지갯빛이 모였다 터지고, 메가 폼의 도트가 있으면 이 판 동안
             # 그 모습으로 싸운다 (1.8.0). 끝나면 finish_cleanup 이 되돌린다.
@@ -488,7 +519,15 @@ class DesktopBattle(object):
                 msg += "  데리고 다니는 포켓몬이 모두 쓰러져서 "                        "야생 포켓몬은 가 버렸다."
             self.app.notify(natural(msg))
         elif res == "fled":
-            self.app.notify("야생 포켓몬이 떠나버렸다.")
+            # 무엇이 판을 끝냈는지 알린다 (배대뒤치기로 날려갔다 …). 끝낸 사건이 없으면 예전 그대로.
+            self.app.notify(flee_news(result.get("events")) or "야생 포켓몬이 떠나버렸다.")
+        # 이번 턴 뒤에 던지려던 볼이 있는데 이 턴에 판이 끝났다 (1.13.2, 게시판 #280 니뉴). 볼은 서버에 안 갔으니
+        # 줄지 않는다. 예전에는 말없이 버려서 '볼을 고르자 포켓몬이 증발했다' 로 보였다 - notify 는 화면에 안 뜨고,
+        # 첫 턴을 기다리는 사이(메가진화 · 공격 연출까지 2~3초)에 고른 볼은 다 이렇게 됐다.
+        if self.pending_ball is not None:
+            self.pending_ball = None
+            self._late_ball("볼을 던지기 전에 쓰러뜨렸다" if res == "won" else "볼을 던지기 전에 배틀이 끝났다",
+                            RESULT_MS + 60)
         # 진화는 배틀 정리가 끝난 뒤에 한다. 배틀이 남아 있는 동안 종을
         # 바꾸면 서버가 들고 있는 배틀 스냅샷과 어긋난다.
         # 어느 포켓몬이 진화했는지 id 로 들고 간다. 같은 종이 파티에 둘 있으면
@@ -496,6 +535,22 @@ class DesktopBattle(object):
         # 배우려고 기다리는 기술도 같다 (exp_news 가 줄을 세워 두었다).
         self.pending_evolve = evolves
         self.after(RESULT_MS, self.finish_cleanup)
+
+    def _late_ball(self, text, delay=0):
+        """던지려던 볼이 판이 끝나서 안 나갔다. 내 포켓몬 머리 위에 띄운다 (배틀 층은 정리 때 닫히므로 정리 뒤에
+        앱의 것으로). 기록에는 볼이 그대로라는 것과, 잡은 적 있는 포켓몬이면 왜 바로 쓰러뜨렸는지를 남긴다."""
+        note = text + ". 볼은 그대로다."
+        if config.catch_mode(self.app.settings) == "new":
+            note += " 이미 잡은 포켓몬은 끝까지 싸운다 - 설정의 '야생 배틀에서 잡기 좋게 싸우기' 를 '항상' 으로 하면 멈춘다."
+        self.app.notify(note)
+        pid = ((self.b or {}).get("me") or {}).get("id")
+        show = getattr(self.app, "float_over_pet", None)
+        if pid is None or show is None:
+            return
+        if delay:
+            self.root.after(delay, lambda: show(pid, text, "#ffd447", ms=2200))
+        else:
+            show(pid, text, "#ffd447", ms=2200)
 
     def switch_to(self, mon):
         """쓰러지면 다음 포켓몬이 자동으로 나온다."""
@@ -595,7 +650,8 @@ class DesktopBattle(object):
 
     def _do_throw(self, ball=None):
         if self.closed:
-            return
+            # 볼 메뉴가 열린 사이에 판이 끝났다 (맥은 메뉴가 열려 있어도 턴이 돈다). 말없이 버리지 않는다 (#280).
+            return self._late_ball("배틀이 끝나서 볼을 던지지 않았다")
         ball = ball or (self.app.settings.get("lastBall") or "POKEBALL")
         if ball == "POKEBALL" and self.app.balls <= 0:
             return self.app.notify("몬스터볼이 없습니다.")
@@ -645,10 +701,15 @@ class DesktopBattle(object):
                     self.mine.play("Hop", once=True)
                 except Exception:                           # noqa: BLE001
                     pass
+                # **잡았다고 화면에 적는다** (1.13.2, 게시판 #266 레드 36세 · #280 니뉴). notify 는 화면에 안 뜨고 볼은
+                # 0.4초 반짝이고 사라져서, 잡혔는지 몰라 '잡힌 것 같았는데 배틀이 증발했다' 로 보였다.
+                name = ((self.b or {}).get("foe") or {}).get("name")
+                self.float_over(self.mine, natural("%s을(를) 잡았다!" % name) if name else "잡았다!",
+                                "#ffd447", ms=CAUGHT_MS)
                 if main:
                     self.float_over(self.mine, "+%d exp" % main["gained"], "#7bffa0")
-            # 받은 경험치가 뜰 시간을 준다 (정리가 글씨까지 치운다)
-            return self.after(1100 if main else 500, self.finish_cleanup)
+            # 잡았다는 글씨와 받은 경험치를 읽을 시간을 준다 (정리가 글씨까지 치운다)
+            return self.after(CAUGHT_MS, self.finish_cleanup)
         b = r.get("battle")
         if b:
             self.b = b
@@ -669,10 +730,10 @@ class DesktopBattle(object):
     def to_local(self, x, y):
         return self.layer.to_local(x, y)
 
-    def float_over(self, pet, text, color):
+    def float_over(self, pet, text, color, ms=900):
         if not self.layer or not text:
             return
-        t = FloatText(self.layer, pet.x + pet.fw / 2.0, pet.y - 6, text, color)
+        t = FloatText(self.layer, pet.x + pet.fw / 2.0, pet.y - 6, text, color, ms=ms)
         self.texts.append(t)
 
     def find_move(self, ev):
