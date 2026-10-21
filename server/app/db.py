@@ -18,7 +18,9 @@ dict 로 감싸 준다. 그래야 나머지 코드를 한 줄도 안 고쳐도 �
 import json
 import os
 import sqlite3
+import sys
 import threading
+import time
 
 from common import tint as TINT
 
@@ -1263,13 +1265,57 @@ def run(sql, args=()):
 
     한 문장짜리라 다시 해도 안전하다(모두 조건이 붙은 UPDATE 이거나
     INSERT ... ON CONFLICT 다). 그래서 일시적 실패면 다시 해본다.
+
+    **실패하면 그 자리에서 되돌린다** (2026-10-21 22:35 운영 장애). 파이썬 sqlite3 는 쓰기 문장 앞에 트랜잭션을
+    저절로 연다. 문장이 실패하면(유일 조건 위반을 부르는 쪽이 잡아서 넘기는 곳이 있다 - guild._dup …) 그 트랜잭션이
+    커밋도 롤백도 안 된 채 스레드의 커넥션에 남아 **쓰기 잠금을 계속 쥔다** - 그 스레드가 다음에 쓰기를 커밋할 때까지
+    다른 모든 쓰기가 15초 기다리다 'database is locked' 로 떨어졌다 (78초 동안 572건). 잠금에 걸려 실패한 쪽도 낡은
+    읽기 시점을 쥔 채 남아 다음 쓰기가 또 실패하므로 같이 되돌린다.
     """
+    t0 = time.time()
+
     def go():
         conn = connect()
-        cur = conn.execute(sql, args)
-        conn.commit()
+        try:
+            cur = conn.execute(sql, args)
+            conn.commit()
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:                               # noqa: BLE001
+                pass
+            _note_failure(sql, e)
+            raise
         return cur
-    return _retry(go)
+    out = _retry(go)
+    took = time.time() - t0
+    if took >= SLOW_SEC:
+        _log("[db 느림] %.1f초 %s" % (took, _short(sql)))
+    return out
+
+
+# 잠금 장애 때 어떤 문장이 먼저 실패했는지, 어떤 문장이 잠금을 오래 쥐었는지 알 수 있게 서버 로그(docker logs)에
+# 남긴다 (2026-10-21). 잡아서 넘긴 실패는 server_error 에도 안 남아서 그날은 어느 문장이었는지 끝내 몰랐다.
+# 잠금 대기 실패('database is locked')는 장애 때 수백 건씩 나오므로 남기지 않는다 - 그 원인이 되는 쪽만 본다.
+SLOW_SEC = 2.0
+
+
+def _short(sql):
+    return " ".join(str(sql).split())[:120]
+
+
+def _log(line):
+    try:
+        sys.stderr.write(line + "\n")
+        sys.stderr.flush()
+    except Exception:                                       # noqa: BLE001
+        pass
+
+
+def _note_failure(sql, e):
+    if "locked" in str(e).lower():
+        return
+    _log("[db.run 실패] %s: %s | %s" % (type(e).__name__, str(e)[:160], _short(sql)))
 
 
 # ---------------------------------------------------------------- 변환
