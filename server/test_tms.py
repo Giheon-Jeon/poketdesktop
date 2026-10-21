@@ -61,6 +61,33 @@ def mkmon(uid, species, moves, level=50):
         "luxury": False, "held": None}, "2026-01-01")
 
 
+def za_level_gaps(d):
+    """메가가 있는 종의 Z-A 레벨업 기술 가운데 이 게임에서 그 레벨까지 못 배우는 것 [(종, 기술, Z-A 레벨)].
+    Z-A 학습표 캐시가 없으면 None."""
+    path = os.path.join(os.path.dirname(HERE), "tools", "_cache", "showdown_gen9legends_learnsets.ts")
+    if not os.path.exists(path):
+        return None
+    sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tools"))
+    import add_reminder                                    # noqa: E402
+    za = add_reminder.za_learnsets(path)
+    out = []
+    for name in sorted(set(m["megaOf"] for m in d.raw.get("megas") or [] if m.get("megaOf"))):
+        sp = d.get(name)
+        level, cur, seen = {}, sp, set()
+        while cur and cur["num"] not in seen:
+            seen.add(cur["num"])
+            for lv, mv in cur.get("moves") or []:
+                level[mv] = min(level.get(mv, lv), lv)
+            cur = d.get(cur["prevo"]) if cur.get("prevo") else None
+        remind = set(sp.get("remind") or [])
+        for mv, zlv in sorted((za.get(name) or {}).items()):
+            if zlv is None or mv not in d.raw["moves"] or mv in remind:
+                continue
+            if not (mv in level and level[mv] <= max(zlv, 1)):
+                out.append((name, mv, zlv))
+    return out
+
+
 def refused(fn, code=400):
     """HTTPException(code) 로 거절되나."""
     try:
@@ -180,6 +207,16 @@ def remember_checks(d, R, Body):
         "AIRSLASH" not in (d.get("CLEFAIRY").get("remind") or []), d.get("CLEFAIRY").get("remind"))
     chk("  옛 메가의 종도 (메가리자몽 - 리자몽 더블윙)", "DUALWINGBEAT" in (d.get("CHARIZARD").get("remind") or []),
         d.get("CHARIZARD").get("remind"))
+    # 같은 날 니뉴 대댓글: 매지컬리프 · 매지컬플레임 · 이판사판태클은 Z-A 에서 픽시의 레벨업 기술인데, 이 게임에서는
+    # 픽시가 그 기술머신으로 배울 수 있어서 떠올리기에서 뺐다 - 기술머신이 없으면 못 배운다. 레벨업 기술은 넣는다.
+    chk("  Z-A 레벨업 기술은 기술머신으로 배울 수 있어도 떠올리기로 (픽시 매지컬리프 · 매지컬플레임 · 이판사판태클)",
+        {"MAGICALLEAF", "MYSTICALFIRE", "DOUBLEEDGE"} <= set(names), names)
+    gaps = za_level_gaps(d)
+    if gaps is None:                                       # Z-A 학습표는 git 에 없는 캐시 - CI 에서는 위 대표 사례만
+        print("  --   Z-A 학습표 캐시가 없어 전수 확인은 건너뜀 (tools/_cache/showdown_gen9legends_learnsets.ts)")
+    else:
+        chk("  메가가 있는 종의 Z-A 레벨업 기술은 빠짐없이 그 레벨까지 배울 수 있다 (레벨업 · 떠올리기)",
+            not gaps, gaps[:5])
 
     print("\n=== 떠올리기 - 기다리던 기술은 공짜 ===")
     owed = rest[3]

@@ -26,9 +26,14 @@
 
 **메가진화하는 종은 레전즈 Z-A 의 학습표도 (1.13.4, 사용자 결정 '메가 있는 종만'):** 2026-10-20 게시판 #291 (니뉴) -
 메가픽시는 Z-A 에서 나온 메가라 Z-A 학습표(픽시 Lv.52 에어슬래시)를 바탕으로 짜였는데, 이 게임은 SV 학습표만 따라서
-못 배웠다. 메가진화가 있는 종(도감의 megas 의 megaOf, 옛 메가 포함 87종)에 한해 Z-A 학습표의 기술 가운데 이 게임에서
-지금 배울 길이 없는 것(레벨업 · 진화 전 단계 레벨업 · 그 종의 기술머신 호환 · 이미 넣은 떠올리기에 없는 것)을
-떠올리기로 넣는다. 다른 종까지 넓히면 기술 폭이 너무 바뀐다. 자료는 쇼다운의 Z-A 학습표 (없으면 멈춘다):
+못 배웠다. 메가진화가 있는 종(도감의 megas 의 megaOf, 옛 메가 포함 87종)에 한해 Z-A 학습표의 기술을 떠올리기로 넣는다
+(레벨과 상관없이). 다른 종까지 넓히면 기술 폭이 너무 바뀐다.
+  · **Z-A 에서 레벨업으로 배우는 기술은 기술머신이 있어도 넣는다** (1.13.4 고침, 같은 날 니뉴 대댓글 '매지컬리프 ·
+    매지컬플레임 · 이판사판태클을 못 배운다'). 처음에는 그 종이 이 게임의 기술머신으로 배울 수 있으면 뺐는데, 기술머신은
+    잡아야 나오니 없으면 못 배운다 - 본가 Z-A 에서는 기술머신 없이 레벨업으로 배운다. 이 게임 레벨업(진화 전 단계 포함)
+    으로 Z-A 와 같거나 더 이른 레벨에 배우는 것만 뺀다 (더 늦게 배우면 넣는다 - 앱솔 칼춤 Z-A Lv.20 · 여기 Lv.45).
+  · Z-A 에서 기술머신으로만 배우는 기술은 이 게임에서 그 종이 그 기술머신으로도 레벨업으로도 못 배울 때만 넣는다.
+자료는 쇼다운의 Z-A 학습표 (없으면 멈춘다):
   tools/_cache/showdown_gen9legends_learnsets.ts
   https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen9legends/learnsets.ts
 
@@ -81,7 +86,7 @@ def key(ident):
 
 
 def za_learnsets(path=ZA_LEARNSETS):
-    """쇼다운 Z-A 학습표 -> {종 열쇠(CLEFABLE): set(기술 열쇠)}. 배우는 방법(레벨 · 기술머신)은 가리지 않는다."""
+    """쇼다운 Z-A 학습표 -> {종 열쇠(CLEFABLE): {기술 열쇠: 레벨업 레벨(가장 이른 것) 또는 None(기술머신만)}}."""
     if not os.path.exists(path):
         raise SystemExit("레전즈 Z-A 학습표가 없습니다: %s\n  받기: curl -o '%s' "
                          "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen9legends/"
@@ -92,11 +97,12 @@ def za_learnsets(path=ZA_LEARNSETS):
             m = re.match(r"^\t(\w+): \{", line)
             if m:
                 cur = key(m.group(1))
-                out[cur] = set()
+                out[cur] = {}
                 continue
-            m = re.match(r"^\t\t\t(\w+): \[", line)
+            m = re.match(r"^\t\t\t(\w+): \[(.*)\]", line)
             if m and cur:
-                out[cur].add(key(m.group(1)))
+                lv = [int(c[2:]) for c in re.findall(r'"([^"]+)"', m.group(2)) if re.match(r"^9L\d+$", c)]
+                out[cur][key(m.group(1))] = min(lv) if lv else None
     return out
 
 
@@ -149,17 +155,24 @@ def build(dex):
         sp = by_name.get(name)
         if sp is None or name not in za:
             continue
-        have, cur, seen = set(), sp, set()
+        level, cur, seen = {}, sp, set()
         while cur and cur["num"] not in seen:           # 레벨업 (진화 전 단계 것도 떠올리기에 나온다)
             seen.add(cur["num"])
-            have |= set(mv for _lv, mv in cur.get("moves") or [])
+            for lv, mv in cur.get("moves") or []:
+                level[mv] = min(level.get(mv, lv), lv)
             p = cur.get("prevo")
             cur = by_num.get(p) if isinstance(p, int) else None
-        have |= set(tm_no.get(str(no)) for no in learn_tm["learn"].get(str(sp["num"]), []))
+        tm = set(tm_no.get(str(no)) for no in learn_tm["learn"].get(str(sp["num"]), []))
         lst = out.setdefault(name, [])
-        for mv in sorted(za[name]):
-            if mv in dex["moves"] and mv not in have and mv not in lst:
-                lst.append(mv)
+        for mv, zlv in sorted(za[name].items()):
+            if mv not in dex["moves"] or mv in lst:
+                continue
+            if zlv is not None:                         # Z-A 레벨업: 여기서 그 레벨까지 레벨업으로 못 배우면 넣는다
+                if mv in level and level[mv] <= max(zlv, 1):
+                    continue
+            elif mv in level or mv in tm:               # Z-A 기술머신만: 여기서 배울 길이 없을 때만
+                continue
+            lst.append(mv)
     names = set(s["internal"] for s in dex["species"])
     for sp, mvs in MANUAL.items():
         if sp not in names:
