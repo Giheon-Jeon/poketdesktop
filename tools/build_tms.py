@@ -42,6 +42,15 @@
 **최신작 것만** 넣는다 (사용자 결정) - 전 세대 가르침을 다 합치면 722종 2,758줄이 늘어 흉내내기 · 탁쳐서떨구기
 같은 기술이 대거 풀린다. '최신작' 은 tools/learn_ref.py 가 고른다.
 
+## 레전즈 Z-A 에만 있는 기술머신 (1.13.4)
+
+**레전즈 Z-A · 메가디멘션에만 있는 기술머신 18개는 Z-A 에서 그 기술머신으로 배우는 포켓몬이 배운다.**
+2026-10-22 게시판 #313 (Leica) '더블촙 기술머신을 배울 수 있는 포켓몬이 없다'. 기술머신 목록은 모든 판의
+machines.csv 를 합쳐 만드는데, PokeAPI 에는 Z-A 의 '누가 기술머신으로 배우나' 가 비어 있어서 이 18개는 알 기술 ·
+가르침 기술로 우연히 붙은 것뿐이었다 - 더블촙 · 마그넷봄 0종, 절대영도 1종 … (쇼다운 Z-A 학습표보다 416줄 적었다).
+쇼다운의 Z-A 학습표(learn_ref.za_codes)에서 그 기술이 기술머신("9M")인 종을 붙인다. 본편에도 있는 기술머신은
+건드리지 않는다 (본편 자료로 이미 덮인다). 폼(영원의 꽃 플라엣테 등)은 원래 종 이름이 아니라서 빠진다.
+
 ## 돌리는 법
 
     python tools/build_tms.py
@@ -110,8 +119,10 @@ def build(pokedex_path):
     # ---- 어떤 기술이 기술머신인가 -------------------------------------
     sv_no = {}          # 기술 id -> 스칼렛/바이올렛 번호
     seen = {}           # 기술 id -> (가장 높은 세대, 그 세대의 번호)
+    src = {}            # 기술 id -> 그 기술머신이 있는 판 번호들
     for r in rows("machines.csv"):
         mid = as_int(r["move_id"])
+        src.setdefault(mid, set()).add(as_int(r["version_group_id"]))
         g = gen_of.get(r["version_group_id"], 0)
         if r["version_group_id"] == SV:
             sv_no[mid] = as_int(r["machine_number"])
@@ -187,6 +198,22 @@ def build(pokedex_path):
                 learn.setdefault(num, set()).add(no)
                 tutor_rows += 1
 
+    # ---- 레전즈 Z-A 에만 있는 기술머신 (1.13.4): Z-A 에서 그 기술머신으로 배우는 종 ----
+    za_rows, za_only = 0, []
+    za = learn_ref.za_codes()
+    num_of = dict((s["internal"], s["num"]) for s in dex["species"])
+    for mid, no in sorted(no_of_move.items(), key=lambda kv: kv[1]):
+        vgs = src.get(mid, set())
+        if not (vgs & learn_ref.ZA_VG) or any(v not in learn_ref.SIDE_VG for v in vgs):
+            continue                      # Z-A 기술머신이 아니거나, 본편에도 있는 기술머신
+        za_only.append(no)
+        key = by_id[mid][0]
+        for sp in sorted(za):
+            num = num_of.get(sp)
+            if num and "9M" in za[sp].get(key, ()) and no not in learn.get(num, set()):
+                learn.setdefault(num, set()).add(no)
+                za_rows += 1
+
     out_learn = dict((str(k), sorted(v)) for k, v in sorted(learn.items()))
 
     if skipped:
@@ -194,16 +221,20 @@ def build(pokedex_path):
 
     return {
         "version": 2,
-        "source": "PokeAPI (전 세대 기술머신 합집합 + 알 기술 + 최신작 가르침 기술)",
+        "source": "PokeAPI (전 세대 기술머신 합집합 + 알 기술 + 최신작 가르침 기술) + 쇼다운 Z-A 학습표 (Z-A 전용 기술머신)",
         "counts": {
             "tms": len(tms),
             "species": len(out_learn),
             "rows": sum(len(v) for v in out_learn.values()),
             "eggRows": egg_rows,          # 그 가운데 알 기술이라서 들어간 줄
             "tutorRows": tutor_rows,      # 그 가운데 최신작 가르침 기술이라서 들어간 줄 (1.13.3)
+            "zaRows": za_rows,            # 그 가운데 Z-A 전용 기술머신이라서 들어간 줄 (1.13.4)
         },
         "tms": tms,
         "learn": out_learn,
+        # Z-A 전용 기술머신 번호 (1.13.4). add_reminder 가 본다 - 메가 종의 Z-A 떠올리기 기술은 이 기술머신으로
+        # 배울 수 있게 됐다고 빼지 않는다 (먼저 떠올리기로 줬고, 기술머신은 잡아야 나온다).
+        "zaOnly": sorted(za_only),
     }
 
 
@@ -222,8 +253,8 @@ def main():
 
     c = data["counts"]
     mb = os.path.getsize(a.out) / 1048576.0
-    print("  기술머신 %d개 · %d종 · 학습 %d줄 (그 가운데 알 기술 %d줄 · 가르침 기술 %d줄)  (%s, %.1fMB)"
-          % (c["tms"], c["species"], c["rows"], c["eggRows"], c["tutorRows"], a.out, mb))
+    print("  기술머신 %d개 · %d종 · 학습 %d줄 (그 가운데 알 기술 %d줄 · 가르침 기술 %d줄 · Z-A 전용 %d줄)  (%s, %.1fMB)"
+          % (c["tms"], c["species"], c["rows"], c["eggRows"], c["tutorRows"], c["zaRows"], a.out, mb))
     sv = sum(1 for t in data["tms"].values() if t["sv"] is not None)
     print("  스칼렛/바이올렛 번호 그대로 %d개, 옛 세대에서 가져온 것 %d개"
           % (sv, c["tms"] - sv))

@@ -11,8 +11,42 @@
 방법 번호 (pokemon_move_methods): 1 레벨업 · 2 알 · 3 가르치기 · 4 기술머신 · 6 전기구슬 알(볼트태클) ·
 10 폼체인지 · 11 지가르데큐브.
 """
+import io
+import os
+import re
+
 SIDE_VG = {19, 24, 28, 29, 30, 31, 32}
+ZA_VG = {30, 31}                    # 레전즈 Z-A · 메가디멘션
 LEVEL_UP, EGG, TUTOR, MACHINE = 1, 2, 3, 4
+
+# 쇼다운의 레전즈 Z-A 학습표 (1.13.4). PokeAPI 에는 Z-A 의 '누가 무엇을 배우나' 가 비어 있다.
+ZA_LEARNSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_cache", "showdown_gen9legends_learnsets.ts")
+ZA_URL = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen9legends/learnsets.ts"
+
+
+def _key(ident):
+    return re.sub(r"[^A-Za-z0-9]", "", ident).upper()
+
+
+def za_codes(path=ZA_LEARNSETS):
+    """쇼다운 Z-A 학습표 -> {종 열쇠(CLEFABLE): {기술 열쇠: ["9L52", "9M", ...]}}. 없으면 멈춘다.
+
+    종 열쇠는 쇼다운 이름을 그대로 대문자로 - 폼은 따로 있다 (floetteeternal · meowsticf ...).
+    """
+    if not os.path.exists(path):
+        raise SystemExit("레전즈 Z-A 학습표가 없습니다: %s\n  받기: curl -o '%s' %s" % (path, path, ZA_URL))
+    out, cur = {}, None
+    with io.open(path, encoding="utf-8") as f:
+        for line in f:
+            m = re.match(r"^\t(\w+): \{", line)
+            if m:
+                cur = _key(m.group(1))
+                out[cur] = {}
+                continue
+            m = re.match(r"^\t\t\t(\w+): \[(.*)\]", line)
+            if m and cur:
+                out[cur][_key(m.group(1))] = re.findall(r'"([^"]+)"', m.group(2))
+    return out
 
 
 def reference(move_rows, vg_rows):

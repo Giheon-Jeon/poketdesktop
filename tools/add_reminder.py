@@ -33,6 +33,8 @@
     잡아야 나오니 없으면 못 배운다 - 본가 Z-A 에서는 기술머신 없이 레벨업으로 배운다. 이 게임 레벨업(진화 전 단계 포함)
     으로 Z-A 와 같거나 더 이른 레벨에 배우는 것만 뺀다 (더 늦게 배우면 넣는다 - 앱솔 칼춤 Z-A Lv.20 · 여기 Lv.45).
   · Z-A 에서 기술머신으로만 배우는 기술은 이 게임에서 그 종이 그 기술머신으로도 레벨업으로도 못 배울 때만 넣는다.
+    이때 'Z-A 전용 기술머신'(tms.json 의 zaOnly, 1.13.4 에 Z-A 학습표로 호환을 채운 18개)은 기술머신으로 치지 않는다 -
+    채우기 전에 떠올리기로 넣어 준 101개를 기술머신이 생겼다고 도로 빼지 않는다 (기술머신은 잡아야 나온다).
 자료는 쇼다운의 Z-A 학습표 (없으면 멈춘다):
   tools/_cache/showdown_gen9legends_learnsets.ts
   https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen9legends/learnsets.ts
@@ -56,7 +58,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, "tools", "_cache")
 DEX = os.path.join(ROOT, "server", "data", "pokedex.json")
 TMS = os.path.join(ROOT, "server", "data", "tms.json")
-ZA_LEARNSETS = os.path.join(CACHE, "showdown_gen9legends_learnsets.ts")
+ZA_LEARNSETS = learn_ref.ZA_LEARNSETS
 SV = "scarlet-violet"
 EGG = "2"           # pokemon_move_methods: egg
 
@@ -78,6 +80,10 @@ MANUAL = {
     "EXEGGUTOR": ["BARRAGE", "GROWTH"],     # 성장 - SV Lv.1 (쇼다운 9L1). PokeAPI SV 자료에 빠져 있다 (#291 대조)
     "CUBONE": ["BONECLUB"],                 # 뼈다귀치기 - 6세대까지
     "MAROWAK": ["BONECLUB"],
+    # 파멸의빛 - 메가플라엣테의 전용기 (1.13.4, 게시판 #312 윤종녕 · 사용자 결정). 본가(Z-A)에서는 '영원의 꽃 플라엣테' 만
+    # 메가진화하고 Lv.50 에 배우는데, 이 게임은 한 종에 모습이 하나라 그 플라엣테를 플라엣테에 합쳐 두었다 - 그래서
+    # 플라엣테가 메가진화는 하는데 파멸의빛은 어디서도 못 배웠다.
+    "FLOETTE": ["LIGHTOFRUIN"],
 }
 
 
@@ -87,22 +93,12 @@ def key(ident):
 
 def za_learnsets(path=ZA_LEARNSETS):
     """쇼다운 Z-A 학습표 -> {종 열쇠(CLEFABLE): {기술 열쇠: 레벨업 레벨(가장 이른 것) 또는 None(기술머신만)}}."""
-    if not os.path.exists(path):
-        raise SystemExit("레전즈 Z-A 학습표가 없습니다: %s\n  받기: curl -o '%s' "
-                         "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen9legends/"
-                         "learnsets.ts" % (path, path))
-    out, cur = {}, None
-    with io.open(path, encoding="utf-8") as f:
-        for line in f:
-            m = re.match(r"^\t(\w+): \{", line)
-            if m:
-                cur = key(m.group(1))
-                out[cur] = {}
-                continue
-            m = re.match(r"^\t\t\t(\w+): \[(.*)\]", line)
-            if m and cur:
-                lv = [int(c[2:]) for c in re.findall(r'"([^"]+)"', m.group(2)) if re.match(r"^9L\d+$", c)]
-                out[cur][key(m.group(1))] = min(lv) if lv else None
+    out = {}
+    for sp, mvs in learn_ref.za_codes(path).items():
+        out[sp] = {}
+        for mv, codes in mvs.items():
+            lv = [int(c[2:]) for c in codes if re.match(r"^9L\d+$", c)]
+            out[sp][mv] = min(lv) if lv else None
     return out
 
 
@@ -162,7 +158,8 @@ def build(dex):
                 level[mv] = min(level.get(mv, lv), lv)
             p = cur.get("prevo")
             cur = by_num.get(p) if isinstance(p, int) else None
-        tm = set(tm_no.get(str(no)) for no in learn_tm["learn"].get(str(sp["num"]), []))
+        za_only = set(learn_tm.get("zaOnly") or [])
+        tm = set(tm_no.get(str(no)) for no in learn_tm["learn"].get(str(sp["num"]), []) if no not in za_only)
         lst = out.setdefault(name, [])
         for mv, zlv in sorted(za[name].items()):
             if mv not in dex["moves"] or mv in lst:

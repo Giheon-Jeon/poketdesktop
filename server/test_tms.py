@@ -203,6 +203,9 @@ def remember_checks(d, R, Body):
     cf = mkmon(uid, "CLEFABLE", ["MOONBLAST"], level=10)
     names = [x["move"] for x in R.remember_list(cf, me)["remember"]]
     chk("메가가 있는 종: Z-A 학습표 기술도 떠올리기로 (픽시 에어슬래시 · 레벨 10 이어도)", "AIRSLASH" in names, names)
+    fl = mkmon(uid, "FLOETTE", ["FAIRYWIND"], level=20)
+    chk("플라엣테: 메가플라엣테의 전용기 파멸의빛을 떠올리기로 (게시판 #312 · 영원의 꽃 플라엣테를 합쳐 두었다)",
+        "LIGHTOFRUIN" in [x["move"] for x in R.remember_list(fl, me)["remember"]])
     chk("  메가가 없는 종에는 안 붙는다 (삐삐 · 메가가 있는 종으로만 좁혔다)",
         "AIRSLASH" not in (d.get("CLEFAIRY").get("remind") or []), d.get("CLEFAIRY").get("remind"))
     chk("  옛 메가의 종도 (메가리자몽 - 리자몽 더블윙)", "DUALWINGBEAT" in (d.get("CHARIZARD").get("remind") or []),
@@ -340,10 +343,28 @@ def main():
     chk("  팽도리 계열·윽우지·떨구새도", all(tms.can_learn(n, r) for n in (393, 394, 395, 845, 962)))
     chk("  원작에서 어떤 길로도 못 배우는 종은 여전히 못 배운다 (갸라도스·레쿠쟈)", not tms.can_learn(130, r) and not tms.can_learn(384, r))
     c = tms.data()["counts"]
-    chk("  자료에 알 기술 · 가르침 기술로 들어간 줄 수가 적혀 있다 (전 세대 기술머신 61463줄 + 알 기술 + 최신작 가르침, 1.13.3)",
-        c.get("eggRows", 0) > 1000 and c.get("tutorRows", 0) > 200
-        and c["rows"] == 61463 + c["eggRows"] + c["tutorRows"], c)
+    chk("  자료에 알 기술 · 가르침 기술 · Z-A 전용으로 들어간 줄 수가 적혀 있다 (전 세대 기술머신 61463줄 + 알 기술 + "
+        "최신작 가르침 1.13.3 + Z-A 전용 기술머신 1.13.4)",
+        c.get("eggRows", 0) > 1000 and c.get("tutorRows", 0) > 200 and c.get("zaRows", 0) > 400
+        and c["rows"] == 61463 + c["eggRows"] + c["tutorRows"] + c["zaRows"], c)
     chk("  기술머신의 수는 그대로다 (새 기술머신을 만들지 않는다)", tms.count() == 358)
+
+    # 1.13.4 (게시판 #313 Leica '더블촙 기술머신을 배울 수 있는 포켓몬이 없다'): 레전즈 Z-A · 메가디멘션에만 있는
+    # 기술머신 18개는 PokeAPI 에 호환 자료가 없어 더블촙 · 마그넷봄은 0종이었다 - 쇼다운 Z-A 학습표의 기술머신 기록으로.
+    learners = {}
+    for num, nos in tms.data()["learn"].items():
+        for no in nos:
+            learners.setdefault(no, set()).add(int(num))
+    by_move = dict((t["move"], no) for no, t in tms.all_tms().items())
+    za_only = tms.data().get("zaOnly") or []
+    chk("Z-A 전용 기술머신 18개가 적혀 있다", len(za_only) == 18, za_only)
+    chk("  배울 수 있는 포켓몬이 없는 기술머신이 없다 (더블촙 · 마그넷봄이 0종이었다)",
+        all(learners.get(no) for no in tms.all_tms()), [no for no in tms.all_tms() if not learners.get(no)])
+    chk("  괴력몬 · 루카리오가 더블촙, 라이츄 · 로토무가 마그넷봄을 기술머신으로 (Z-A 의 기술머신)",
+        tms.can_learn(68, by_move["DUALCHOP"]) and tms.can_learn(448, by_move["DUALCHOP"])
+        and tms.can_learn(26, by_move["MAGNETBOMB"]) and tms.can_learn(479, by_move["MAGNETBOMB"]))
+    chk("  본편 기술머신은 안 건드린다 (킬가르도는 폴터가이스트를 여전히 못 배운다 - 본편 최신작 · Z-A 둘 다 못 배운다)",
+        not tms.can_learn(681, by_move["POLTERGEIST"]))
 
     print("\n=== 누가 배울 수 있나 ===")
     # 이상해씨(1) 는 배울 게 많고, 메타몽(132) 은 하나도 못 배운다.
