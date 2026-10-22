@@ -575,10 +575,343 @@ def t_길드전_방어_AI(dex, gyms):
             tb = TB.TrainerBattle.load(dex, json.loads(json.dumps(tb.dump())))
         turns += 1
     chk("끝까지 돈다 (턴마다 저장했다 되살려도 길드전 AI 그대로)", tb.over and tb.war, (tb.over, turns))
-    chk("한 턴의 셈은 시간 상한 안 (%.0fms)" % (1000 * max(spent)), max(spent) < TB.TrainerBattle.WAR_BUDGET + 0.5,
-        max(spent))
+    limit = TB.TrainerBattle.WAR2_EMERGENCY if TB.TrainerBattle.WAR_V2 else TB.TrainerBattle.WAR_BUDGET
+    chk("한 턴의 셈은 시간 상한 안 (%.0fms)" % (1000 * max(spent)), max(spent) < limit + 0.5, max(spent))
     gym_tb = TB.TrainerBattle(dex, mine, dict(tr, ai=None), random.Random(5))
     chk("관장 판은 그대로 (길드전 AI 가 아니다)", not gym_tb.war and not gym_tb.bt.auto_z["foe"])
+
+
+def war_tb(dex, foe_mons, me_mons, seed=1):
+    """길드전 판 (ai="war"). foe_mons 는 AI(방어) 쪽, me_mons 는 사람(공격) 쪽."""
+    tr = {"id": "gw:t", "name": "AI", "role": "[t]", "level": 50, "team": [TB.trainer_mon(m) for m in foe_mons],
+          "noMega": True, "ai": "war", "keystone": True, "zring": True}
+    tb = TB.TrainerBattle(dex, me_mons, tr, random.Random(seed))
+    tb.start()
+    return tb
+
+
+def t_길드전_평가(dex):
+    """길드전 방어 AI 의 새 형세 평가 (_eval_v2 · _hazard_toll, 2026-10-22 design-notes).
+
+    옛 _eval 은 깔기를 안 보고 랭크를 ±2 까지 0.05 씩만 쳐서, 스텔스록 · 칼춤이 '이번 턴 데미지를 버린 수' 로만 보였다.
+    """
+    print("-- 길드전 방어 AI: 새 형세 평가")
+    ai = [mon(dex, "GARCHOMP", 50, "ROUGHSKIN", ["EARTHQUAKE", "DRAGONCLAW", "STEALTHROCK", "SWORDSDANCE"], iv=31)]
+
+    def bench(n):
+        names = ["MACHAMP", "GYARADOS", "ARCANINE", "TYRANITAR", "SCIZOR", "VENUSAUR"]
+        return [mon(dex, names[i], 50, iv=31, seed=i + 2) for i in range(n)]
+
+    def rock_gain(n):
+        tb = war_tb(dex, ai, bench(n))
+        base = tb._eval_v2()
+        tb.bt.field.side("me")["stealthrock"] = 1
+        return tb._eval_v2() - base
+    g6, g2 = rock_gain(6), rock_gain(2)
+    chk("사람 진영의 스텔스록은 남은(안 나온) 포켓몬이 많을수록 값이 크다", g6 > g2 > 0, (g6, g2))
+
+    def toll(bench_mon, hazard, layers=1):
+        tb = war_tb(dex, ai, [mon(dex, "MACHAMP", 50, iv=31), bench_mon])
+        tb.bt.field.side("me")[hazard] = layers
+        return tb._hazard_toll("me")
+    chk("  통굽부츠를 지닌 포켓몬은 안 친다",
+        toll(mon(dex, "ARCANINE", 50, iv=31, held="HEAVYDUTYBOOTS"), "stealthrock") == 0, None)
+    chk("  매직가드는 안 친다", toll(mon(dex, "CLEFABLE", 50, "MAGICGUARD", iv=31), "stealthrock") == 0)
+    pid = mon(dex, "PIDGEOT", 50, "KEENEYE", iv=31)
+    chk("  비행 타입은 압정을 안 밟는다 (스텔스록은 맞는다)", toll(pid, "spikes") == 0 and toll(pid, "stealthrock") > 0,
+        (toll(pid, "spikes"), toll(pid, "stealthrock")))
+    chk("  독 타입은 독압정을 흡수한다", toll(mon(dex, "MUK", 50, "STENCH", iv=31), "toxicspikes") == 0)
+    chk("  나와 있는 포켓몬은 안 친다 (이미 밟고 나왔다)",
+        toll(mon(dex, "ARCANINE", 50, iv=31, held="HEAVYDUTYBOOTS"), "stealthrock") == 0)
+
+    def stage_gain(stat, n):
+        tb = war_tb(dex, ai, bench(2))
+        base = tb._eval_v2()
+        tb.foe.stages[stat] = n
+        return tb._eval_v2() - base
+    a2, c2, a6 = stage_gain("atk", 2), stage_gain("spa", 2), stage_gain("atk", 6)
+    chk("AI 의 공격 +2 (물리 기술만 가진 한카리아스) 는 특공 +2 보다 값이 크다", a2 > c2, (a2, c2))
+    chk("  올라갈수록 덜 쳐 준다 (+6 < +2 의 3배)", a2 < a6 < 3 * a2, (a2, a6))
+
+    tb = war_tb(dex, ai, bench(2))
+    tb.over, tb.result, tb.turn = True, "draw", TB.MAX_TURNS
+    chk("400턴 무승부는 AI 에게 진 것과 같다 (시간 끌기로 무승부를 노리지 않게)", tb._eval_v2() == -100.0,
+        tb._eval_v2())
+    tb.turn = 12
+    chk("  마지막끼리 같이 쓰러진 무승부는 방어 성공에 가깝다 (길드전에서 무승부는 칸을 지킨다 - defends)",
+        tb._eval_v2() == 90.0, tb._eval_v2())
+
+    def status_gain(st):
+        # 사람 선두 = 괴력몬 (물리, 한카리아스보다 느리다). 특성은 노가드로 - 근성이면 상태이상이 오히려 이득이라 0 이다
+        tb = war_tb(dex, ai, [mon(dex, "MACHAMP", 50, "NOGUARD", iv=31)] + bench(2)[1:])
+        base = tb._eval_v2()
+        tb.me.status = st
+        return tb._eval_v2() - base
+    burn, para = status_gain("burn"), status_gain("paralysis")
+    chk("사람 쪽 물리 공격수의 화상은 마비보다 값이 크다 (이미 AI 가 더 빠르다)", burn > para > 0, (burn, para))
+    def benched(st, side):
+        tb = war_tb(dex, ai + [mon(dex, "SKARMORY", 50, "STURDY", ["BRAVEBIRD", "DRILLPECK"], iv=31)],
+                    [mon(dex, "MACHAMP", 50, "NOGUARD", iv=31), mon(dex, "TYRANITAR", 50, "SANDSTREAM", iv=31)])
+        (tb.foe_team if side == "foe" else tb.me_team)[1].status = st
+        return tb._eval_v2()
+    chk("벤치에 있는 AI 포켓몬의 화상도 친다 (교체해 넣기만 해도 값이 오르면 쓸데없는 교체를 부추긴다)",
+        benched("burn", "foe") < benched(None, "foe"), (benched("burn", "foe"), benched(None, "foe")))
+    chk("  벤치에 있는 사람 포켓몬의 상태이상도", benched("burn", "me") > benched(None, "me"),
+        (benched("burn", "me"), benched(None, "me")))
+    tb = war_tb(dex, ai, [mon(dex, "MACHAMP", 50, "GUTS", iv=31)] + bench(2)[1:])
+    base = tb._eval_v2()
+    tb.me.status = "burn"
+    chk("  근성 포켓몬의 화상은 값이 없다 (오히려 공격이 오른다)", tb._eval_v2() - base == 0, tb._eval_v2() - base)
+
+
+def t_길드전_셈(dex, gyms):
+    """길드전 방어 AI 의 새 셈 (_war_choice_v2, WAR_V2): 안전장치 · 시간 끌기 감점 · 깔기 · 관장 판 그대로."""
+    print("-- 길드전 방어 AI: 새 셈")
+    import time
+    old_flag = TB.TrainerBattle.WAR_V2
+    TB.TrainerBattle.WAR_V2 = True
+    try:
+        gar = mon(dex, "GARCHOMP", 50, "ROUGHSKIN", ["EARTHQUAKE", "DRAGONCLAW", "STEALTHROCK", "SWORDSDANCE"], iv=31)
+        names = ["MACHAMP", "GYARADOS", "ARCANINE", "TYRANITAR", "SCIZOR", "VENUSAUR"]
+        six = [mon(dex, n, 50, "NOGUARD" if n == "MACHAMP" else None, iv=31, seed=i + 2) for i, n in enumerate(names)]
+
+        # (a) 셈이 터져도 그 턴은 관장 AI 의 수 - act 가 예외로 떨어지면 판이 멈춰 공격권이 날아간다
+        tb = war_tb(dex, [gar], six)
+        real = TB.TrainerBattle._eval_v2
+        TB.TrainerBattle._eval_v2 = lambda self: 1 / 0
+        try:
+            st = tb.rng.getstate()
+            got = tb._war_choice()
+            tb.rng.setstate(st)
+            slot = tb._foe_wants_switch()
+            want = (slot, None) if slot is not None else (None, tb._foe_move())
+            chk("셈이 터지면 그 턴은 관장 AI 의 수", got == want, (got, want))
+            try:
+                tb.act("move", "CROSSCHOP" if "CROSSCHOP" in tb.me.moves else tb.bt.usable(tb.me)[0])
+                ok = True
+            except Exception as e:                       # noqa: BLE001
+                ok = repr(e)
+            chk("  판은 그대로 이어진다 (예외로 떨어지지 않는다)", ok is True, ok)
+        finally:
+            TB.TrainerBattle._eval_v2 = real
+
+        # (a2) 셈이 실패하거나 느리면 서버 로그(docker logs)에 남는다 - 전쟁 중 되돌릴지 정할 근거
+        import io as _io
+        real_err = sys.stderr
+        TB.TrainerBattle._eval_v2 = lambda self: 1 / 0
+        sys.stderr = _io.StringIO()
+        try:
+            war_tb(dex, [gar], six)._war_choice()
+            failed = sys.stderr.getvalue()
+        finally:
+            sys.stderr = real_err
+            TB.TrainerBattle._eval_v2 = real
+        chk("셈이 터지면 서버 로그에 남는다", "[길드전 AI]" in failed and "ZeroDivisionError" in failed, failed)
+        slow0 = getattr(TB.TrainerBattle, "WAR2_SLOW", None)
+        TB.TrainerBattle.WAR2_SLOW = 0.0
+        sys.stderr = _io.StringIO()
+        try:
+            war_tb(dex, [gar], six)._war_choice()
+            slow = sys.stderr.getvalue()
+        finally:
+            sys.stderr = real_err
+            if slow0 is None:
+                del TB.TrainerBattle.WAR2_SLOW
+            else:
+                TB.TrainerBattle.WAR2_SLOW = slow0
+        chk("  느린 턴도 남는다 (WAR2_SLOW 를 넘으면)", "[길드전 AI]" in slow and "ms" in slow, slow)
+
+        # (a3) 셈은 턴을 열기 전의 판에서 시작한다 - 예전에는 턴을 연 뒤의 판을 떠서 사본이 턴을 두 번 열었고,
+        # 나오자마자 쓰는 속이기가 사본에서는 늘 실패했다 (셈이 AI 의 속이기를 헛수로 보았다)
+        amb = mon(dex, "AMBIPOM", 50, "TECHNICIAN", ["FAKEOUT", "DOUBLEHIT", "UTURN", "TAUNT"], iv=31)
+        tb = war_tb(dex, [amb, gar], [mon(dex, "MACHAMP", 50, "NOGUARD", ["CROSSCHOP"], iv=31)] + six[1:])
+        used = []
+        real_load = TB.TrainerBattle.__dict__["load"]
+
+        def spy(cls, dex_, d):
+            used.append(json.loads(json.dumps(d)))
+            return real_load.__func__(cls, dex_, d)
+        TB.TrainerBattle.load = classmethod(spy)
+        try:
+            tb.act("move", "CROSSCHOP")
+        finally:
+            TB.TrainerBattle.load = real_load
+        pre = used[0] if used else None
+        chk("셈에 쓴 판은 이번 턴을 열기 전의 것", pre is not None and pre["turn"] == tb.turn - 1,
+            pre and pre["turn"])
+        chk("  쓴 판은 비운다 (다음 셈이 낡은 판을 쓰지 않게)", getattr(tb, "_war_pre", None) is None)
+        if pre:
+            sim = TB.TrainerBattle.load(dex, pre)
+            sim._sim, sim._forced = True, ("move", "FAKEOUT")
+            ev = sim.act("move", "CROSSCHOP")
+            chk("  그 판의 사본에서 첫 턴 속이기가 상대를 풀죽게 한다", "풀이 죽어" in texts(ev), texts(ev))
+
+        # (b) 시간 끌기: 같은 포켓몬이 회복을 많이 썼으면 공격을 고른다
+        bl = mon(dex, "BLISSEY", 50, "NATURALCURE", ["SOFTBOILED", "SEISMICTOSS", "TOXIC", "PROTECT"], iv=31)
+        picks_ = []
+        for s in range(6):
+            tb = war_tb(dex, [bl], [mon(dex, "MACHAMP", 50, "NOGUARD", iv=31)] + six[1:3], seed=s + 1)
+            tb.foe.hp = int(tb.foe.maxhp * 0.45)
+            tb.war_stall = {str(tb.fi): 6}
+            picks_.append(tb._war_choice()[1])
+        chk("시간 끌기: 회복 · 방어를 여러 번 쓴 포켓몬은 공격(지구던지기 · 맹독)을 고른다",
+            all(p not in ("SOFTBOILED", "PROTECT") for p in picks_), picks_)
+        tb2 = TB.TrainerBattle.load(dex, json.loads(json.dumps(tb.dump())))
+        chk("  회복 · 방어 횟수는 저장했다 되살려도 남는다", tb2.war_stall == tb.war_stall, tb2.war_stall)
+
+        # (b2) 지금 쓰러뜨릴 수 있으면 쓰러뜨린다 (2026-10-22 테스트 플레이 T19: 대도각참이 체력 1 의 메가레쿠쟈 앞에서
+        # 칼춤을 쓰고 한 대를 더 맞았다 - 레쿠쟈가 빨라서 어느 쪽이든 이번 턴에 맞지만, 칼춤이면 다음 턴에 또 맞는다)
+        kg = mon(dex, "KINGAMBIT", 50, "DEFIANT", ["KOWTOWCLEAVE", "ROCKTOMB", "IRONHEAD", "SWORDSDANCE"], iv=31,
+                 held="BLACKGLASSES")
+        ray = mon(dex, "RAYQUAZA", 50, "AIRLOCK", ["DRAGONDANCE", "DRAGONASCENT", "HYDROPUMP", "CRUNCH"], iv=31)
+        took = []
+        for s in range(8):
+            tb = war_tb(dex, [kg, mon(dex, "GHOLDENGO", 50, "GOODASGOLD", iv=31)], [ray] + six[1:3], seed=s + 1)
+            tb.foe.hp = int(tb.foe.maxhp * 0.71)
+            tb.me.hp = 1
+            took.append(tb._war_choice()[1])
+        chk("지금 쓰러뜨릴 수 있으면 랭크업하지 않고 쓰러뜨린다 (체력 1 의 레쿠쟈 앞 대도각참)",
+            all(k in ("KOWTOWCLEAVE", "ROCKTOMB", "IRONHEAD") for k in took), took)
+        tb = war_tb(dex, [kg, mon(dex, "GHOLDENGO", 50, "GOODASGOLD", iv=31)],
+                    [mon(dex, "CATERPIE", 50, "SHIELDDUST", ["STRINGSHOT", "TACKLE"], iv=31)] + six[1:3])
+        tb.me.hp = 1
+        chk("  상대가 거의 못 깎으면 강제하지 않는다 (공짜 랭크업은 셈이 정한다 - 벤치마크에서 강제하면 졌다)",
+            tb._secure_ko() == [], tb._secure_ko())
+
+        # (b3) 들어오다가 쓰러질 포켓몬으로는 바꾸지 않는다 (2026-10-22 테스트 플레이 T20: 막 나온 따라큐 62% 를 체력
+        # 30% 의 토게키스로 바꿔 토게키스가 들어오며 쓰러졌다 - 관장 AI 는 '그 기술을 60% 넘게 맞을 포켓몬' 으로는 안
+        # 바꾸는데 새 셈의 교체 후보에는 그 거름이 없었다)
+        mk = mon(dex, "MIMIKYU", 50, "DISGUISE", ["SHADOWCLAW", "WOODHAMMER", "PLAYROUGH", "SLASH"], iv=31,
+                 held="CHOICESCARF")
+        tg = mon(dex, "TOGEKISS", 50, "HUSTLE", ["AIRSLASH", "TRIATTACK", "EXTRASENSORY", "MOONBLAST"], iv=31)
+        dp = mon(dex, "DELPHOX", 50, "BLAZE", ["FLAMETHROWER", "PSYCHIC", "DAZZLINGGLEAM", "SHADOWBALL"], iv=31)
+        picks2 = []
+        for s in range(8):
+            tb = war_tb(dex, [mk, tg, dp], [ray] + six[1:3], seed=s + 1)
+            tb.foe.hp = int(tb.foe.maxhp * 0.62)
+            tb.foe_team[1].hp = int(tb.foe_team[1].maxhp * 0.30)
+            tb.foe_team[2].hp = int(tb.foe_team[2].maxhp * 0.30)
+            tb.foe.ab["busted"] = True                     # 탈은 벗겨졌다 (실제 판에서도 이미 62%)
+            tb.me.hp = int(tb.me.maxhp * 0.17)
+            tb.me.stages["spe"] = 2                        # 레쿠쟈가 용의춤으로 스카프 따라큐보다 빠르다 (174 < 230)
+            got = tb._war_choice()
+            picks2.append(("교체 %s" % tb.foe_team[got[0]].name) if got[0] is not None else got[1])
+        chk("들어오다가 쓰러질 포켓몬(체력 30% 토게키스 · 마폭시)으로는 바꾸지 않는다",
+            not any(str(p).startswith("교체") for p in picks2), picks2)
+
+        # (b4) 쓰러진 뒤 내보낸 포켓몬을 바로 다음 턴에 바꾸지 않는다 (2026-10-22 테스트 플레이 T14: 파이어로가 쓰러진 뒤
+        # 따라큐를 내보냈다가 바로 토게키스로 바꿔 몰드류에게 한 턴을 공짜로 줬다 - 내보낼 포켓몬은 옛 점수(_pick)로,
+        # 다음 수는 새 셈으로 골라 둘이 어긋났다)
+        ex = mon(dex, "EXCADRILL", 50, "SANDRUSH", ["ROCKSLIDE", "RAPIDSPIN", "EARTHQUAKE", "SWORDSDANCE"], iv=31)
+        tf = mon(dex, "TALONFLAME", 50, "FLAMEBODY", ["STEELWING", "ACROBATICS", "FLAREBLITZ", "AERIALACE"], iv=31)
+        gl = mon(dex, "GLIMMORA", 50, "TOXICDEBRIS", ["STEALTHROCK", "POWERGEM", "DAZZLINGGLEAM", "SLUDGEWAVE"], iv=31)
+        caught = []
+        real_wc = TB.TrainerBattle._war_choice
+
+        def spy_wc(self):
+            got = real_wc(self)
+            caught.append(got)
+            return got
+        flips = []
+        TB.TrainerBattle._war_choice = spy_wc
+        try:
+            for s in range(8):
+                tb = war_tb(dex, [tf, mk, tg, gl], [ex] + six[1:3], seed=s + 1)
+                tb.foe_team[1].hp = int(tb.foe_team[1].maxhp * 0.87)
+                tb.foe_team[1].ab["busted"] = True
+                tb.foe_team[2].hp = int(tb.foe_team[2].maxhp * 0.74)
+                tb.me.hp = int(tb.me.maxhp * 0.5)
+                tb.foe.hp = 0                              # 파이어로가 방금 쓰러졌다 - 다음 포켓몬을 낸다
+                tb._settle([])
+                sent = tb.foe.name
+                del caught[:]
+                tb.act("move", "EARTHQUAKE")
+                got = caught[-1] if caught else (None, None)
+                flips.append("%s -> 교체 %s" % (sent, tb.foe_team[got[0]].name) if got[0] is not None else sent)
+        finally:
+            TB.TrainerBattle._war_choice = real_wc
+        chk("쓰러진 뒤 내보낸 포켓몬을 바로 다음 턴에 바꾸지 않는다 (몰드류 앞, 8판)",
+            not any("교체" in f for f in flips), flips)
+        # 관장 자료 팀으로 훑은 상태 가운데 고치기 전에 '내보내자마자 교체' 가 나온 넷(5 · 86 · 92 · 108)과 다른 넷
+        tops = [t for t in gyms["trainers"] if t.get("role") in ("챔피언", "사천왕", "프런티어브레인")]
+        flips = []
+        TB.TrainerBattle._war_choice = spy_wc
+        try:
+            for n in (5, 86, 92, 108, 0, 1, 2, 3):
+                d, a = tops[n % len(tops)], tops[(n * 7 + 3) % len(tops)]
+                rnd = random.Random(n)
+                tb = war_tb(dex, [TB.trainer_mon(dict(e, level=50, iv=31)) for e in d["team"]],
+                            [TB.trainer_mon(dict(e, level=50, iv=31)) for e in a["team"]][:3], seed=n + 1)
+                for f in tb.foe_team[1:]:
+                    f.hp = max(1, int(f.maxhp * rnd.uniform(0.3, 1.0)))
+                tb.me.hp = max(1, int(tb.me.maxhp * rnd.choice((0.3, 0.6, 0.9))))
+                tb.me.stages["atk"] = tb.me.stages["spa"] = rnd.choice((0, 0, 1, 2))
+                tb.foe.hp = 0
+                tb._settle([])
+                sent = tb.foe.name
+                del caught[:]
+                _d, k = tb._best(tb.me, tb.foe)
+                tb.act("move", k or tb.bt.usable(tb.me)[0])
+                got = caught[-1] if caught else (None, None)
+                if got[0] is not None:
+                    flips.append("%d: %s -> 교체 %s" % (n, sent, tb.foe_team[got[0]].name))
+        finally:
+            TB.TrainerBattle._war_choice = real_wc
+        chk("  관장 팀 8판에서도 내보내자마자 바꾸지 않는다", not flips, flips)
+
+        # (c) 깔기: 사람에게 6마리가 남았고 이번 턴에 안 쓰러지면 스텔스록부터
+        first = []
+        for s in range(9):
+            tb = war_tb(dex, [gar, mon(dex, "SKARMORY", 50, iv=31)], six, seed=s + 1)
+            first.append(tb._war_choice()[1])
+        chk("깔기: 사람에게 6마리가 남았으면 첫 턴에 스텔스록 (9판 중 과반)",
+            sum(1 for k in first if k == "STEALTHROCK") >= 5, first)
+
+        # (d) 관장 판(ai 없음)은 새 셈과 상관없다 - 같은 시드면 사건이 같다
+        gym = dict(next(x for x in gyms["trainers"] if x["name"] == "난천"))
+        evs = []
+        for flag in (False, True):
+            TB.TrainerBattle.WAR_V2 = flag
+            tb = TB.TrainerBattle(dex, [dict(m) for m in six], gym, random.Random(11))
+            tb.start()
+            log = []
+            for _ in range(12):
+                if tb.over:
+                    break
+                if tb.need_switch:
+                    tb.act("switch", tb.valid_switches()[0])
+                    continue
+                log.append([e.get("text") for e in tb.act("move", tb.bt.usable(tb.me)[0])])
+            evs.append(log)
+        TB.TrainerBattle.WAR_V2 = True
+        chk("관장 판은 새 셈을 켜도 사건이 같다", evs[0] == evs[1] and evs[0], len(evs[0]))
+
+        # (e) 시간: 6 대 6 판을 끝까지 - 한 턴의 셈이 비상 상한 안
+        team = [TB.trainer_mon(dict(e, level=50, iv=31)) for e in gyms["trainers"][-1]["team"]]
+        mine = [TB.trainer_mon(dict(e, level=50, iv=31)) for e in gyms["trainers"][-2]["team"]]
+        tr = {"id": "gw:t", "name": "AI", "level": 50, "team": team, "noMega": True, "ai": "war",
+              "keystone": True, "zring": True}
+        tb = TB.TrainerBattle(dex, mine, tr, random.Random(5))
+        tb.start()
+        spent, turns = [], 0
+        while not tb.over and turns < 200:
+            if tb.need_switch:
+                tb.act("switch", tb.valid_switches()[0])
+            else:
+                _d, k = tb._best(tb.me, tb.foe)
+                t0 = time.time()
+                try:
+                    tb.act("move", k or tb.bt.usable(tb.me)[0])
+                except ValueError:
+                    tb.act("move", tb.bt.usable(tb.me)[0])
+                spent.append(time.time() - t0)
+            tb = TB.TrainerBattle.load(dex, json.loads(json.dumps(tb.dump())))       # 턴마다 저장 · 되살림
+            turns += 1
+        chk("끝까지 돈다 (턴마다 저장했다 되살려도)", tb.over, turns)
+        chk("  한 턴의 셈은 비상 상한 안 (%.0fms)" % (1000 * max(spent)),
+            max(spent) < TB.TrainerBattle.WAR2_EMERGENCY + 0.3, max(spent))
+    finally:
+        TB.TrainerBattle.WAR_V2 = old_flag
 
 
 def t_턴_끝(dex):
@@ -622,6 +955,8 @@ def main():
     t_상대_AI(dex, gyms)
     t_끝까지_돈다(dex, gyms)
     t_길드전_방어_AI(dex, gyms)
+    t_길드전_평가(dex)
+    t_길드전_셈(dex, gyms)
     t_턴_끝(dex)
     print()
     print("======================================================")

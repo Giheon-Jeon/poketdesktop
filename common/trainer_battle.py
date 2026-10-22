@@ -53,6 +53,7 @@ PvP 와 야생은 battle.Battle.choose_for 를 쓴다. 관장은 **여기서 따
 """
 import json
 import random
+import sys
 import time
 
 from . import abilities as A
@@ -201,6 +202,8 @@ class TrainerBattle(object):
         self.started = False
         # 누가 누구를 쓰러뜨렸나. 서버가 경험치를 줄 때 본다 (내 자리가 받는다).
         self.kos = []
+        self.war_stall = {}                     # 길드전 새 셈: AI 자리마다 시간 끌기 수(회복 · 방어 …)를 고른 횟수
+        self.war_sent = -1                      # 길드전 새 셈: AI 가 쓰러진 포켓몬 대신 다음 포켓몬을 낸 턴
         # 내 포켓몬이 유턴·배턴터치·순간이동으로 물러난다 - 그 기술이 끝나자마자 사람이 고른다 (_pause)
         self.pending_out = None
 
@@ -642,6 +645,9 @@ class TrainerBattle(object):
         return best
 
     # ---------------- 길드전 방어 AI (ai="war") ----------------
+    # 새 셈 (2026-10-22, design-notes/2026-10-22-guild-war-defense-ai.md): 깔기 · 랭크업 · 교체의 앞으로의 값을
+    # 보고 몇 턴 더 내다본다. 끄면(False) 아래의 옛 셈 그대로 - 전쟁 중 문제가 보이면 이것만 끈다.
+    WAR_V2 = True
     WAR_REPLY = (0.55, 0.25, 0.20)   # 사람이 할 법한 것의 무게: 가장 아픈 기술 · 둘째 기술 · 가장 나은 교체
     WAR_DEPTH = 1                    # 몇 턴 앞까지 굴려 보나 (첫 턴 + 그 뒤를 양쪽 다 무난하게 둔 것)
     WAR_SIM = True                   # 사본으로 셈하나 (끄면 실수 없는 관장 AI 다)
@@ -669,6 +675,214 @@ class TrainerBattle(object):
             except ValueError:
                 self.act("move", self.bt.usable(self.me)[0])
 
+    # ---- 새 셈 (WAR_V2) ----
+    WAR2_DEPTH = 2          # 첫 턴 뒤 양쪽 기본 정책(사람 = 가장 아픈 기술, AI = 관장 AI)으로 더 굴릴 턴 수
+    WAR2_SEEDS = 2          # 사람의 수 하나마다 굴려 보는 난수 수
+    WAR2_EMERGENCY = 2.0    # 비상 상한 (초). 셈의 양은 고정이고, 이 시간을 넘을 때만 그때까지 본 것 중에서 고른다
+    # 값은 tools/war_ai_bench.py 로 맞췄다 (design-notes/bench-log.md, 2026-10-22): 0.15 보다 0.3 이 낫고, 교체를
+    # '위험할 때만' 셈하게 막으면 오히려 졌다 (승률 0.465). 깊이 2 는 0 · 1 과 승률이 같으면서 랭크업 7배 · 시간 끌기 절반.
+    WAR2_PRIOR = 0.3        # 관장 AI 의 수에 얹는 값
+    WAR2_RISK = 0.35        # 최악의 경우를 섞는 비율 (나머지는 평균)
+    STALL_FREE = 2          # 한 포켓몬이 감점 없이 쓰는 시간 끌기 수(회복 · 방어 · 대타출동 · 소원 · 잠자기)
+    STALL_PEN = 0.3         # 그 뒤로 한 번마다 깎는 값
+    STALL_TURN = 40         # 이 턴이 지나면 시간 끌기 수를 더 깎는다
+    STALL_LATE = 0.2        # STALL_TURN 뒤 10턴마다
+    STALL_EXTRA = ("SUBSTITUTE", "WISH", "REST")
+    WAR2_SLOW = 1.0         # 셈이 이보다 오래 걸리면 서버 로그에 남긴다 (초)
+    KO_FORCE_THREAT = 0.25  # 상대의 이번 턴 공격이 내 남은 체력의 이만큼 넘을 때만 '확실한 KO' 를 강제한다
+    # 바꿔 들어올 포켓몬이 사람의 기술을 남은 체력의 이만큼 넘게 맞으면 교체 후보에서 뺀다 = **들어오면 바로 쓰러질 때만**.
+    # 관장 AI 처럼 0.6 으로 했더니 '크게 맞고도 받아내는' 교체까지 막혀 벤치마크가 0.510 -> 0.476 (마진 -0.39) 이었다.
+    SAFE_SWITCH_TAKEN = 1.0
+    # 쓰러진 포켓몬 대신 막 낸 포켓몬을 바로 다음 턴에 바꾸면 깎는 값 - 그 턴을 상대에게 공짜로 준다
+    # (2026-10-22 테스트 플레이 T14: 따라큐를 내보냈다가 바로 토게키스로 바꿨다)
+    WAR2_REENTRY_PEN = 0.3
+
+    def _is_stall(self, key):
+        """시간을 끄는 수인가 - 상대를 깎지 못하고 버티기만 하는 것."""
+        if not key or key == B.STRUGGLE:
+            return False
+        md = self.bt.move_of(key) or {}
+        if MC.attacks(md):
+            return False
+        return (md.get("heal") or 0) > 0 or key in SM.PROTECTS or key in self.STALL_EXTRA
+
+    def _stall_pen(self):
+        n = self.war_stall.get(str(self.fi), 0)
+        pen = self.STALL_PEN * max(0, n - self.STALL_FREE + 1)
+        if self.turn > self.STALL_TURN:
+            pen += self.STALL_LATE * (self.turn - self.STALL_TURN) / 10.0
+        return pen
+
+    def _war_choice_v2(self):
+        """(바꿀 자리, 쓸 기술) - 새 셈. 관장 AI 의 수(plain)를 먼저 정하고, 사본에서 몇 턴을 굴려 뒤집을지 본다.
+
+        셈 안에서 무엇이 터져도 그 턴은 plain 이다 - act 가 예외로 떨어지면 판이 멈추고 시간이 지나 공격권이 날아간다.
+        """
+        slot = self._foe_wants_switch()
+        plain = ("switch", slot) if slot is not None else ("move", self._foe_move())
+        try:
+            best = self._war_search(plain)
+        except Exception as e:                              # noqa: BLE001
+            self._war_log("셈 오류 -> 관장 AI 의 수: %r" % (e,))
+            best = plain
+        if best[0] == "move" and self._is_stall(best[1]):
+            k = str(self.fi)
+            self.war_stall[k] = self.war_stall.get(k, 0) + 1
+        return (best[1], None) if best[0] == "switch" else (None, best[1])
+
+    def _war_pick(self):
+        """쓰러진 포켓몬 대신 낼 자리 - 후보마다 사본에서 내보내고 몇 턴 굴려 _eval_v2 로 고른다 (WAR_V2).
+
+        예전에는 옛 점수(_pick)로 내고 다음 수는 새 셈으로 골라서, 내보낸 포켓몬을 바로 다음 턴에 바꾸는 일이
+        있었다 (테스트 플레이 T14). 상대도 같이 쓰러졌을 때는 상대가 무엇을 낼지 몰라 옛 점수를 쓴다(부르는 쪽).
+        """
+        plain = self._pick(self.foe_team, self.me)
+        cands = [i for i, f in enumerate(self.foe_team) if f.alive() and i != self.fi]
+        if len(cands) <= 1:
+            return plain
+        try:
+            blob = json.dumps(self.dump())
+            seeds = [self.rng.randrange(1 << 30) for _s in range(self.WAR2_SEEDS + 1)]
+            best, best_sc = None, None
+            for i in cands:
+                vals = []
+                for seed in seeds:
+                    sim = TrainerBattle.load(self.dex, json.loads(blob))
+                    sim._sim = True
+                    sim.rng.seed(seed)
+                    ev = []
+                    sim._switch("foe", i, ev, trigger=True, fresh=False)
+                    sim.foe_switched_last = False
+                    if not sim.foe.alive():                  # 압정에 쓰러졌다
+                        sim.bt._check_faint(ev)
+                        sim._settle(ev)
+                    sim._rollout(1 + self.WAR2_DEPTH)
+                    vals.append(sim._eval_v2())
+                mean = sum(vals) / float(len(vals))
+                sc = (1 - self.WAR2_RISK) * mean + self.WAR2_RISK * min(vals) + (self.WAR2_PRIOR if i == plain else 0.0)
+                if best_sc is None or sc > best_sc:
+                    best, best_sc = i, sc
+            return plain if best is None else best
+        except Exception as e:                              # noqa: BLE001
+            self._war_log("다음 포켓몬 셈 오류 -> 옛 점수: %r" % (e,))
+            return plain
+
+    def _safe_switches(self):
+        """바꿔 들어와도 되는 자리 - **사람이 지금 포켓몬에게 쓸 기술을 맞고 들어오자마자 쓰러질 포켓몬은 뺀다**
+        (SAFE_SWITCH_TAKEN 배 이상 맞는 것).
+
+        2026-10-22 테스트 플레이 T20: 막 나온 따라큐 62% 를 체력 30% 의 토게키스로 바꿨고, 토게키스는 들어오며
+        쓰러졌다. 셈은 '약한 쪽을 버려 센 쪽을 아낀다' 로 보았지만 용의춤 레쿠쟈가 더 빨라 따라큐도 결국 졌다.
+        """
+        foe, me = self.foe, self.me
+        _d, their_k = self._best(me, foe)
+        their_md = self.bt.move_of(their_k) if their_k else None
+        out = []
+        for i, f in enumerate(self.foe_team):
+            if not f.alive() or i == self.fi:
+                continue
+            if their_k and self._est(me, f, their_k) * self._acc(their_md) >= f.hp * self.SAFE_SWITCH_TAKEN:
+                continue
+            out.append(i)
+        return out
+
+    def _secure_ko(self):
+        """이번 턴에 확실히 쓰러뜨리는 기술들 - 데미지가 넉넉하고(KO_ROLL), 명중 90% 이상, 먼저 쓰러지지 않는다.
+
+        체력이 가득한 상대의 기합의띠 · 옹골참은 확실하지 않으니 뺀다. **상대가 이번 턴에 내 남은 체력의
+        KO_FORCE_THREAT 도 못 깎으면 강제하지 않는다** - 그 앞에서 랭크를 쌓는 것은 공짜다 (셈이 정한다).
+        벤치마크에서 늘 강제했더니 승률이 0.528 -> 0.490 으로 내려갔다.
+        """
+        foe, me = self.foe, self.me
+        if not foe.alive() or not me.alive():
+            return []
+        if me.hp >= me.maxhp and (me.held == "FOCUSSASH" or A.has(me, "STURDY")):
+            return []
+        their_d, their_k = self._best(me, foe)
+        if their_d < foe.hp * self.KO_FORCE_THREAT:
+            return []
+        their_md = self.bt.move_of(their_k) if their_k else None
+        out = []
+        for k in self._pool(foe):
+            md = self.bt.move_of(k)
+            if not md or not MC.attacks(md) or AF.ai_mult(self.bt, MC.key(md), md, foe, me) <= 0:
+                continue
+            if self._est(foe, me, k) * KO_ROLL < me.hp or self._hit_rate(md, foe, me) < 0.9:
+                continue
+            if their_k and their_d * KO_ROLL >= foe.hp and not self._first(foe, me, md, their_md):
+                continue                                    # 쓰기 전에 내가 쓰러진다
+            out.append(k)
+        return out
+
+    def _war_search(self, plain):
+        """내 수 전부 x 사람의 수(_human_replies) x 시드를 사본에서 (첫 턴 + WAR2_DEPTH 턴) 굴려 _eval_v2 로 잰다."""
+        foe = self.foe
+        opts = [("move", k) for k in self._pool(foe)]
+        if not (self.foe_switched_last or SM.trapped(self.bt, foe) or SM.must_stay(foe)):
+            opts += [("switch", i) for i in self._safe_switches()]
+        kos = self._secure_ko()
+        if kos:
+            # **지금 확실히 쓰러뜨릴 수 있으면 쓰러뜨린다** (2026-10-22 테스트 플레이 T19: 체력 1 의 메가레쿠쟈 앞에서
+            # 대도각참이 칼춤을 쓰고 한 대를 더 맞았다 - 셈은 다음 턴에 쓰러뜨려도 +2 가 남으니 낫다고 보았다)
+            opts = [("move", k) for k in kos]
+            if len(opts) == 1:
+                return opts[0]
+        replies = self._human_replies()
+        if len(opts) <= 1 or not replies:
+            return opts[0] if kos else plain
+        blob, self._war_pre = getattr(self, "_war_pre", None) or json.dumps(self.dump()), None
+        seeds = [[self.rng.randrange(1 << 30) for _s in range(self.WAR2_SEEDS)] for _ in replies]
+        t0 = time.time()
+        deadline = t0 + self.WAR2_EMERGENCY
+        stall_pen = self._stall_pen()
+        best, best_sc = None, None
+        errs, first_err, seen, cut = 0, None, 0, False
+        for opt in sorted(opts, key=lambda o: o != plain):        # 관장 AI 의 수부터 (비상 상한이 와도 그것은 본다)
+            if time.time() > deadline and best is not None:
+                cut = True
+                break
+            seen += 1
+            vals = []
+            for (w, kind, value), ss in zip(replies, seeds):
+                for seed in ss:
+                    sim = TrainerBattle.load(self.dex, json.loads(blob))
+                    sim._sim = True
+                    sim._forced = opt
+                    sim.rng.seed(seed)
+                    try:
+                        sim.act(kind, value)
+                        sim._rollout(self.WAR2_DEPTH)
+                        vals.append((w, sim._eval_v2()))
+                    except Exception as e:                     # noqa: BLE001  (그 사본은 셈에서 뺀다)
+                        errs += 1
+                        first_err = first_err or e
+            if not vals:
+                continue
+            mean = sum(w * v for w, v in vals) / sum(w for w, _v in vals)
+            sc = (1 - self.WAR2_RISK) * mean + self.WAR2_RISK * min(v for _w, v in vals) + self.rng.random() * 0.01
+            if opt == plain:
+                sc += self.WAR2_PRIOR
+            if opt[0] == "move" and self._is_stall(opt[1]):
+                sc -= stall_pen
+            if opt[0] == "switch" and self.war_sent == self.turn - 1:
+                sc -= self.WAR2_REENTRY_PEN                # 막 낸 포켓몬을 바로 바꾸면 그 턴을 공짜로 준다
+            if best_sc is None or sc > best_sc:
+                best, best_sc = opt, sc
+        took = time.time() - t0
+        if errs:
+            self._war_log("사본 오류 %d개 (첫 오류 %r)" % (errs, first_err))
+        if cut or took > self.WAR2_SLOW:
+            self._war_log("셈 %dms (선택지 %d/%d%s)" % (took * 1000, seen, len(opts), ", 비상 상한" if cut else ""))
+        return best or plain
+
+    def _war_log(self, text):
+        """서버 로그(docker logs)에 한 줄 - 전쟁 중 새 셈을 되돌릴지 정할 근거 (2026-10-22 사용자 결정)."""
+        try:
+            sys.stderr.write("[길드전 AI] %s T%d 자리 %s: %s\n" % (self.trainer.get("id"), self.turn, self.fi, text))
+            sys.stderr.flush()
+        except Exception:                                   # noqa: BLE001
+            pass
+
     def _war_choice(self):
         """(바꿀 자리, 쓸 기술) - 한 턴을 **판의 사본으로 미리 돌려 보고** 고른다.
 
@@ -677,6 +891,8 @@ class TrainerBattle(object):
         같은 난수를 써서 내 수끼리 공평하게 견준다. 평균과 최악을 섞어 고른다 - 한 수만 노리다 크게
         지는 수를 피한다. 작은 흔들림을 섞어 같은 판에서 늘 같은 수를 두지 않는다 (외워서 이기지 못하게).
         """
+        if self.WAR_V2:
+            return self._war_choice_v2()
         foe = self.foe
         # 먼저 실수 없는 관장 AI 의 수를 정해 둔다. 셈은 이것을 **뒤집을 만큼 뚜렷할 때만** 뒤집는다
         # (WAR_PRIOR) - 사본 몇 판의 난수에 휘둘려 좋은 수를 버리지 않게.
@@ -758,6 +974,113 @@ class TrainerBattle(object):
                 v -= sign * 0.12
         return v
 
+    # ---- 새 형세 평가 (WAR_V2) - 단위는 옛 _eval 과 같다: 한 마리 = 0.5 + 체력 비율 ----
+    HAZARD_W = 1.5       # 깔기가 앞으로 깎을 체력 비율 합에 곱한다 (벤치마크로 1.0 · 1.5 중 1.5)
+    STAGE_W = 0.35       # 실제로 쓰는 공격 능력 · 맞을 쪽 방어의 랭크 (1 - 0.75^단계 만큼)
+    SPEED_FLIP_W = 0.25  # 랭크 · 마비로 스피드가 뒤집힌 값
+    SIDE_W = 0.03        # 벽 · 순풍의 남은 한 턴
+
+    def _hazard_toll(self, who):
+        """who 진영에 깔린 것이 그 진영의 **아직 안 나온** 포켓몬에게 앞으로 줄 손해 (체력 비율의 합)."""
+        side = self.bt.field.side(who)
+        if not any(side.get(h) for h in FD.HAZARDS):
+            return 0.0
+        team, cur = (self.me_team, self.me) if who == "me" else (self.foe_team, self.foe)
+        total = 0.0
+        for f in team:
+            if f is cur or not f.alive() or H.no_hazards(f):
+                continue
+            magic = A.has(f, "MAGICGUARD")
+            ground = SM.grounded(f)
+            types = f.types()
+            loss = 0.0
+            if side.get("stealthrock") and not magic:
+                loss += self.dex.effectiveness("ROCK", types) / 8.0
+            if side.get("spikes") and ground and not magic:
+                loss += 1.0 / {1: 8, 2: 6, 3: 4}[min(3, int(side["spikes"]))]
+            if side.get("toxicspikes") and ground and not f.status and "POISON" not in types and "STEEL" not in types:
+                loss += 0.25 if int(side["toxicspikes"]) >= 2 else 0.15
+            if side.get("stickyweb") and ground:
+                loss += 0.05
+            total += min(loss, f.hp / float(f.maxhp or 1))
+        return total
+
+    def _attack_kinds(self, f):
+        """(물리 공격기가 있나, 특수 공격기가 있나)"""
+        phys = spec = False
+        for k in f.moves:
+            md = self.bt.move_of(k) or {}
+            if MC.attacks(md):
+                phys = phys or md.get("cat") == "physical"
+                spec = spec or md.get("cat") == "special"
+        return phys, spec
+
+    def _stage_value(self, f, opp):
+        """f 의 랭크가 f 쪽에 주는 값."""
+        if not f.alive() or not opp.alive():
+            return 0.0
+        phys, spec = self._attack_kinds(f)
+        o_phys, o_spec = self._attack_kinds(opp)
+
+        def curve(s):
+            return (1.0 - 0.75 ** abs(s)) * (1 if s > 0 else -1) if s else 0.0
+        st = f.stages
+        v = curve(st.get("atk", 0)) * (1.0 if phys else 0.1) + curve(st.get("spa", 0)) * (1.0 if spec else 0.1)
+        v += 0.6 * (curve(st.get("def", 0)) * (1.0 if o_phys else 0.2) + curve(st.get("spd", 0)) * (1.0 if o_spec else 0.2))
+        v *= self.STAGE_W
+        mine, theirs = f.stat("spe"), opp.stat("spe")
+        plain = f.stat("spe", stages=False)
+        if (mine > theirs) != (plain > theirs):         # 랭크로 스피드가 뒤집혔다
+            v += self.SPEED_FLIP_W if mine > theirs else -self.SPEED_FLIP_W
+        return v
+
+    def _status_value_of(self, f, opp):
+        """f 에게 걸린 상태이상이 f 쪽에 주는 손해 (0 이상)."""
+        if not f.alive() or not f.status:
+            return 0.0
+        if A.has(f, "GUTS", "MARVELSCALE", "QUICKFEET", "MAGICGUARD", "POISONHEAL"):
+            return 0.0
+        phys, spec = self._attack_kinds(f)
+        s = f.status
+        if s == "burn":
+            return 0.35 if phys and not spec else (0.2 if phys else 0.08)
+        if s == "paralysis":
+            fast = f.stat("spe", stages=True) * 2 > opp.stat("spe")       # 마비 전에는 더 빨랐나
+            return 0.12 + (self.SPEED_FLIP_W if fast and f.stat("spe") <= opp.stat("spe") else 0.0)
+        if s == "poison":
+            return 0.2 if f.cond.get("toxic") else 0.12
+        if s in ("sleep", "freeze"):
+            return 0.35
+        return 0.12
+
+    def _eval_v2(self):
+        """이 판을 AI(방어) 쪽에서 본 값. 클수록 AI 에게 좋다 (WAR_V2).
+
+        옛 _eval + 깔기가 앞으로 깎을 체력 · 실제로 쓰는 능력의 랭크(±6, 올라갈수록 덜) · 스피드 역전 ·
+        상태이상의 종류와 상대 · 벽 · 순풍. **무승부는 진 것과 같다** - 400턴을 끌어 무승부로 칸을 지키지 않게.
+        """
+        if self.over:
+            if self.result in ("lost", "forfeit"):
+                return 100.0
+            if self.result == "draw" and self.turn < MAX_TURNS:
+                return 90.0                 # 마지막끼리 같이 쓰러졌다 - 길드전에서 무승부는 칸을 지킨다 (defends)
+            return -100.0                   # 진 판 · 400턴 무승부 (시간 끌기로 노리지 않게)
+
+        def side(team):
+            return sum(0.5 + f.hp / float(f.maxhp or 1) for f in team if f.alive())
+        v = side(self.foe_team) - side(self.me_team)
+        v += self.HAZARD_W * (self._hazard_toll("me") - self._hazard_toll("foe"))
+        v += self._stage_value(self.foe, self.me) - self._stage_value(self.me, self.foe)
+        # 상태이상은 **벤치에 있는 것까지** - 나와 있는 둘만 보면 걸린 포켓몬을 교체해 넣기만 해도 값이 올라
+        # 쓸데없는 교체를 부추긴다 (검토 지적)
+        v += sum(self._status_value_of(f, self.foe) for f in self.me_team) \
+            - sum(self._status_value_of(f, self.me) for f in self.foe_team)
+        for who, sign in (("foe", 1.0), ("me", -1.0)):
+            sd = self.bt.field.side(who)
+            for k in ("reflect", "lightscreen", "auroraveil", "tailwind"):
+                v += sign * self.SIDE_W * int(sd.get(k) or 0)
+        return v
+
     # ---------------- 한 턴 ----------------
     def valid_switches(self):
         return [i for i, f in enumerate(self.me_team) if f.alive() and i != self.mi]
@@ -817,6 +1140,10 @@ class TrainerBattle(object):
             if why and not (enc and enc.get("move") == value):
                 raise ValueError(why)
 
+        if self.war and self.WAR_V2 and not getattr(self, "_sim", False):
+            # 길드전 새 셈은 **이번 턴을 열기 전의 판**에서 사본을 뜬다. 연 뒤에 뜨면 사본의 act 가 턴을 또 열어서
+            # (나온 뒤 턴 수 · 시계가 둘씩 감) 나오자마자 쓰는 속이기 · 만나자마자가 사본에서는 늘 실패했다.
+            self._war_pre = json.dumps(self.dump())
         self.turn += 1
         self.bt.turn_no = self.turn
         bt = self.bt
@@ -977,7 +1304,11 @@ class TrainerBattle(object):
         if not me_left:
             return self._finish("lost", ev)
         if foe_down:
-            nxt = self._pick(self.foe_team, self.me)
+            if self.war and self.WAR_V2 and not me_down and not getattr(self, "_sim", False):
+                nxt = self._war_pick()
+                self.war_sent = self.turn
+            else:
+                nxt = self._pick(self.foe_team, self.me)
             # 나도 쓰러져서 곧 바꿀 거면, 상대의 등장 특성은 내가 고른 뒤에
             self._switch("foe", nxt, ev, trigger=not me_down, fresh=False)
             if me_down:
@@ -1105,6 +1436,7 @@ class TrainerBattle(object):
             "field": self.bt.field.dump(), "pendingOut": self.pending_out, "mid": self.mid,
             "keystone": dict(self.keystone), "megaDone": sorted(self.mega_done),
             "gimmick": B.gimmick_dump(self),
+            "warStall": dict(self.war_stall), "warSent": self.war_sent,
         }
 
     @classmethod
@@ -1134,4 +1466,6 @@ class TrainerBattle(object):
         self.seen = set(d.get("seen") or [0])
         self.started = d.get("started", True)
         self.kos = list(d.get("kos") or [])
+        self.war_stall = dict(d.get("warStall") or {})
+        self.war_sent = int(d.get("warSent", -1))
         return self
