@@ -11,6 +11,9 @@
 
 유대 미션을 마쳐야 받는다 (아래 bond 절). 한 번 받으면 친밀도가 떨어져도
 계속 가진다 (사용자가 정했다).
+
+**메가진화는 유대 미션을 마친 개체만 한다 (2026-10-22 사용자).** 그래서 스톤이 이미 다 있는 종도
+다른 개체가 미션을 할 수 있고, 마치면 스톤 없이 '유대 완료' 만 된다 (stone = NO_STONE).
 """
 from . import config, db, gym
 
@@ -44,6 +47,8 @@ BOND_HAPPINESS = 255
 BOND_GYM = 1
 BOND_KOS = 30
 BOND_WILD = 10
+# 받을 스톤이 없이 마친 유대 - 그 종의 스톤을 이미 다 가졌다 (10/22). bond.stone 에 적는다.
+NO_STONE = "-"
 
 
 def _now_iso():
@@ -84,9 +89,37 @@ def _row(pid):
     return db.q1("SELECT * FROM bond WHERE pokemon_id=?", (pid,))
 
 
+# ---- 유대를 마친 개체만 메가진화한다 (10/22 사용자) ----
+# 판정은 배틀 엔진(battle.Fighter.mega_target)이 포켓몬의 bonded 로 한다. DB 에서 읽은 포켓몬은
+# db.row_to_mon 이 메가스톤을 지닌 것에 붙이고, 미리 고정해 둔 팀(길드전)은 판을 열 때 mark_bonded 로 붙인다.
+def done_ids(ids):
+    """유대 미션을 마친 개체 id 들 (set)."""
+    ids = [int(i) for i in ids or [] if i]
+    if not ids:
+        return set()
+    marks = ",".join("?" * len(ids))
+    return set(r["pokemon_id"] for r in db.q(
+        "SELECT pokemon_id FROM bond WHERE done_at IS NOT NULL AND pokemon_id IN (%s)" % marks, tuple(ids)))
+
+
+def is_bonded(pid):
+    return bool(pid) and int(pid) in done_ids([pid])
+
+
+def mark_bonded(mons):
+    """사람 포켓몬(id 가 있는 것)에 지금의 유대 여부를 붙인다. 관장·AI 팀(id 없음)은 그대로 둔다."""
+    done = done_ids([m.get("id") for m in mons or [] if m.get("id")])
+    for m in mons or []:
+        if m.get("id"):
+            m["bonded"] = m["id"] in done
+    return mons
+
+
 def ready(uid):
     """빛나는 돌을 띄울 포켓몬 id. 데리고 다니고, 친밀도가 끝까지 찼고,
-    아직 미션을 시작 안 했고, 그 종의 스톤 중 아직 없는 것이 있을 때."""
+    아직 미션을 시작 안 했고, 메가스톤으로 메가진화하는 종일 때.
+
+    스톤을 이미 다 가졌어도 뜬다 - 유대를 마친 개체만 메가진화하므로 (10/22) 다른 개체도 미션을 한다."""
     if not has_keystone(uid):
         return []
     rows = db.q("SELECT id, species, happiness FROM pokemon WHERE user_id=?"
@@ -97,7 +130,7 @@ def ready(uid):
     for r in rows:
         if r["id"] in started:
             continue
-        if missing_stones(uid, r["species"]):
+        if stones_for(r["species"]):
             out.append(r["id"])
     return out
 
@@ -114,8 +147,6 @@ def start(uid, pid, now=None):
         raise ValueError("이 포켓몬은 메가스톤으로 메가진화하지 않습니다.")
     if (r["happiness"] or 0) < BOND_HAPPINESS:
         raise ValueError("아직 유대가 부족합니다. 더 오래 데리고 다녀 주세요.")
-    if not missing_stones(uid, r["species"]):
-        raise ValueError("이 종의 메가스톤은 이미 모두 가지고 있습니다.")
     db.run("INSERT INTO bond (pokemon_id, user_id, species, started_at)"
            " VALUES (?,?,?,?) ON CONFLICT(pokemon_id) DO NOTHING",
            (pid, uid, r["species"], now or _now_iso()))
@@ -140,6 +171,9 @@ def _complete(uid, pid, now=None):
     if len(miss) == 1:
         # 배틀·잡기 도중에 저절로 받는다 - 본 적이 없으니 나중에 알린다(seen=0).
         claim(uid, pid, miss[0], now, seen=False)
+    elif not miss:
+        # 받을 스톤이 없다 (그 종의 스톤을 이미 다 가졌다). 이 개체가 메가진화할 수 있게 된 것만 알린다 (10/22)
+        db.run("UPDATE bond SET stone=?, seen=0 WHERE pokemon_id=? AND stone IS NULL", (NO_STONE, pid))
 
 
 def claim(uid, pid, stone, now=None, seen=True):
@@ -236,7 +270,9 @@ def card(uid, pid):
                 {"key": "wild", "text": "데리고 다니는 동안 야생 %d마리 잡기" % BOND_WILD,
                  "value": min(b["wild"], BOND_WILD), "target": BOND_WILD},
             ],
-            "done": bool(b["done_at"]), "stone": b["stone"],
+            "done": bool(b["done_at"]),
+            "stone": None if b["stone"] == NO_STONE else b["stone"],
+            "bondOnly": b["stone"] == NO_STONE,            # 받을 스톤 없이 마쳤다 (이미 다 가졌다)
             "claimable": bool(b["done_at"] and not b["stone"]),
         })
     return out
@@ -267,8 +303,10 @@ def me_card(uid):
         claim_ready = [r["pokemon_id"] for r in db.q(
             "SELECT b.pokemon_id FROM bond b JOIN pokemon p ON p.id=b.pokemon_id"
             " WHERE b.user_id=? AND b.done_at IS NOT NULL AND b.stone IS NULL", (uid,))]
-        # 저절로 받고 아직 못 알린 스톤
+        # 저절로 받고 아직 못 알린 스톤. 스톤 없이 유대만 마친 것은 bondOnly (10/22)
         got = [{"pokemon": r["pokemon_id"], "name": _name(r["pokemon_id"]),
+                "stone": None, "stoneKr": None, "bondOnly": True} if r["stone"] == NO_STONE else
+               {"pokemon": r["pokemon_id"], "name": _name(r["pokemon_id"]),
                 "stone": r["stone"], "stoneKr": _stone_kr(r["stone"])}
                for r in db.q(
                    "SELECT b.pokemon_id, b.stone FROM bond b JOIN pokemon p"

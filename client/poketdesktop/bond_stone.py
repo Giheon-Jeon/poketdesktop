@@ -180,7 +180,8 @@ class BondStones(object):
         PLAT.activate()
         if not confirm(app.root, "빛나는 돌",
                        natural("%s 와(과)의 유대가 가득 찼습니다!\n\n세 가지 미션을 마치면 "
-                               "메가스톤을 받습니다. 시작할까요?" % name),
+                               "이 포켓몬이 메가진화할 수 있습니다 (그 종의 메가스톤이 아직 없으면 받습니다). "
+                               "시작할까요?" % name),
                        danger=False, ok_text="시작"):
             return
 
@@ -205,12 +206,16 @@ class BondStones(object):
 
 
 def announce_got(parent, got):
-    """저절로 받은 메가스톤을 알린다. 여럿이면 한 창에."""
+    """저절로 받은 메가스톤을 알린다. 여럿이면 한 창에.
+
+    스톤 없이 유대만 마친 것(bondOnly - 그 종의 스톤은 이미 있다, 10/22)은 이제 메가진화할 수 있다고 알린다.
+    """
     if not got:
         return
     from . import ui_box
-    win, f = ui_box._shell(parent, "메가스톤", 440, U.h(250))
-    tk.Label(f, text="메가스톤을 받았습니다!", bg=U.BG, fg=U.ACCENT_TEXT,
+    only = all(g.get("bondOnly") for g in got)
+    win, f = ui_box._shell(parent, "메가진화" if only else "메가스톤", 440, U.h(250))
+    tk.Label(f, text="유대 미션을 마쳤습니다!" if only else "메가스톤을 받았습니다!", bg=U.BG, fg=U.ACCENT_TEXT,
              font=(U.FAMILY_BLACK, U.pt(17))).pack(anchor="w")
     box = tk.Frame(f, bg="#161b28", highlightthickness=2, highlightbackground=U.LINE)
     box.pack(fill="x", pady=(12, 0))
@@ -220,14 +225,18 @@ def announce_got(parent, got):
         row = tk.Frame(inner, bg="#161b28")
         row.pack(fill="x", pady=2)
         tk.Label(row, text="✦", bg="#161b28", fg=FILL_LIT, font=U.FONT_B).pack(side="left", anchor="n")
-        lb = tk.Label(row, text=natural("%s 와(과)의 유대 미션을 마쳐 %s 을(를) 받았습니다."
-                                        % (g.get("name") or "포켓몬",
-                                           g.get("stoneKr") or g.get("stone") or "메가스톤")),
+        text = ("%s 와(과)의 유대 미션을 마쳐 이제 메가진화할 수 있습니다." % (g.get("name") or "포켓몬")
+                if g.get("bondOnly") else
+                "%s 와(과)의 유대 미션을 마쳐 %s 을(를) 받았습니다."
+                % (g.get("name") or "포켓몬", g.get("stoneKr") or g.get("stone") or "메가스톤"))
+        lb = tk.Label(row, text=natural(text),
                       bg="#161b28", fg=U.FG, font=U.FONT_S, anchor="w", justify="left",
                       wraplength=340)
         lb.pack(side="left", fill="x", expand=True, padx=(6, 0))
-    note = tk.Label(f, text="가방에 넣어 두었습니다. 포켓몬 관리에서 지니게 하고, 배틀에서 "
-                            "'메가진화' 를 켜면 한 판에 한 번 메가진화합니다.",
+    note = tk.Label(f, text=("포켓몬 관리에서 메가스톤을 지니게 하고, 배틀에서 '메가진화' 를 켜면 한 판에 "
+                             "한 번 메가진화합니다." if only else
+                             "가방에 넣어 두었습니다. 포켓몬 관리에서 지니게 하고, 배틀에서 "
+                             "'메가진화' 를 켜면 한 판에 한 번 메가진화합니다."),
                     bg=U.BG, fg=U.FG_DIM, font=U.FONT_S, anchor="w", justify="left",
                     wraplength=390)
     note.pack(fill="x", pady=(10, 0))

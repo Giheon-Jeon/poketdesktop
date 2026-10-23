@@ -32,7 +32,7 @@ def start(ctx=Depends(deps.current)):
             raise HTTPException(409, "관장과의 승부가 아직 끝나지 않았습니다. 그 승부부터 마쳐 주세요.")
         tb = TB.TrainerBattle.load(deps.dex(), json.loads(old["data"]))
         return gym_routes._out(old, tb, extra={"resumed": True})
-    # 전설·환상은 한 마리만 나간다 (관장과 같다). 나머지는 이번 판에서 쉰다.
+    # 전설·환상은 한 마리만, 같은 종도 한 마리만 나간다 (관장과 같다). 나머지는 이번 판에서 쉰다.
     party, benched = pvp.split_restricted(gym_routes._party(uid))
     if not party:
         raise HTTPException(409, "데리고 다니는 포켓몬이 없습니다.")
@@ -45,7 +45,7 @@ def start(ctx=Depends(deps.current)):
         raise HTTPException(409, str(e))
     if benched:
         at = 1 if events and events[0].get("t") == "intro" else 0
-        events.insert(at, {"t": "note", "text": pvp.bench_note(benched)})
+        events.insert(at, {"t": "note", "text": pvp.bench_note(benched, party)})
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     cur = db.run("INSERT INTO gym_battle (user_id, region, trainer, state, turn, rev, data,"
                  " created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",

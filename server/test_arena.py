@@ -59,16 +59,19 @@ def mkuser(tag):
 
 
 def rank_team(uid):
-    """랭크전 조건을 채운다: Lv.50 피카츄 여섯 마리를 데리고 다니게 (스타팅은 바탕화면에서 내린다)."""
+    """랭크전 조건을 채운다: Lv.50 전기 포켓몬 여섯 마리를 데리고 다니게 (스타팅은 바탕화면에서 내린다).
+
+    같은 종은 한 팀에 한 마리만 나가서(10/22) 여섯 종을 달리한다 (모두 정전기 특성을 가질 수 있는 종).
+    """
     con = sqlite3.connect(DB)
     con.execute("UPDATE pokemon SET on_desktop=0, slot=NULL WHERE user_id=?", (uid,))
-    for slot in range(6):
+    for slot, sp in enumerate(("PIKACHU", "RAICHU", "ELECTABUZZ", "AMPHAROS", "FLAAFFY", "ELEKID")):
         con.execute("INSERT INTO pokemon (user_id, species, nickname, level, exp, nature, ability,"
                     " hidden_ability, gender, shiny, happiness, ivs, evs, moves, on_desktop, slot,"
                     " met_level, caught_at, hyper, no_evolve, luxury, held)"
-                    " VALUES (?,'PIKACHU',NULL,50,125000,'HARDY','STATIC',0,'M',0,70,?,?,?,1,?,50,"
+                    " VALUES (?,?,NULL,50,125000,'HARDY','STATIC',0,'M',0,70,?,?,?,1,?,50,"
                     "'2026-01-01','{}',0,0,NULL)",
-                    (uid, json.dumps({k: 20 for k in ("hp", "atk", "def", "spa", "spd", "spe")}),
+                    (uid, sp, json.dumps({k: 20 for k in ("hp", "atk", "def", "spa", "spd", "spe")}),
                      json.dumps({k: 0 for k in ("hp", "atk", "def", "spa", "spd", "spe")}),
                      json.dumps(["THUNDERBOLT", "QUICKATTACK", "IRONTAIL", "THUNDERWAVE"]), slot))
     con.commit()

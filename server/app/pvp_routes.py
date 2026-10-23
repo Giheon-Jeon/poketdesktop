@@ -125,7 +125,7 @@ def ranking(limit: int = 50, ctx=Depends(deps.current)):
             "me": me, "season": pvp.SEASON,
             "placement": pvp.PLACEMENT,
             "rules": dict(season.rules_public(),
-                          restrictedMax=pvp.RESTRICTED_MAX),
+                          restrictedMax=pvp.RESTRICTED_MAX, sameSpeciesMax=pvp.SAME_SPECIES_MAX),
             # 지난 시즌 명예의 전당. 시즌 1 은 티어가 없던 시즌이라 순위만 있다.
             "hall": {"season": pvp.SEASON - 1,
                      "rows": season.hall(pvp.SEASON - 1)}}
@@ -138,7 +138,7 @@ class TeamIn(BaseModel):
 
 def _team_view(uid):
     source = pvp._ranked_source(uid)
-    team, dropped = pvp.restrict(source)
+    team, dropped, same = pvp.drop_counts(source)
     dex = deps.dex()
     return {"registered": bool(pvp.team_ids(uid)),
             # 고르는 창에는 제한 전의 팀을 준다 (등록한 그대로 보여야 한다).
@@ -151,6 +151,9 @@ def _team_view(uid):
             "restrictedNums": sorted(dex.get(s)["num"] for s in pvp.restricted_species()
                                      if dex.get(s)),
             "restrictedDropped": dropped,
+            # 같은 종은 한 마리 (10/22). 창이 두 마리째를 미리 막는다 (서버도 막는다).
+            "sameSpeciesMax": pvp.SAME_SPECIES_MAX,
+            "sameDropped": same,
             # 랭크전 조건 (시즌 4): 실제로 나가는 팀에 Lv.50 이상 6마리
             "rankMin": {"count": season.RANK_MIN_COUNT, "level": season.RANK_MIN_LEVEL},
             "rankReady": pvp.rank_ready(team)[0], "rankReadyCount": pvp.rank_ready(team)[1]}

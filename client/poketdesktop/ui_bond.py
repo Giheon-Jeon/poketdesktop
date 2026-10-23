@@ -162,6 +162,8 @@ class BondPanel(object):
         for form in forms_for(dex, m):
             pv = mega_preview(dex, m, form)
             if pv:
+                # 스톤 메가는 유대 미션을 마친 개체만 (10/22). 서버가 bonded 를 보낸다 - 없으면(옛 서버) 말하지 않는다
+                pv["needBond"] = bool(pv.get("stoneKr") and not pv.get("move") and m.get("bonded") is False)
                 self.previews.append(pv)
         if not self.previews:
             return
@@ -219,7 +221,8 @@ class BondPanel(object):
                      fg=U.GOOD if d > 0 else (U.DANGER if d < 0 else U.FG_FAINT),
                      font=U.FONT_S, anchor="e").grid(row=i, column=3, sticky="e")
         how = ("화룡점정을 알고 있으면" if pv.get("move")
-               else "%s 을(를) 지니면" % pv["stoneKr"] if pv.get("stoneKr") else None)
+               else "%s%s 을(를) 지니면" % ("유대 미션을 마치고 " if pv.get("needBond") else "", pv["stoneKr"])
+               if pv.get("stoneKr") else None)
         note = "지금 레벨·개체값·노력치·성격으로 센 값입니다. 체력은 안 바뀝니다."
         if how:
             note = "%s 배틀에서 메가진화할 수 있습니다. %s" % (how, note)
@@ -309,16 +312,18 @@ class BondPanel(object):
                  fg=U.PINK if now >= need else U.FG_FAINT,
                  font=U.FONT_XS).pack(side="right")
         self._bar(fr, now / float(need or 1), U.PINK).pack(fill="x", pady=(3, 0))
-        if not missing:
-            msg, fg, btn = "이 종의 메가스톤을 모두 가지고 있습니다.", U.GOOD, None
-        elif not has_key:
+        # 스톤이 이미 다 있어도 미션을 한다 - 메가진화는 유대 미션을 마친 개체만 한다 (10/22)
+        reward = "메가스톤을 받습니다." if missing else "이 포켓몬도 메가진화할 수 있어요."
+        if not has_key:
             msg, fg, btn = ("관장 8곳을 이기면 키스톤을 받습니다. 키스톤이 있어야 "
                             "메가진화할 수 있어요."), U.FG_DIM, None
         elif now < need:
             msg, fg, btn = ("데리고 다니며 유대를 끝까지 채우면 바탕화면에 빛나는 돌이 "
                             "나타납니다. 누르면 유대 미션이 시작돼요."), U.FG_DIM, None
+            if not missing:
+                msg = "이 종의 메가스톤은 이미 있지만, 메가진화는 유대 미션을 마친 포켓몬만 할 수 있어요. " + msg
         else:
-            msg, fg, btn = ("유대가 가득 찼습니다! 미션 셋을 마치면 메가스톤을 받습니다."
+            msg, fg, btn = ("유대가 가득 찼습니다! 미션 셋을 마치면 " + reward
                             ), MEGA, ("미션 시작", self.do_start)
         self._label(self.body, msg, fg).pack(fill="x", pady=(6, 0))
         self._button(btn)
@@ -346,10 +351,15 @@ class BondPanel(object):
                        if s["id"] == c["stone"]), c["stone"])
             msg, fg, btn = ("%s 을(를) 받았습니다. 지니게 하고 배틀에서 메가진화를 "
                             "켜 보세요." % kr), U.GOOD, None
+        elif c.get("bondOnly"):
+            # 받을 스톤 없이 마쳤다 - 그 종의 스톤은 이미 있다 (10/22)
+            msg, fg, btn = ("유대 미션을 마쳤습니다! 이 포켓몬은 이제 메가진화할 수 있어요. "
+                            "메가스톤을 지니게 하세요."), U.GOOD, None
         elif c.get("done"):
             msg, fg, btn = "미션을 마쳤습니다.", U.GOOD, None
         else:
-            msg, fg, btn = "세 가지를 다 채우면 메가스톤을 받습니다.", U.FG_DIM, None
+            msg, fg, btn = ("세 가지를 다 채우면 %s" % ("메가스톤을 받습니다." if missing
+                                                     else "이 포켓몬도 메가진화할 수 있어요.")), U.FG_DIM, None
         self._label(self.body, msg, fg).pack(fill="x", pady=(8, 0))
         self._button(btn)
 

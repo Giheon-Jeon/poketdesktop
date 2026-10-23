@@ -207,6 +207,9 @@ def _party(uid):
 # 등록한 랭크 팀은 두 마리째를 넣을 수 없다 (set_team). 바탕화면 파티로 싸우는
 # 곳은 **앞에 있는 한 마리만 나가고 나머지는 쉰다** (restrict / split_restricted).
 RESTRICTED_MAX = 1
+# 같은 종은 한 팀에 한 마리 (10/22 사용자: "타부자고 두 마리 같은 중복 파티는 안 된다"). 전설·환상 제한과 같은 틀 -
+# 등록하는 팀(랭크·길드전)은 거절하고, 바탕화면 파티로 싸우는 곳은 앞의 한 마리만 나가고 나머지는 쉰다.
+SAME_SPECIES_MAX = 1
 
 
 def restricted_species():
@@ -233,18 +236,31 @@ _RESTRICTED = None
 def split_restricted(mons):
     """실제로 나가는 팀과 쉬는 포켓몬. (팀, 쉬는 것 목록).
 
-    전설·환상은 앞에서부터 RESTRICTED_MAX 마리만 남긴다. 순서는 그대로다.
+    같은 종은 앞의 한 마리만, 전설·환상은 앞에서부터 RESTRICTED_MAX 마리만 남긴다. 순서는 그대로다.
     """
     names = restricted_species()
-    out, seen, benched = [], 0, []
+    out, seen, benched, kinds = [], 0, [], {}
     for m in mons:
-        if m.get("species") in names:
+        sp = m.get("species")
+        if kinds.get(sp, 0) >= SAME_SPECIES_MAX:
+            benched.append(m)
+            continue
+        if sp in names:
             if seen >= RESTRICTED_MAX:
                 benched.append(m)
                 continue
             seen += 1
+        kinds[sp] = kinds.get(sp, 0) + 1
         out.append(m)
     return out, benched
+
+
+def too_many_same(species):
+    """종 목록에 같은 종이 SAME_SPECIES_MAX 마리보다 많은가 (등록하는 팀을 거절할 때)."""
+    count = {}
+    for sp in species:
+        count[sp] = count.get(sp, 0) + 1
+    return any(n > SAME_SPECIES_MAX for n in count.values())
 
 
 def restrict(mons):
@@ -253,21 +269,49 @@ def restrict(mons):
     return out, len(benched)
 
 
+def drop_counts(mons):
+    """나가는 팀과 쉬는 수를 까닭별로. (팀, 전설·환상이라 쉬는 수, 같은 종이라 쉬는 수).
+
+    나가는 팀에 같은 종이 있으면 '같은 종' 이다 - 뮤츠 둘이면 두 번째는 같은 종 까닭이다.
+    """
+    team, benched = split_restricted(mons)
+    same = len(_same_of(benched, team))
+    return team, len(benched) - same, same
+
+
+def _same_of(benched, team):
+    kinds = set(m.get("species") for m in team or [])
+    return [m for m in benched if m.get("species") in kinds]
+
+
 def battle_party(uid):
     """친구 배틀·관장·레이드가 쓰는 팀 — 바탕화면 파티에 전설·환상 제한을 건 것.
     (팀, 쉬는 것 목록)."""
     return split_restricted(_party(uid))
 
 
-def bench_note(benched):
-    """쉬는 포켓몬을 알리는 한 줄. 없으면 빈 문자열. 이름은 별명이 있으면 별명."""
+def bench_note(benched, team=None):
+    """쉬는 포켓몬을 알리는 한 줄. 없으면 빈 문자열. 이름은 별명이 있으면 별명.
+
+    team(나가는 팀)을 주면 같은 종이라 쉬는 것과 전설·환상이라 쉬는 것을 나눠 말한다.
+    """
     if not benched:
         return ""
     dex = deps.dex()
-    names = [m.get("nickname") or (dex.get(m.get("species")) or {}).get("kr")
-             or m.get("species") for m in benched]
-    return ("전설·환상 포켓몬은 한 팀에 %d마리만 데려갈 수 있어서 %s 은(는) 이번에 쉽니다."
-            % (RESTRICTED_MAX, "·".join(names)))
+
+    def names(ms):
+        return "·".join(m.get("nickname") or (dex.get(m.get("species")) or {}).get("kr")
+                        or m.get("species") for m in ms)
+    same = _same_of(benched, team)
+    legend = [m for m in benched if not any(m is s for s in same)]
+    out = []
+    if same:
+        out.append("같은 포켓몬은 한 팀에 %d마리만 데려갈 수 있어서 %s 은(는) 이번에 쉽니다."
+                   % (SAME_SPECIES_MAX, names(same)))
+    if legend:
+        out.append("전설·환상 포켓몬은 한 팀에 %d마리만 데려갈 수 있어서 %s 은(는) 이번에 쉽니다."
+                   % (RESTRICTED_MAX, names(legend)))
+    return " ".join(out)
 
 
 def team_ids(uid):
@@ -325,6 +369,8 @@ def set_team(uid, ids):
         if sum(1 for r in rows if r["species"] in names) > RESTRICTED_MAX:
             raise ValueError("랭크 팀에는 전설·환상 포켓몬을 %d마리까지 넣을 수 있습니다."
                              % RESTRICTED_MAX)
+        if too_many_same([r["species"] for r in rows]):
+            raise ValueError("같은 포켓몬은 한 팀에 %d마리만 넣을 수 있습니다." % SAME_SPECIES_MAX)
     db.run("DELETE FROM rank_team WHERE user_id=?", (uid,))
     for pos, pid in enumerate(clean):
         db.run("INSERT INTO rank_team (user_id, pos, pokemon_id) VALUES (?,?,?)",
@@ -754,12 +800,14 @@ def rank_ready(mons):
 
 def rank_short(uid):
     """랭크전 조건을 못 채웠으면 그 까닭 한 줄, 채웠으면 None."""
-    team, dropped = restrict(_ranked_source(uid))
+    team, dropped, same = drop_counts(_ranked_source(uid))
     ok, n = rank_ready(team)
     if ok:
         return None
     why = ("랭크전(랜덤 배틀)은 Lv.%d 이상 포켓몬 %d마리로 팀을 채워야 걸 수 있습니다 (지금 %d마리)."
            % (season.RANK_MIN_LEVEL, season.RANK_MIN_COUNT, n))
+    if same:
+        why += " 같은 포켓몬은 한 팀에 %d마리만 나갑니다." % SAME_SPECIES_MAX
     if dropped:
         why += " 전설·환상 포켓몬은 한 팀에 %d마리만 나갑니다." % RESTRICTED_MAX
     return why
@@ -1021,7 +1069,7 @@ def summary(uid):
     tier = season.tier_for(r, season.seats())
     nxt, need = season.next_tier(rp)
     ids = team_ids(uid)
-    fighting, dropped = restrict(_ranked_source(uid))
+    fighting, dropped, same = drop_counts(_ranked_source(uid))
     out = {"rating": r["rating"], "games": r["games"], "wins": r["wins"],
            "losses": r["losses"], "draws": r["draws"],
            "friendWins": r["fr_wins"], "friendLosses": r["fr_losses"],
@@ -1042,6 +1090,8 @@ def summary(uid):
            "teamSize": len(fighting),
            "restrictedMax": RESTRICTED_MAX,
            "restrictedDropped": dropped,
+           "sameSpeciesMax": SAME_SPECIES_MAX,
+           "sameDropped": same,
            "levelCap": season.LEVEL_CAP,
            # 랭크전 조건 (시즌 4): 실제로 나가는 팀에 Lv.50 이상이 몇 마리인가
            "rankReady": rank_ready(fighting)[0], "rankReadyCount": rank_ready(fighting)[1]}

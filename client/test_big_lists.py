@@ -400,6 +400,72 @@ def main():
     r0._out(None)
     chk("  마우스를 올리면 그 줄이 밝아졌다 돌아온다", hov == U.BG2 and r0.body.cget("bg") == ui_bag.ROW_BG, hov)
 
+    print("\n=== 가방 도구 목록: 찾기 · 줄 세우기 (1.13.4, 게시판 #323 '이름순 / 특성순') ===")
+    from common import held as H
+    w.item_canvas.yview_moveto(0.5)
+    looking = w.item_id
+    by_id = dict((i["id"], i) for i in items)
+
+    def listed(kind):
+        return [d for k, d in w.item_vl.entries if k == kind]
+    held_ids = sorted(i["id"] for i in items if i["cat"] == "held")
+    chk("단추: 이름 · 종류 · 등급 · 개수 (처음은 이름)", list(w.item_seg.cells) == ["name", "kind", "rarity", "count"]
+        and w.item_seg.current == "name", list(w.item_seg.cells))
+    bar_w = max(w.item_sortrow.winfo_reqwidth(), w.item_findrow.winfo_reqwidth())
+    chk("  찾기 칸과 단추가 목록 폭 안에 넉넉히 들어간다 (%dpx / %dpx)" % (bar_w, w.item_vl.canvas.winfo_width()),
+        bar_w <= w.item_vl.canvas.winfo_width() - 20 and w.item_find.winfo_ismapped(), bar_w)
+    chk("  단추 글: 이름 · 종류 · 등급 · 개수", [w.item_seg.cells[k].cget("text") for k in w.item_seg.cells]
+        == ["이름", "종류", "등급", "개수"])
+    w.set_item_sort("kind")
+    settle(root, 0.15)
+    chk("  누르면 무엇으로 줄 세웠는지 아래에 적는다", "종류순으로 봅니다" in w.status._label.cget("text"),
+        w.status._label.cget("text"))
+    heads = listed("head")
+    held_heads = [d for d in heads if d[0] == "held"]
+    want = [lab for key, lab in H.GROUPS if any(H.group(i) == key for i in held_ids)]
+    chk("종류순: 지닌 도구가 종류마다 머리줄로 나뉜다 (열매 → 타입 강화 → … → 기타)",
+        [d[2] for d in held_heads] == want and sum(d[1] for d in held_heads) == len(held_ids), [d[2] for d in held_heads])
+    got_held = [d["id"] for d in listed("item") if d["cat"] == "held"]
+    chk("  지닌 도구는 빠짐없이 한 번씩, 묶음 안은 가나다", sorted(got_held) == held_ids and all(
+        [by_id[x]["kr"] for x in got_held if H.group(x) == key] == sorted(by_id[x]["kr"] for x in got_held if H.group(x) == key)
+        for key, _l in H.GROUPS), len(got_held))
+    hr = ui_bag.HeadRow(w.item_vl.canvas)
+    hr.bind(("held", 47, "열매"))
+    chk("  머리줄 글은 '지닌 도구 · 열매 · 47종'", hr.label.cget("text") == "지닌 도구 · 열매 · 47종", hr.label.cget("text"))
+    hr.f.destroy()
+    chk("  다른 분류는 그대로 머리줄 하나 (메가스톤 · 볼 …)", [d for d in heads if d[0] == "ball"] and all(len(d) == 2 for d in heads if d[0] != "held"))
+    chk("  고르던 도구는 그대로, 목록은 맨 위부터", w.item_id == looking and w.item_canvas.yview()[0] == 0.0, (w.item_id, looking))
+    bad = cut(w.shown_items())
+    chk("  줄 안의 글자가 줄 높이를 넘지 않는다", not bad, bad[:3])
+    rank = {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5}
+    w.set_item_sort("rarity")
+    settle(root, 0.1)
+    hs = [(d["cat"], -rank.get(d.get("rarity"), 0), d["kr"]) for d in listed("item")]
+    chk("등급순: 분류마다 높은 등급부터, 같은 등급은 가나다", all(
+        [x[1:] for x in hs if x[0] == c] == sorted(x[1:] for x in hs if x[0] == c) for c in set(x[0] for x in hs)), hs[:4])
+    for n, i in enumerate(sorted(w.bag)):
+        w.bag[i] = 1 + (n * 7) % 13
+    w.set_item_sort("count")
+    settle(root, 0.1)
+    hs = [(d["cat"], -w.bag[d["id"]], d["kr"]) for d in listed("item")]
+    chk("개수순: 분류마다 많이 가진 것부터", all(
+        [x[1:] for x in hs if x[0] == c] == sorted(x[1:] for x in hs if x[0] == c) for c in set(x[0] for x in hs)), hs[:4])
+    w.item_q.set("열매")
+    settle(root, 0.15)
+    its = listed("item")
+    chk("찾기: 이름에 '열매' 가 든 도구만, 머리줄의 종 수도 그만큼", its and all("열매" in d["kr"] for d in its)
+        and sum(d[1] for d in listed("head")) == len(its) == len([i for i in items if "열매" in i["kr"]]), len(its))
+    chk("  고른 순서(개수순)는 그대로", w.item_seg.current == "count")
+    w.item_q.set("없는도구이름")
+    settle(root, 0.15)
+    chk("  맞는 도구가 없으면 그렇다고 알린다", not listed("item") and w.item_nomatch.winfo_ismapped()
+        and "없는도구이름" in w.item_nomatch.cget("text"), w.item_nomatch.cget("text"))
+    w.item_q.set("")
+    w.set_item_sort("name")
+    settle(root, 0.15)
+    chk("  지우고 이름순으로 돌아오면 처음 목록 그대로", [d["id"] for d in listed("item")] == [i["id"] for i in w._owned()]
+        and not w.item_nomatch.winfo_ismapped() and w.item_vl.holder.winfo_ismapped())
+
     print("\n=== 도구를 쓴다 ===")
     w.pick_item("RARECANDY")
     w.pick_mon(target)

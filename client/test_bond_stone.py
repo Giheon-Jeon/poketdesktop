@@ -266,6 +266,15 @@ def main():
     chk("  눌린 글자가 없다", not squeezed(win), squeezed(win)[:3])
     chk("  창이 화면 안", win.winfo_height() <= root.winfo_screenheight(), win.winfo_height())
     win.destroy()
+    # 스톤을 이미 다 가진 종의 다른 개체가 유대만 마쳤다 (10/22, bondOnly)
+    win = bond_stone.announce_got(root, [{"pokemon": 5, "name": "팬텀", "stone": None, "stoneKr": None,
+                                          "bondOnly": True}])
+    settle(root)
+    t = " ".join(texts(win))
+    chk("유대만 마친 알림: 스톤을 받았다고 하지 않는다", "팬텀" in t and "메가진화할 수 있" in t
+        and "받았습니다" not in t, t)
+    chk("  눌린 글자가 없다", not squeezed(win), squeezed(win)[:3])
+    win.destroy()
 
     ov.clear()
     settle(root)

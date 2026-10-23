@@ -77,6 +77,7 @@ class FakeApi(object):
         self.old_server = False
         self.rank_min = None            # 시즌 4 서버: {"count", "level"} 와 내 팀이 조건을 채웠나
         self.rank_ready = (False, 2)
+        self.same = False               # 10/22 서버: 종(species)·같은 종 상한을 실어 보낸다, 피카츄가 둘
 
     def pvp_ranking(self, limit=50):
         rows = [
@@ -106,6 +107,9 @@ class FakeApi(object):
         if self.rank_min:
             rules = dict(RULES, rankMin=self.rank_min)
             me["rankReady"], me["rankReadyCount"] = self.rank_ready
+        if self.same:
+            rules = dict(rules, sameSpeciesMax=1)
+            me.update(sameSpeciesMax=1, sameDropped=1)
         return {"ranking": rows, "me": me, "season": 2, "placement": 5,
                 "rules": rules,
                 "hall": {"season": 1, "rows": [
@@ -117,6 +121,9 @@ class FakeApi(object):
                "restrictedMax": 1, "restrictedNums": [150, 151]}
         if self.rank_min:
             out["rankMin"] = self.rank_min
+        if self.same:
+            out["sameSpeciesMax"] = 1
+            out["ids"] = [1, 2, 7]
         return out
 
     def pokemon(self):
@@ -125,6 +132,10 @@ class FakeApi(object):
                mon(3, "리자몽", 55), mon(4, "잉어킹", 5, shiny=True),
                mon(5, "뮤츠", 50), mon(6, "뮤", 40)]
         out[4]["num"], out[5]["num"] = 150, 151
+        if self.same:
+            out.append(mon(7, "피카츄", 60, desk=True, slot=2))
+            for m, sp in zip(out, ("PIKACHU", "EEVEE", "CHARIZARD", "MAGIKARP", "MEWTWO", "MEW", "PIKACHU")):
+                m["species"] = sp
         return out
 
     def pvp_set_team(self, ids):
@@ -401,6 +412,43 @@ def main():
         and "랭크전은" not in gw.status._label.cget("text"), gw.status._label.cget("text"))
     gw.close()
     app.api.rank_min = None
+
+    print("같은 종은 한 마리 (10/22: 타부자고 두 마리 같은 중복 파티는 안 된다)")
+    app.api.same = True
+    tw = ui_season.TeamWindow(app)
+    pump(root, lambda: len(tw.rows) == 7)
+    chk("등록해 둔 팀에 같은 종이 있으면 열 때 알린다", "같은 포켓몬" in tw.status._label.cget("text"),
+        tw.status._label.cget("text"))
+    tw.clear()
+    tw.toggle(1)
+    tw.toggle(7)
+    chk("두 번째 피카츄는 안 들어간다", tw.picked == [1], tw.picked)
+    chk("  왜 안 되는지 말한다", "같은 포켓몬은 1마리까지" in tw.status._label.cget("text"),
+        tw.status._label.cget("text"))
+    tw.fill_party()
+    chk("바탕화면 파티로 채우기도 두 번째 피카츄는 건너뛴다", tw.picked == [1, 2], tw.picked)
+    tw.close()
+    app.api.rank_min = {"count": 6, "level": 50}
+    tw = ui_season.TeamWindow(app)
+    pump(root, lambda: len(tw.rows) == 7)
+    tw.picked = [1, 7, 3, 5]
+    chk("랭크전 조건도 같은 종은 한 마리만 센다 (서버처럼)", tw.rank_ready_count() == 3, tw.rank_ready_count())
+    tw.close()
+    app.api.rank_min = None
+    rw = ui_rank.RankWindow(app)
+    pump(root, lambda: not rw.busy and "명예의 전당" in texts(rw.win))
+    t = texts(rw.win)
+    chk("랭크 창: 내 카드에 같은 종이 빠진 수, 규칙 칸에 같은 종 제한",
+        "같은 포켓몬은 1마리까지라 1마리는 빠지고 싸움" in t and "같은 포켓몬은 한 팀에 1마리까지" in t, t[-500:])
+    rw.close()
+    app.api.same = False
+    tw = ui_season.TeamWindow(app)
+    pump(root, lambda: len(tw.rows) == 6)
+    tw.clear()
+    tw.toggle(1)
+    tw.toggle(2)
+    chk("옛 서버(종 정보 없음)면 막지 않는다", tw.picked == [1, 2], tw.picked)
+    tw.close()
 
     print("칭호·명패")
     ew = ui_season.RewardsWindow(app)

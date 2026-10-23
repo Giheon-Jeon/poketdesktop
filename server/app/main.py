@@ -1290,6 +1290,8 @@ def list_pokemon(ctx=Depends(current)):
     # 알은 따로 싣는다. 포켓몬 목록에 섞으면 옛 클라이언트가 알을 포켓몬으로
     # 그리려다 터진다. 새 관리 창이 둘을 합쳐 보여준다.
     mons = [_decorate(m) for m in _mons(uid)]
+    # 유대 미션을 마쳤나 (10/22). 가방이 메가스톤을 지닐 수 있는 개체만 밝힌다 - 마치지 않으면 메가진화 못 한다.
+    mega.mark_bonded(mons)
     # 탐험에 나가 있는 포켓몬 (1.10.4). 관리 창이 '탐험 중' 으로 적고, 꺼내기·놓아주기를 막는다.
     away = expedition.away_ids(uid)
     if away:
@@ -1593,6 +1595,16 @@ def hold(pid: int, body: HoldIn, ctx=Depends(current)):
                 "bag": items.bag_get(uid),
                 "message": korean.natural("%s은(는) 이미 %s을(를) 지니고 있다."
                                           % (name, items.name_of(item)))}
+    # 메가스톤은 그 스톤으로 메가진화하는 종만 지닌다. 다른 종에게는 쓸모가 없고, 가방 화면이 파티 맨 앞
+    # 빈손 포켓몬을 먼저 골라 두어서 모르고 넘겼다가 '스톤이 사라졌다' 고 했다 (10/22 오이쉬에 · 치엔파오).
+    if HELD.is_mega_stone(item) and item not in mega.stones_for(r["species"]):
+        # 스톤 이름 뒤에 조사를 붙이지 않는다 - '리자몽나이트X' 는 X 를 받침으로 읽어 '으로' 가 붙는다
+        owner = dex().name((items.get(item) or {}).get("megaFor") or "") or "다른 포켓몬"
+        raise HTTPException(400, korean.natural("%s에게 맞지 않는 메가스톤입니다 (%s 전용)." % (name, owner)))
+    # 그리고 유대 미션을 마친 개체만 (10/22 사용자: 유대가 없으면 메가진화하면 안 된다)
+    if HELD.is_mega_stone(item) and not mega.is_bonded(pid):
+        raise HTTPException(400, korean.natural("%s은(는) 아직 유대 미션을 마치지 않아 메가스톤을 지닐 수 없습니다. "
+                                                "유대 미션을 마친 포켓몬에게 지니게 해 주세요." % name))
     # 가방에서 먼저 뺀다. 없으면 여기서 끝난다 - 아무것도 안 바뀐다.
     if not items.bag_take(uid, item, 1):
         raise HTTPException(400, "%s이(가) 가방에 없습니다." % items.name_of(item))

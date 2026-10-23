@@ -417,6 +417,31 @@ def t_설명():
     chk("모르는 도구는 빈 글자", H.effect_note("NOPE") == "" and H.effect_note(None) == "")
 
 
+def t_종류():
+    """가방의 '종류순' 묶음 (1.13.4, 게시판 #323 '이름순 / 특성순'). 지닌 도구를 하는 일로 묶는다."""
+    print("-- 종류 (가방의 종류순)")
+    p = os.path.join(HERE, "..", "server", "data", "items.json")
+    with open(p, encoding="utf-8") as f:
+        held = [v["id"] for v in json.load(f)["items"].values() if v.get("cat") == "held"]
+    keys = [k for k, _l in H.GROUPS]
+    got = dict((i, H.group(i)) for i in held)
+    chk("지닌 도구는 모두 묶음 하나에 든다", all(g in keys for g in got.values()),
+        [(i, g) for i, g in got.items() if g not in keys][:5])
+    etc = sorted(i for i, g in got.items() if g == "etc")
+    chk("  '기타' 는 열 남짓 (%d종)" % len(etc), len(etc) <= 12, etc)
+    named = set().union(*[v for v in (H.ATTACK, H.RECOVER, H.ONCE, H.GUARD)])
+    chk("  묶음에 적은 이름이 도구 목록에 다 있다 (오타 없음)", named <= set(H.KR), named - set(H.KR))
+    for item, want in (("ORANBERRY", "berry"), ("CHARCOAL", "type"), ("FLAMEPLATE", "type"), ("FIREGEM", "type"),
+                       ("CHOICEBAND", "attack"), ("LIFEORB", "attack"), ("LEFTOVERS", "recover"),
+                       ("FOCUSSASH", "recover"), ("WEAKNESSPOLICY", "once"), ("WHITEHERB", "once"),
+                       ("HEAVYDUTYBOOTS", "guard"), ("FLAMEORB", "guard"), ("DAMPROCK", "field"),
+                       ("LIGHTCLAY", "field"), ("POWERBRACER", "train"), ("LUCKYEGG", "train"),
+                       ("LIGHTBALL", "species"), ("WELLSPRINGMASK", "species"), ("IRONBALL", "etc"),
+                       ("NOPE", "etc")):
+        chk("  %s -> %s" % (item, want), H.group(item) == want, H.group(item))
+    chk("  묶음 이름 (화면에 쓰는 말)", H.group_kr("berry") == "열매" and H.group_kr("etc") == "기타")
+
+
 def t_구애_변화기(dex):
     """구애 도구를 지닌 AI 는 변화기를 고르지 않는다 (1.13.2, 게시판 #284 하늬바람).
 
@@ -617,6 +642,7 @@ def main():
     t_카탈로그와_맞는다()
     t_효과(dex)
     t_설명()
+    t_종류()
     t_구애_변화기(dex)
     t_구애_잠금이_막히면_발버둥(dex)
     t_파티배틀_쓰러뜨린_턴에도_턴끝(dex)

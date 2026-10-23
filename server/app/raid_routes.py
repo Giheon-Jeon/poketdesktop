@@ -76,7 +76,7 @@ def overview(ctx=Depends(deps.current)):
     team, benched = raid.party_split(uid)
     out["party"] = len(team)
     out["partyAll"] = len(team) + len(benched)
-    out["benchNote"] = pvp.bench_note(benched)
+    out["benchNote"] = pvp.bench_note(benched, team)
     # 아직 결과를 못 본 판. /api/me 가 이걸 보고 알린다.
     out["unseen"] = unseen(uid)
     return out

@@ -79,7 +79,7 @@ def rule_line(st):
             "못 뺏습니다. 칸이 가장 많은 길드가 이깁니다. 공격은 길드 합쳐 %d번 - 길드장이 전략 기간에 나눠 "
             "줍니다 (한 사람 최소 1번). 길드원은 한 사람이 한 칸씩 지키고(길드장이 전략 기간에 옮긴다), 남는 "
             "칸은 AI 수비대가 지킵니다. 남의 방어팀은 앞에서부터 %d마리만 미리 보입니다. 팀은 Lv.%d 상한에 "
-            "전설·환상 한 마리까지입니다."
+            "전설·환상 한 마리, 같은 포켓몬 한 마리까지입니다."
             % (schedule_line(st), st.get("tilesPer") or 15, st.get("need") or 3, st.get("total") or 30,
                st.get("shown") or 3, st.get("levelCap") or 50))
 
@@ -778,7 +778,8 @@ class WarTab(object):
         self.picker = TeamWindow(self.app, on_saved=self.reload, spec={
             "title": "길드전 " + kr, "load": load, "save": save, "saved": "%s을 저장했습니다." % kr,
             "note": ("길드전에서 %s 싸우는 팀입니다. 전쟁이 시작되는 순간의 기술·도구·노력치로 고정됩니다.\n"
-                     "Lv.%d 넘는 포켓몬은 Lv.%d(으)로 싸웁니다. 전설·환상 포켓몬은 한 마리까지 넣을 수 있습니다.%s"
+                     "Lv.%d 넘는 포켓몬은 Lv.%d(으)로 싸웁니다. 전설·환상 포켓몬과 같은 포켓몬은 한 마리까지 "
+                     "넣을 수 있습니다.%s"
                      % ("내 칸을 지키며 (AI 가 굴립니다)" if kind == "def" else "남의 칸을 칠 때 (직접 싸웁니다)",
                         cap, cap, "\n상대에게는 앞의 %d마리만 미리 보입니다." % shown if kind == "def" else ""))})
 

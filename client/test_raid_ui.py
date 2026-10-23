@@ -299,7 +299,7 @@ def main():
     w.close()
 
     print("=== 전설·환상 한 마리 제한 (시즌 3) ===")
-    for case in ("bench", "short"):
+    for case in ("bench", "short", "same"):
         apil = FakeApi(dex, n=3, revealed=True)
         apil.state = "none"
         apil.rb = None
@@ -313,9 +313,13 @@ def main():
                 d.update(party=3, partyAll=5,
                          benchNote="전설·환상 포켓몬은 한 팀에 1마리만 데려갈 수 있어서 "
                                    "루기·뮤 은(는) 이번에 쉽니다.")
-            else:
+            elif case == "short":
                 d.update(party=1, partyAll=2, benchNote="전설·환상 포켓몬은 한 팀에 1마리만 "
                                                         "데려갈 수 있어서 루기아 은(는) 이번에 쉽니다.")
+            else:
+                # 같은 종은 한 마리 (10/22) - 타부자고 둘뿐이면 한 마리만 나가서 모자란다
+                d.update(party=1, partyAll=2, benchNote="같은 포켓몬은 한 팀에 1마리만 "
+                                                        "데려갈 수 있어서 타부자고 은(는) 이번에 쉽니다.")
             return d
         apil.raid = _legend
         appl = FakeApp(root, apil, dex)
@@ -326,9 +330,13 @@ def main():
         if case == "bench":
             chk("쉬는 포켓몬을 참가 전에 알린다 (조사도 고친다)",
                 "루기·뮤는 이번에 쉽니다" in tl and "참가하기" in tl, tl[:300])
-        else:
+        elif case == "short":
             chk("제한 때문에 모자라면 까닭을 말하고 참가 단추는 없다",
                 "한 팀에 한 마리만" in tl and "참가하기" not in tl, tl[:300])
+        else:
+            chk("같은 종 때문에 모자라면 그 까닭을 말한다 (전설 얘기가 아니라)",
+                "같은 포켓몬" in tl and "타부자고는 이번에 쉽니다" in tl and "서로 다른 포켓몬 2마리" in tl
+                and "전설·환상 포켓몬은" not in tl and "참가하기" not in tl, tl[:400])
         bad = squeezed(wl.win)
         chk("  눌린 위젯 없음", not bad, bad[:3])
         wl.close()

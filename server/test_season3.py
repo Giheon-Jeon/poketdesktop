@@ -182,6 +182,16 @@ def main():
     chk("  직접 고른 것은 알릴 것에 없다", me["bond"]["got"] == [] and me["bond"]["claim"] == [],
         me["bond"])
 
+    # 메가스톤은 그 스톤으로 메가진화하는 종만 지닌다 (10/22 오이쉬에: 파티 맨 앞 치엔파오가 받아 가서
+    # '증발' 한 줄 알았다). 거절되면 스톤은 가방에 그대로다.
+    st, mons = call("GET", "/api/pokemon", token=token)
+    starter = next(m for m in mons["pokemon"] if m["id"] != liz)
+    st, r = call("POST", "/api/pokemon/%d/hold" % starter["id"], {"item": "CHARIZARDITEX"}, token)
+    chk("리자몽나이트X 는 첫 포켓몬(%s)이 못 지닌다 (400, 스톤 이름 뒤 조사 없이)" % starter["species"],
+        st == 400 and "리자몽 전용" in str(r) and "X으로" not in str(r), (st, r))
+    st, bag = call("GET", "/api/bag", token=token)
+    chk("  스톤은 가방에 그대로", (bag.get("bag") or {}).get("CHARIZARDITEX") == 1, bag.get("bag"))
+
     print("\n=== 메가진화 배틀 ===")
     st, r = call("POST", "/api/pokemon/%d/hold" % liz, {"item": "CHARIZARDITEX"}, token)
     chk("리자몽나이트X 를 지닌다", st == 200, (st, r))
@@ -206,6 +216,33 @@ def main():
         call("POST", "/api/gym/battle/%d/act" % bid, {"kind": "forfeit"}, token)
     else:
         chk("두 번째는 안 바뀐다 (첫 턴에 끝남 - 한 번 사건만 봤다)", True)
+
+    print("\n=== 유대 안 마친 개체 (10/22 사용자: 유대가 없으면 메가진화 못 한다) ===")
+    liz2 = give_charizard(uid)              # 파티 맨 앞. 친밀도 255 지만 미션은 안 했다
+    st, r = call("DELETE", "/api/pokemon/%d/hold" % liz, token=token)
+    chk("유대 마친 리자몽에게서 스톤을 뺀다", st == 200, (st, r))
+    st, r = call("POST", "/api/pokemon/%d/hold" % liz2, {"item": "CHARIZARDITEX"}, token)
+    chk("유대 안 마친 리자몽은 메가스톤을 못 지닌다 (400)", st == 400 and "유대" in str(r), (st, r))
+    st, bag = call("GET", "/api/bag", token=token)
+    chk("  스톤은 가방에 그대로", (bag.get("bag") or {}).get("CHARIZARDITEX") == 1, bag.get("bag"))
+    st, mons = call("GET", "/api/pokemon", token=token)
+    by = dict((m["id"], m) for m in mons["pokemon"])
+    chk("목록에 유대 여부가 실린다 (가방이 대상을 가린다)",
+        by[liz].get("bonded") is True and by[liz2].get("bonded") is False,
+        (by[liz].get("bonded"), by[liz2].get("bonded")))
+    # 규칙 전에 이미 지니고 있던 개체: DB 로 쥐여 주고 배틀에서 메가가 안 열리는지 본다
+    sql("UPDATE pokemon SET held='CHARIZARDITEY' WHERE id=?", (liz2,))
+    st, s2 = call("POST", "/api/gym/%s/start" % battle_region["region"], token=token)
+    chk("  이미 지닌 개체도 관장 배틀에서 canMega 가 꺼져 있다",
+        st == 200 and s2["battle"]["me"]["team"][s2["battle"]["me"]["slot"]]["species"] == "CHARIZARD"
+        and s2["battle"].get("canMega") is False, (st, s2.get("battle", {}).get("canMega")))
+    st, t3 = call("POST", "/api/gym/battle/%d/act" % s2["id"],
+                  {"kind": "move", "move": "DRAGONCLAW", "mega": True}, token)
+    chk("  mega=true 로 둬도 안 바뀐다", st == 200 and not any(e.get("t") == "mega" for e in t3.get("events", [])),
+        (st, [e.get("t") for e in t3.get("events", [])]))
+    if not t3["battle"]["over"]:
+        call("POST", "/api/gym/battle/%d/act" % s2["id"], {"kind": "forfeit"}, token)
+    sql("UPDATE pokemon SET held=NULL WHERE id=?", (liz2,))
 
     print("\n=== 저절로 받은 스톤 알림 ===")
     gen = sql("INSERT INTO pokemon (user_id, species, nickname, level, exp, nature, ability,"

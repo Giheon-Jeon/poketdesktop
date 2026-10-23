@@ -177,8 +177,9 @@ def main():
 
     print("\n=== 간부의 팀 ===")
     levels = [72, 100, 55]
-    for i, lv in enumerate(levels):
-        mkmon(uid, "GARCHOMP", lv, i)
+    # 같은 종은 한 팀에 한 마리만 나간다 (10/22) - 세 마리가 다 나가게 종을 달리한다
+    for i, (sp, lv) in enumerate(zip(("SALAMENCE", "GARCHOMP", "DRAGONITE"), levels)):
+        mkmon(uid, sp, lv, i)
     party = gym_routes._party(uid)
     tr = boss.admin_trainer(p["members"][0], party)
     src = gym.trainer(p["members"][0])

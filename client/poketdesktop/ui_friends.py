@@ -162,6 +162,10 @@ class FriendsWindow(object):
     def reload(self):
         if self.busy:
             return
+        # 대전을 재생하는 동안에는 읽지 않는다 - 친구의 RP · 승패가 끝나기도 전에 바뀌어 보인다 (1.13.4)
+        later = getattr(self.app, "scores_after_match", None)
+        if later is not None and later(self.reload):
+            return self.say("대전이 끝나면 불러옵니다.", U.FG_FAINT)
         self.busy = True
         # 서버가 자고 있으면 깨는 데 1분까지 걸린다. 그동안 빈 창을
         # 보여주면 고장으로 오해한다.

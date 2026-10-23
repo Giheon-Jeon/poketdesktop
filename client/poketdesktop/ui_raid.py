@@ -492,6 +492,10 @@ class RaidWindow(object):
             return "오늘은 이미 레이드에 참가했습니다. 다음 날 다시 도전할 수 있습니다."
         if (d.get("party") or 0) < d.get("minParty", 2):
             if (d.get("partyAll") or 0) >= d.get("minParty", 2):
+                if "같은 포켓몬" in (d.get("benchNote") or ""):
+                    # 같은 종이 쉬어서 모자란다 (10/22) - 서버가 쉬는 까닭을 말해 준다
+                    return natural("%s 서로 다른 포켓몬 %d마리 이상이 나갈 수 있어야 참가할 수 있습니다."
+                                   % (d["benchNote"], d.get("minParty", 2)))
                 # 데리고 다니는 수는 되는데 전설·환상 제한(한 마리)으로 모자란다
                 return ("전설·환상 포켓몬은 한 팀에 한 마리만 데려갈 수 있습니다. "
                         "전설·환상이 아닌 포켓몬과 함께 %d마리 이상 데리고 다녀야 "

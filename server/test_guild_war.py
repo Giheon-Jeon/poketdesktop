@@ -269,6 +269,20 @@ def main():
     chk("방어팀을 짠다 (레벨은 상한 50 으로 보인다)", [m["id"] for m in pv] == [extra[0], extra[1], ids[0]]
         and all(m["level"] == 50 for m in pv), pv)
     chk("남의 포켓몬은 안 된다", code_of(lambda: GW.set_team(u, "def", [mon_ids(a[3])[0]])) == 404)
+    chk("같은 종 두 마리는 안 된다 (한카리아스 둘, 10/22)", code_of(lambda: GW.set_team(u, "atk", ids[:2])) == 409)
+    # 판을 열 때 고정된 팀을 다시 다듬는다 - 규칙이 팀을 고정한 뒤에 생겼을 수 있다 (같은 종 · 유대)
+    stone = give(u, "CHARIZARD", 80, seed=950)
+    fixed = GW._mons(u, [ids[0], ids[1], stone])
+    fixed[2]["held"] = "CHARIZARDITEX"
+    ready = GW._ready(fixed)
+    chk("  판을 열 때: 같은 종은 앞의 한 마리만", [m["id"] for m in ready] == [ids[0], stone], [m["id"] for m in ready])
+    chk("  판을 열 때: 유대 안 마친 개체는 메가진화 못 한다 (bonded=False)", ready[1].get("bonded") is False, ready[1])
+    db.run("INSERT INTO bond (pokemon_id, user_id, species, started_at, gym, kos, wild, done_at, stone, seen)"
+           " VALUES (?,?,'CHARIZARD','2026-09-30',1,30,10,'2026-09-30','CHARIZARDITEX',1)", (stone, u))
+    chk("  유대를 마쳤으면 bonded=True", GW._ready(fixed)[1].get("bonded") is True)
+    chk("  AI 수비대 팀(id 없음)은 손대지 않는다", "bonded" not in GW._ready([{"species": "PIKACHU", "level": 50}])[0])
+    db.run("DELETE FROM pokemon WHERE id=?", (stone,))
+    db.run("DELETE FROM bond WHERE pokemon_id=?", (stone,))
     # 결과를 못 박을 사람들 (전쟁이 시작되기 전에 차려 둔다)
     #   weak   나길드. 잉어킹 Lv.1 한 마리뿐 - 이 사람이 지키는 칸은 반드시 뚫리고, 이 사람의 공격은 반드시 진다
     #   b[0]   나길드. 여섯 마리 - 미리보기에서 뒤의 셋이 가려지는지 본다
@@ -277,6 +291,8 @@ def main():
     give(weak, "MAGIKARP", 1, slot=0)
     for i, sp in enumerate(("SNORLAX", "GENGAR", "LUCARIO", "GYARADOS")):
         give(b[0], sp, 60, slot=2 + i, seed=400 + i)
+    # 같은 종은 한 팀에 한 마리만 나간다 (10/22) - 여섯 마리가 다 나가게 둘째 망나뇽을 보만다로
+    db.run("UPDATE pokemon SET species='SALAMENCE' WHERE id=?", (mon_ids(b[0])[1],))
 
     print("\n=== 전략 기간이 시작되면 명단이 고정되고 지도가 나뉜다 ===")
     gd, dd = mkguild("라길드", 5)
@@ -364,7 +380,7 @@ def main():
     tv = GW.tile_view(a[3], rb)
     chk("남의 칸: 주인·지키는 사람", tv["guild"] == "나길드" and tv["guard"] == "나길드_00" and tv["mine"] is False
         and tv["ai"] is False and tv["need"] == 3 and tv["wins"] == 0)
-    chk("  방어팀은 앞 3마리만 온다 (여섯 마리 중 셋은 수만)", [m["kr"] for m in tv["team"]] == ["망나뇽", "망나뇽", "잠만보"]
+    chk("  방어팀은 앞 3마리만 온다 (여섯 마리 중 셋은 수만)", [m["kr"] for m in tv["team"]] == ["망나뇽", "보만다", "잠만보"]
         and tv["size"] == 6 and tv["hidden"] == 3, (tv["team"], tv["hidden"]))
     raw = json.dumps(tv, ensure_ascii=False)
     chk("  가려진 셋은 응답 어디에도 없다", not any(w in raw for w in ("GENGAR", "LUCARIO", "GYARADOS", "팬텀",
@@ -375,6 +391,19 @@ def main():
     own = GW.tile_view(b[3], rb)
     chk("우리 칸은 전부 보이고, 노리는 길드가 적힌다", own["mine"] and len(own["team"]) == 6 and own["hidden"] == 0
         and own["threats"] == [] and own["blocked"] and own["manager"] is False)
+    # 규칙(같은 종 한 마리, 10/22) 전에 고정된 팀: 보이는 것도 판에 나가는 것과 같아야 한다
+    old_def = GW._row(b[0])["def_team"]
+    dup = json.loads(old_def)
+    dup.insert(1, dict(dup[0]))
+    db.run("UPDATE guild_war_team SET def_team=? WHERE season=? AND user_id=?",
+           (json.dumps(dup), season.SEASON, b[0]))
+    tv2 = GW.tile_view(a[3], rb)
+    chk("  고정된 팀에 같은 종이 있으면 보기에서도 앞의 한 마리만",
+        [m["kr"] for m in tv2["team"]] == ["망나뇽", "보만다", "잠만보"] and tv2["size"] == 6, (tv2["team"], tv2["size"]))
+    mine_view = GW.state(b[0])["teams"]["def"]["mons"]
+    chk("  내 팀 보기도", [m["kr"] for m in mine_view][:2] == ["망나뇽", "보만다"] and len(mine_view) == 6,
+        [m["kr"] for m in mine_view])
+    db.run("UPDATE guild_war_team SET def_team=? WHERE season=? AND user_id=?", (old_def, season.SEASON, b[0]))
     ai_tile = next(r for r in lands(gb) if GW.tile(r)["guard_user"] == GW.AI_GUARD)
     av = GW.tile_view(a[3], ai_tile)
     chk("AI 수비대 칸", av["ai"] is True and av["guard"].startswith("AI 수비대") and len(av["team"]) <= 3)

@@ -326,6 +326,9 @@ class RankWindow(object):
         if me.get("restrictedDropped"):
             lines.append("전설·환상은 %d마리까지라 %d마리는 빠지고 싸움"
                          % (me.get("restrictedMax") or 1, me["restrictedDropped"]))
+        if me.get("sameDropped"):
+            lines.append("같은 포켓몬은 %d마리까지라 %d마리는 빠지고 싸움"
+                         % (me.get("sameSpeciesMax") or 1, me["sameDropped"]))
         tk.Label(inner, text="  ·  ".join(lines), bg=U.BG2, fg=U.FG_DIM,
                  font=U.FONT_XS, anchor="w", justify="left",
                  wraplength=W - 90).pack(fill="x", pady=(6, 0))
@@ -386,6 +389,9 @@ class RankWindow(object):
             # 시즌 3 부터 랭크만이 아니라 모든 팀 배틀이다 (server/app/pvp.RESTRICTED_MAX)
             text.append("전설·환상 포켓몬은 한 팀에 %d마리까지 (랭크·친구·관장·레이드)"
                         % r["restrictedMax"])
+        if r.get("sameSpeciesMax"):
+            # 10/22: 같은 종도 한 마리 (server/app/pvp.SAME_SPECIES_MAX) - 전설 제한과 같은 곳에 건다
+            text.append("같은 포켓몬은 한 팀에 %d마리까지 (랭크·친구·관장·레이드·길드전)" % r["sameSpeciesMax"])
         text.append("내가 건 랜덤 배틀만 점수에 들어갑니다")
         tk.Label(inner, text="\n".join(text), bg=CARD_BG, fg=U.FG_DIM,
                  font=U.FONT_XS, anchor="w", justify="left",

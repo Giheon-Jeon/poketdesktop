@@ -271,6 +271,10 @@ class MyPageWindow(object):
                  font=U.FONT_S).pack(pady=30)
 
     def load(self):
+        # 대전을 재생하는 동안에는 읽지 않는다 - 서버에는 점수가 이미 들어가 있다 (1.13.4)
+        later = getattr(self.app, "scores_after_match", None)
+        if later is not None and later(self.load):
+            return self.say("대전이 끝나면 불러옵니다. 점수는 대전을 다 본 뒤에 바뀝니다.", U.FG_FAINT)
         self._gen += 1
         gen = self._gen
         api = self.app.api

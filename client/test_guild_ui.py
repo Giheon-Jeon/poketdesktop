@@ -684,6 +684,26 @@ def main():
     short = dlg.winfo_height()
     dlg.destroy()
 
+    # 대전을 재생하는 동안에는 읽지 않는다 - 시즌 기록(RP · 전적)이 끝나기도 전에 바뀌어 보였다 (1.13.4)
+    import types
+    from poketdesktop.app import App
+    app.arena, app._match_loading, app._after_match = None, True, []
+    for name in ("match_playing", "after_match", "scores_after_match", "_match_over"):
+        setattr(app, name, types.MethodType(getattr(App, name), app))
+    n = len([c for c in srv.calls if c[0] == "profile"])
+    dlg = w.profile_dialog(2)
+    settle(root, 0.3)
+    chk("대전 재생 중에는 프로필을 읽지 않고 끝나면 불러온다고 적는다",
+        len([c for c in srv.calls if c[0] == "profile"]) == n and any("대전이 끝나면" in x for x in texts(dlg)),
+        texts(dlg)[:4])
+    app._match_over()
+    wait(root, lambda: dlg.profile is not None, 4)
+    settle(root, 0.3)
+    chk("  재생이 끝나면 읽어서 채운다", len([c for c in srv.calls if c[0] == "profile"]) == n + 1
+        and "시즌 기록" in texts(dlg), len([c for c in srv.calls if c[0] == "profile"]) - n)
+    dlg.destroy()
+    app._match_loading = False
+
     srv.long_profile = True
     dlg = w.profile_dialog(2)
     wait(root, lambda: dlg.profile is not None, 4)

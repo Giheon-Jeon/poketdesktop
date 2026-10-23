@@ -78,6 +78,9 @@ def wipe():
 
 def main():
     db.init()
+    # 이 검사는 전력을 '같은 종 여섯 마리' 로 맞춘다. 같은 종은 한 팀에 한 마리(10/22)라 그대로 두면 한 마리만
+    # 나가서 랭크전 조건에 못 든다 - 여기서만 그 상한을 푼다 (같은 종 규칙은 test_legend_limit 가 본다).
+    pvp.SAME_SPECIES_MAX = 6
 
     print("=== 띠 ===")
     chk("RP 띠는 ±50, ±100, ±200, 전체 순", pvp.RP_BANDS == (50, 100, 200, None), pvp.RP_BANDS)

@@ -161,7 +161,7 @@ def start(region: str, ctx=Depends(deps.current)):
                                 % (other.get("name") or "다른 트레이너"))
         tb = TB.TrainerBattle.load(deps.dex(), json.loads(old["data"]))
         return _out(old, tb, extra={"resumed": True})
-    # 전설·환상은 한 마리만 나간다 (시즌 3). 나머지는 이번 판에서 쉰다.
+    # 전설·환상은 한 마리만, 같은 종도 한 마리만 나간다 (시즌 3 · 10/22). 나머지는 이번 판에서 쉰다.
     party, benched = pvp.split_restricted(_party(uid))
     if not party:
         raise HTTPException(409, "데리고 다니는 포켓몬이 없습니다.")
@@ -172,7 +172,7 @@ def start(region: str, ctx=Depends(deps.current)):
     if benched:
         # 인사 바로 뒤에 알린다. 교체 목록에 없는 까닭을 판 처음에 말해 둔다.
         at = 1 if events and events[0].get("t") == "intro" else 0
-        events.insert(at, {"t": "note", "text": pvp.bench_note(benched)})
+        events.insert(at, {"t": "note", "text": pvp.bench_note(benched, party)})
     now = auth.now_iso()
     cur = db.run("INSERT INTO gym_battle (user_id, region, trainer, state, turn, rev, data,"
                  " created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",

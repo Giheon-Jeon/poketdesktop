@@ -64,7 +64,8 @@ def mkuser(name, mons=0, level=30, species=None):
     for i in range(mons):
         m = d.roll_wild(level, level, rng)
         if species:
-            m["species"] = species
+            # 목록이면 자리마다 (같은 종은 한 팀에 한 마리만 나간다 - 10/22)
+            m["species"] = species[i] if isinstance(species, (list, tuple)) else species
         pid = db.insert_mon(uid, m, "2026-01-01")
         db.run("UPDATE pokemon SET on_desktop=1, slot=?, level=? WHERE id=?",
                (i, level, pid))
@@ -459,7 +460,7 @@ def main():
         pvp.can_fight(a6, low6, "random"))
     chk("친구 배틀은 랭크전이 아니라 그대로 된다", pvp.can_start(a2, "friend") is None
         and "랭크전" not in (pvp.can_fight(a6, low6, "friend") or ""), pvp.can_fight(a6, low6, "friend"))
-    legends = mkuser("ss_lg6", 6, 50, species="MEWTWO")
+    legends = mkuser("ss_lg6", 6, 50, species=("MEWTWO", "LUGIA", "HOOH", "KYOGRE", "GROUDON", "RAYQUAZA"))
     why = pvp.can_start(legends, "random")
     chk("전설·환상이 빠져 모자라면 그 까닭도 알려 준다", bool(why) and "지금 1마리" in why and "전설" in why, why)
     s_me = pvp.summary(a2)
@@ -479,7 +480,8 @@ def main():
     pvp.set_team(low6, reg)
     chk("  여섯 마리로 등록하면 건다", pvp.can_start(low6, "random") is None, pvp.can_start(low6, "random"))
     # 전설은 한 팀에 한 마리만 나가서 아르세우스 여섯은 랭크전 조건에 못 든다 - 전설이 아닌 센 팀으로
-    lonely = mkuser("ss_lonely", 6, 100, species="DRAGONITE")
+    lonely = mkuser("ss_lonely", 6, 100,
+                    species=("DRAGONITE", "TYRANITAR", "SALAMENCE", "METAGROSS", "GARCHOMP", "HYDREIGON"))
     op = pvp.find_opponent(lonely)
     # 시즌 4: 전력은 사람을 떨어뜨리지 않는다. 받을 수 있는 여섯 마리 팀이 있으면 붙는다.
     chk("전력이 동떨어져도 받을 사람이 있으면 붙인다",

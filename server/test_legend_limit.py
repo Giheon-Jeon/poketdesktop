@@ -27,7 +27,7 @@ os.environ.pop("POKET_TURSO_URL", None)
 os.environ["POKET_POKEDEX"] = os.path.join(HERE, "data", "pokedex.json")
 os.environ["POKET_ITEMS"] = os.path.join(HERE, "data", "items.json")
 
-from app import battle_routes, db, deps, gym, gym_routes, pvp, raid, raid_routes  # noqa: E402
+from app import battle_routes, db, deps, gym, gym_routes, pvp, pvp_routes, raid, raid_routes  # noqa: E402
 
 OK = FAIL = 0
 
@@ -151,8 +151,90 @@ def main():
     chk("바탕화면 야생 배틀의 교체 목록에는 다 있다",
         len(battle_routes._party(rich)) == 5, len(battle_routes._party(rich)))
 
+    same_species()
+
     print("\n%d개 통과, %d개 실패" % (OK, FAIL))
     return 1 if FAIL else 0
+
+
+def same_species():
+    """같은 종은 한 팀에 한 마리 (10/22 사용자: 타부자고 두 마리 같은 중복 파티는 안 된다).
+
+    전설·환상 제한과 같은 틀이다 - 등록하는 팀(랭크·길드전)은 거절하고, 바탕화면 파티로 싸우는 곳은
+    앞의 한 마리만 나가고 나머지는 쉰다. 바탕화면 야생 배틀은 팀 대 팀이 아니라 그대로.
+    """
+    print("\n=== 같은 종은 한 마리 - 나누기 ===")
+    team, benched = pvp.split_restricted([{"species": s} for s in (
+        "GHOLDENGO", "PIKACHU", "GHOLDENGO", "MEWTWO", "MEWTWO", "LUGIA")])
+    chk("앞의 한 마리만 남고 순서는 그대로", species_of(team) == ["GHOLDENGO", "PIKACHU", "MEWTWO"],
+        species_of(team))
+    chk("  같은 종·두 번째 전설은 쉰다", species_of(benched) == ["GHOLDENGO", "MEWTWO", "LUGIA"],
+        species_of(benched))
+    t, legend, same = pvp.drop_counts([{"species": s} for s in (
+        "GHOLDENGO", "PIKACHU", "GHOLDENGO", "MEWTWO", "MEWTWO", "LUGIA")])
+    chk("까닭별로 센다 (전설 1 · 같은 종 2)", (len(t), legend, same) == (3, 1, 2), (len(t), legend, same))
+    note = pvp.bench_note(benched, team)
+    chk("알림이 까닭을 나눠 말한다",
+        "같은 포켓몬은 한 팀에 1마리만" in note and "타부자고·뮤츠" in note
+        and "전설·환상" in note and "루기아" in note, note)
+    chk("  전설만 쉬면 예전 알림 그대로", "같은 포켓몬" not in pvp.bench_note([{"species": "MEW"}]),
+        pvp.bench_note([{"species": "MEW"}]))
+
+    twin = mkuser("쌍둥이", ["GHOLDENGO", "PIKACHU", "GHOLDENGO"])
+    twin_only = mkuser("둘뿐", ["GHOLDENGO", "GHOLDENGO"])
+    ids = [r["id"] for r in db.q("SELECT id FROM pokemon WHERE user_id=? ORDER BY slot", (twin,))]
+
+    print("\n=== 같은 종 - 랭크 팀 등록 ===")
+    try:
+        pvp.set_team(twin, ids)
+        msg = ""
+    except ValueError as e:
+        msg = str(e)
+    chk("같은 종 두 마리는 등록 못 한다", "같은 포켓몬" in msg, msg)
+    chk("  랭크·실시간은 앞의 한 마리만 나간다",
+        species_of(pvp.ranked_team(twin)) == ["GHOLDENGO", "PIKACHU"], species_of(pvp.ranked_team(twin)))
+    view = pvp_routes._team_view(twin)
+    chk("  팀 창: 같은 종 제한과 빠지는 수", view.get("sameSpeciesMax") == 1 and view.get("sameDropped") == 1
+        and view.get("restrictedDropped") == 0, (view.get("sameSpeciesMax"), view.get("sameDropped")))
+    short = pvp.rank_short(twin)
+    chk("  랭크전 조건이 모자라면 같은 종 까닭도 말한다", short and "같은 포켓몬" in short, short)
+
+    print("\n=== 같은 종 - 친구 배틀 · 관장 · 레이드 ===")
+    out = pvp.run_match(twin, plain_user(), kind="friend", seed=9)
+    row = db.q1("SELECT log FROM pvp_match WHERE id=?", (out["matchId"],))
+    teams = next(e for e in pvp.unpack(row["log"]) if e.get("t") == "teams")
+    chk("친구 배틀: 한 마리만 싸운다", [x["species"] for x in teams["me"]] == ["GHOLDENGO", "PIKACHU"], teams["me"])
+    region = next(iter(gym.gyms()["_by_region"]))
+    r = gym_routes.start(region, ctx={"user": {"id": twin}})
+    chk("관장: 나가는 팀에 한 마리", [m["species"] for m in r["battle"]["me"]["team"]] == ["GHOLDENGO", "PIKACHU"],
+        [m["species"] for m in r["battle"]["me"]["team"]])
+    notes = [e["text"] for e in r["events"] if e.get("t") == "note"]
+    chk("  판 처음에 같은 종이라 쉰다고 알린다", notes and "같은 포켓몬" in notes[0], notes)
+    gym_routes.act(r["id"], gym_routes.ActIn(kind="forfeit"), ctx={"user": {"id": twin}})
+    real = raid.in_period, raid.played_today
+    raid.in_period = lambda now=None: True
+    raid.played_today = lambda uid, now=None: False
+    try:
+        raid._can_play(twin_only, now=None)
+        msg = ""
+    except ValueError as e:
+        msg = str(e)
+    finally:
+        raid.in_period, raid.played_today = real
+    chk("레이드: 같은 종 둘뿐이면 못 들어가고 까닭을 말한다", "같은 포켓몬" in msg, msg)
+    ov = raid_routes.overview(ctx={"user": {"id": twin}})
+    chk("  화면용 알림", ov["party"] == 2 and ov["partyAll"] == 3 and "같은 포켓몬" in ov["benchNote"],
+        (ov["party"], ov["partyAll"], ov["benchNote"]))
+    chk("야생 배틀은 그대로 (교체 목록에 다 있다)", len(battle_routes._party(twin)) == 3)
+
+
+_PLAIN = []
+
+
+def plain_user():
+    if not _PLAIN:
+        _PLAIN.append(mkuser("보통2", ["EEVEE", "SNORLAX"]))
+    return _PLAIN[0]
 
 
 if __name__ == "__main__":

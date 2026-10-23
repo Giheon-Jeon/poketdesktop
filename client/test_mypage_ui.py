@@ -485,6 +485,50 @@ def main():
     settle(root, 0.2)
     chk("톱니바퀴를 다시 누르면 돌아온다", w.view == "page")
 
+    print("\n=== 대전을 재생하는 동안에는 점수를 안 읽는다 (1.13.4) ===")
+    # 서버는 랜덤 배틀을 누르는 순간 점수까지 넣는다 - 재생 중에 읽으면 끝나기도 전에 결과가 보였다.
+    # 진짜 App 의 대전 재생 차례(match_playing · after_match · _match_over)를 그대로 붙인다.
+    import types
+    from poketdesktop.app import App
+    app.arena, app._match_loading, app._after_match = None, True, []
+    for name in ("match_playing", "after_match", "scores_after_match", "_match_over"):
+        setattr(app, name, types.MethodType(getattr(App, name), app))
+    calls = app.api.calls
+    w.refresh()
+    w.refresh()
+    settle(root, 0.3)
+    chk("재생 중에 새로고침하면 서버에 묻지 않는다", app.api.calls == calls, app.api.calls - calls)
+    chk("  대전이 끝나면 불러온다고 적는다", "대전이 끝나면" in w.status._label.cget("text"),
+        w.status._label.cget("text"))
+    app._match_over()
+    wait(root, lambda: app.api.calls > calls)
+    settle(root, 0.3)
+    chk("재생이 끝나면 한 번만 읽는다", app.api.calls == calls + 1, app.api.calls - calls)
+
+    # 친구 목록도 친구의 RP · 승패를 보여 준다 (상대가 친구일 수 있다)
+    from poketdesktop import ui_friends
+    fr_calls = []
+    app.api.friends = lambda: fr_calls.append(1) or {"friends": [], "incoming": [], "outgoing": [], "blocked": []}
+    app.check_live = lambda: None
+    app._match_loading = True
+    fw = ui_friends.FriendsWindow(app)
+    settle(root, 0.3)
+    chk("친구 목록도 재생 중에는 안 읽고 끝나면 불러온다고 적는다",
+        fr_calls == [] and "대전이 끝나면" in fw.status._label.cget("text"), (fr_calls, fw.status._label.cget("text")))
+    app._match_over()
+    wait(root, lambda: fr_calls)
+    settle(root, 0.3)
+    chk("  재생이 끝나면 읽는다", fr_calls == [1], fr_calls)
+    fw.close()
+
+    # 이미 열어 둔 마이페이지는 대전이 끝나면 새로 읽는다 (탭을 다시 열어도 새로 읽지 않는 창이다)
+    app.hub = types.SimpleNamespace(panes={"my": w})
+    calls = app.api.calls
+    App._refresh_scores(app)
+    wait(root, lambda: app.api.calls > calls)
+    chk("대전이 끝나면 열어 둔 마이페이지를 새로 읽는다", app.api.calls == calls + 1, app.api.calls - calls)
+    app.hub = None
+
     w.close()
     chk("닫으면 설정 화면도 치운다", w.settings is None and app.settings_win is None)
     root.destroy()

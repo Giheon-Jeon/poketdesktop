@@ -25,6 +25,7 @@ from tkinter import ttk
 
 from PIL import ImageTk
 
+from common import held as H
 from common import pokelogic as P
 from common import tint as T
 from common.korean import natural
@@ -37,6 +38,10 @@ from . import ui_loading
 from . import ui_monfind
 
 LIST_W = 292            # 왼쪽 도구 목록 폭
+# 도구 목록 줄 세우기 (1.13.4, 게시판 #323 '도구가 많아져 정렬이 마구잡이 - 이름순 / 특성순'). 분류 머리줄은 그대로 두고
+# 그 안을 이 순서로 세운다. 종류순은 지닌 도구를 하는 일(held.GROUPS)마다 머리줄로 나눈다.
+ITEM_SORTS = (("name", "이름"), ("kind", "종류"), ("rarity", "등급"), ("count", "개수"))
+RARITY_RANK = {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5}
 ITEM_H = U.h(28)        # 도구 한 줄 높이 (글꼴 따라 늘어난다)
 MON_H = U.h(34)         # 포켓몬 한 줄 높이
 THUMB = 22              # 목록에 놓는 도트 높이 (다른 창과 겹치지 않는 값)
@@ -119,6 +124,14 @@ def use_item(api, item_id, pid, stat, hour, form="", tm_type=""):
 def form_targets(item, mon):
     """이 폼 도구가 이 포켓몬에게 해 줄 수 있는 모습들 (서버가 도구마다 실어 보낸 forms 중 그 종의 것)."""
     return [t for t in (item.get("forms") or []) if t.get("of") == (mon or {}).get("species")]
+
+
+def mega_fits(dex, item, mon):
+    """이 포켓몬이 이 메가스톤으로 메가진화하나. 메가스톤이 아니거나 도감이 없으면 True (서버가 본다)."""
+    if (item or {}).get("cat") != "megastone" or dex is None:
+        return True
+    forms = (getattr(dex, "mega_of", None) or {}).get((mon or {}).get("species")) or []
+    return any(f.get("megaStone") == item["id"] for f in forms)
 
 
 # ---------------------------------------------------------------- 설명 만들기
@@ -308,9 +321,12 @@ class HeadRow(object):
         self.label.place(x=21, rely=0.5, anchor="w")
 
     def bind(self, data):
-        cat, n = data
+        """data = (분류, 종 수) 또는 (분류, 종 수, 종류) - 종류순에서 지닌 도구를 나눈 머리줄."""
+        cat, n = data[0], data[1]
+        sub = data[2] if len(data) > 2 else None
         self.mark.configure(bg=CAT_COLOR.get(cat, U.ACCENT))
-        self.label.configure(text="%s · %d종" % (CAT_KR.get(cat, cat), n))
+        self.label.configure(text=("%s · %s · %d종" % (CAT_KR.get(cat, cat), sub, n)) if sub
+                             else "%s · %d종" % (CAT_KR.get(cat, cat), n))
 
 
 class ItemRow(object):
@@ -544,6 +560,7 @@ class BagWindow(object):
         self._mon_ids = set()
         self._view = []          # 오른쪽 목록에 보이는 포켓몬 - 찾는 말로 거르고 줄 세운 것 (1.13.1)
         self.tm_left = None      # {타입: 아직 없는 기술머신 수} - 타입 확정 뽑기권이 있을 때만 온다 (1.13.1)
+        self.item_sort = "name"  # 도구 목록 순서 (ITEM_SORTS). 다시 불러와도 그대로다 (1.13.4)
 
         # parent 가 있으면 탭 안의 한 칸으로, 없으면 지금까지처럼 창으로.
         self.win = U.panel(parent, root, "포스크탑 — 가방",
@@ -602,6 +619,21 @@ class BagWindow(object):
         U.marker_label(head, "가진 도구", bg=U.INK).pack(side="left", padx=12,
                                                      pady=6)
         tk.Frame(wrap, bg=U.LINE, height=U.h(2)).pack(fill="x")
+        # 찾기 · 줄 세우기 (1.13.4, 게시판 #323). 찾는 말은 trace 로 듣는다 - 한글 조합 중인 글자를 놓치지 않게.
+        tools = tk.Frame(wrap, bg=U.BG)
+        tools.pack(fill="x", padx=10, pady=(8, 6))
+        self.item_findrow = tk.Frame(tools, bg=U.BG)
+        self.item_findrow.pack(fill="x")
+        tk.Label(self.item_findrow, text="찾기", bg=U.BG, fg=U.FG_DIM, font=U.FONT_XS).pack(side="left")
+        self.item_q = tk.StringVar()
+        self.item_find = U.entry(self.item_findrow, self.item_q, width=10)
+        self.item_find.pack(side="left", fill="x", expand=True, padx=(8, 0))
+        self.item_sortrow = tk.Frame(tools, bg=U.BG)
+        self.item_sortrow.pack(fill="x", pady=(6, 0))
+        self.item_seg = U.Segmented(self.item_sortrow, ITEM_SORTS, self.item_sort, self.set_item_sort)
+        self.item_seg.frame.pack(side="left")
+        self.item_q.trace_add("write", lambda *_a: self._items_changed())
+        tk.Frame(wrap, bg=U.LINE, height=U.h(1)).pack(fill="x")
         # **보이는 줄만 만든다** (U.VirtualList). 도구가 300종이어도 위젯은 화면만큼이다 -
         # 예전에는 줄을 전부 만들어서 열 때와 도구를 쓸 때마다 몇 초씩 끊겼다.
         self.item_vl = U.VirtualList(wrap, {
@@ -614,6 +646,9 @@ class BagWindow(object):
                  fg=U.FG_DIM, font=U.FONT_S).pack(pady=(34, 4))
         tk.Label(self.item_empty, text="야생 포켓몬을 잡거나 배틀에서\n도구를 주울 수 있다.",
                  bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS, justify="center").pack()
+        # 찾는 말에 맞는 도구가 없을 때 목록 대신 (1.13.4)
+        self.item_nomatch = tk.Label(wrap, text="", bg=U.BG, fg=U.FG_DIM, font=U.FONT_S,
+                                     wraplength=LIST_W - 40, justify="center")
 
     # ---------------- 오른쪽: 설명과 대상 ----------------
     def _detail_pane(self, parent):
@@ -878,29 +913,81 @@ class BagWindow(object):
                                   i["kr"]))
         return owned
 
-    def _fill_items(self):
+    def _fill_items(self, keep=True):
         """왼쪽 도구 목록을 새로 채운다: 분류마다 머리줄 하나, 그 아래 가진 도구들.
 
         줄을 만들지 않는다 - 무엇이 몇 번째 줄인지만 넘긴다 (U.VirtualList). 보던 자리는 그대로다.
         """
         owned = self._owned()
+        self.item_nomatch.pack_forget()
         if not owned:
             self.item_vl.set([])
             self.item_vl.holder.pack_forget()
             self.item_empty.pack(fill="both", expand=True)
             return
         self.item_empty.pack_forget()
+        entries = self._item_entries(owned)
+        if not entries:
+            # 찾는 말에 맞는 도구가 없다
+            self.item_vl.set([])
+            self.item_vl.holder.pack_forget()
+            self.item_nomatch.configure(text=natural("'%s' 에 맞는 도구가 없다." % self.item_q.get().strip()))
+            self.item_nomatch.pack(fill="x", pady=(34, 0))
+            return
         self.item_vl.pack(fill="both", expand=True)
-        counts = {}
-        for x in owned:
-            counts[x["cat"]] = counts.get(x["cat"], 0) + 1
-        entries, last = [], None
-        for it in owned:
-            if it["cat"] != last:
-                last = it["cat"]
-                entries.append(("head", (last, counts[last])))
-            entries.append(("item", it))
-        self.item_vl.set(entries)
+        self.item_vl.set(entries, keep=keep)
+
+    def _item_entries(self, owned):
+        """목록에 담을 줄: 분류마다 머리줄 하나와 그 아래 도구들 - 찾는 말로 거르고 고른 순서로 (1.13.4).
+
+        종류순이면 지닌 도구는 하는 일(held.GROUPS)마다 머리줄을 따로 둔다.
+        """
+        q = self.item_q.get().strip().lower()
+        if q:
+            owned = [i for i in owned if q in (i.get("kr") or "").lower() or q in (i.get("en") or "").lower()]
+        sort = self.item_sort
+        cats, by_cat = [], {}
+        for it in owned:                            # _owned() 가 이미 분류 순서다
+            if it["cat"] not in by_cat:
+                cats.append(it["cat"])
+                by_cat[it["cat"]] = []
+            by_cat[it["cat"]].append(it)
+        entries = []
+        for cat in cats:
+            rows = sorted(by_cat[cat], key=self._item_key)
+            if sort == "kind" and cat == "held":
+                for key, label in H.GROUPS:
+                    part = [i for i in rows if H.group(i["id"]) == key]
+                    if part:
+                        entries.append(("head", (cat, len(part), label)))
+                        entries.extend(("item", i) for i in part)
+                continue
+            entries.append(("head", (cat, len(rows))))
+            entries.extend(("item", i) for i in rows)
+        return entries
+
+    def _item_key(self, it):
+        """분류 안의 순서. 같으면 가나다 (이름순은 가나다만)."""
+        name = (it.get("kr") or "", it.get("id") or "")
+        if self.item_sort == "rarity":
+            return (-RARITY_RANK.get(it.get("rarity"), 0),) + name
+        if self.item_sort == "count":
+            return (-int(self.bag.get(it.get("id"), 0) or 0),) + name
+        return name
+
+    def set_item_sort(self, key):
+        """줄 세우기 단추를 눌렀다. 고른 도구는 그대로, 목록은 맨 위부터."""
+        self.item_sort = key if key in dict(ITEM_SORTS) else "name"
+        self.item_seg.set(self.item_sort)
+        self._items_changed()
+        self.say("도구를 %s순으로 봅니다." % dict(ITEM_SORTS)[self.item_sort]
+                 + (" 지닌 도구는 하는 일마다 묶었습니다." if self.item_sort == "kind" else ""), U.INFO, U.FG_DIM)
+
+    def _items_changed(self):
+        """찾는 말이나 순서가 바뀌었다 - 목록만 다시 담는다 (고른 도구 · 오른쪽 칸은 그대로)."""
+        if not self.alive:
+            return
+        self._fill_items(keep=False)
 
     def _fill_mons(self, keep=True):
         """'누구에게 쓸까?' 목록을 새로 채운다. 줄은 화면에 걸칠 때 그 시점의 상태로 칠해진다.
@@ -1052,6 +1139,13 @@ class BagWindow(object):
             cur = mon.get("heldKr")
             if mon.get("held") == it["id"]:
                 return False, True, "이미 지님", U.FG_FAINT
+            if not mega_fits(getattr(self.app, "dex", None), it, mon):
+                # 그 스톤으로 메가진화하는 종만 지닌다 (서버도 막는다). 막아 두어야 파티 맨 앞의 빈손
+                # 포켓몬이 먼저 골라지지 않는다 - 10/22 오이쉬에의 망나뇽나이트가 그렇게 치엔파오에게 갔다.
+                return False, True, "메가진화 안 함", U.FG_FAINT
+            if it.get("cat") == "megastone" and mon.get("bonded") is False:
+                # 유대 미션을 마친 개체만 메가진화한다 (10/22, 서버도 막는다). 옛 서버는 bonded 를 안 보낸다.
+                return False, True, "유대 미션 전", U.FG_FAINT
             if cur:
                 return False, False, "지님: %s" % cur, U.FG_DIM
             return True, False, "빈손", U.GOOD

@@ -2798,6 +2798,11 @@ class HeldPicker(object):
         bag = (r or {}).get("bag") or {}
         rows = [it for it in (r or {}).get("items", [])
                 if it.get("holdable") and bag.get(it["id"], 0) > 0]
+        # 메가스톤은 이 포켓몬이 그 스톤으로 메가진화할 때만 (맞는 종 · 유대 미션을 마친 개체, 10/22 - 서버도 막는다)
+        from .ui_bag import mega_fits               # ui_bag 이 이 모듈을 부르므로 여기서 늦게 부른다
+        dex = getattr(self.app, "dex", None)
+        rows = [it for it in rows if it.get("cat") != "megastone"
+                or (mega_fits(dex, it, self.mon) and self.mon.get("bonded") is not False)]
         if not rows:
             self.note.configure(text="지닐 수 있는 도구가 가방에 없습니다. "
                                      "상점의 '지닌 도구' 칸에서 살 수 있습니다.")
@@ -3048,6 +3053,12 @@ def confirm_release(parent, app, mon):
     tk.Label(txt, text="%s · 개체값 %.0f%%" % (info.get("species", ""),
                                              info.get("ivPercent", 0)),
              bg=U.BG, fg=U.FG_FAINT, font=U.FONT_XS, anchor="w").pack(anchor="w")
+    if info.get("hiddenAbility") or mon.get("hiddenAbility"):
+        # 숨은 특성은 다시 얻기 어렵다 - 모르고 놓아주지 않게 한 번 더 알린다 (10/22 사용자)
+        ab = info.get("ability")
+        hid = tk.Label(txt, text="이 포켓몬은 숨은 특성%s을 가졌습니다!" % ("(%s)" % ab if ab else ""),
+                       bg=U.BG, fg=U.SHINY, font=U.FONT_B, anchor="w", justify="left", wraplength=250)
+        hid.pack(anchor="w", pady=(8, 0))
     tk.Label(txt, text="정말 놓아줄까요?\n되돌릴 수 없습니다.", bg=U.BG, fg=U.DANGER,
              font=U.FONT_S, justify="left").pack(anchor="w", pady=(8, 0))
 

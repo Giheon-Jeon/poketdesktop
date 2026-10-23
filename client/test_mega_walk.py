@@ -241,6 +241,11 @@ def menu_part(root):
     row = app.mega_menu_row(StubPet(mon(4, "CHARIZARD")))
     chk("스톤을 안 지녔으면 회색으로 까닭을 알린다",
         row and row.get("enabled") is False and "메가스톤" in row["text"], row)
+    lone = dict(mon(8, "CHARIZARD", "CHARIZARDITEX"), bonded=False)
+    row = app.mega_menu_row(StubPet(lone))
+    chk("유대 미션을 안 마쳤으면 회색으로 그 까닭을 알린다 (10/22)",
+        row and row.get("enabled") is False and "유대" in row["text"], row)
+    chk("  그때는 될 수 있는 폼도 없다", app.mega_form(lone) is None)
     row = app.mega_menu_row(StubPet(liz))
     chk("되면 '메가진화한 모습으로 걷기'",
         row and row.get("enabled", True) and row["text"] == "메가진화한 모습으로 걷기"

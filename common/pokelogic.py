@@ -416,7 +416,8 @@ class Pokedex(object):
         forms = self.mega_of.get((mon or {}).get("species")) or []
         if not forms:
             return None
-        held = mon.get("held")
+        # 스톤 메가는 유대 미션을 마친 개체만 (Fighter.mega_target 과 같다 - bonded 가 없으면 보지 않는다)
+        held = mon.get("held") if mon.get("bonded") is not False else None
         moves = mon.get("moves") or []
         cand = [m for m in forms
                 if (m.get("megaMove") and m["megaMove"] in moves)

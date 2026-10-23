@@ -4,10 +4,12 @@
     python server/test_mega.py
 
   1. 키스톤은 관장 8곳. 7곳이면 없다.
-  2. 빛나는 돌은 데리고 다니고 + 친밀도 255 + 키스톤 + 아직 없는 스톤이 있을 때.
+  2. 빛나는 돌은 데리고 다니고 + 친밀도 255 + 키스톤 + 메가스톤으로 메가진화하는 종일 때.
+     스톤이 이미 다 있어도 뜬다 (10/22 사용자 - 유대를 마친 개체만 메가진화하므로 다른 개체도 미션을 한다).
   3. 미션 셋(타입 관장·KO 30·야생 10)을 다 채우면 끝.
      스톤이 하나뿐인 종은 저절로 받고, X/Y 는 골라서 받는다.
-  4. **두 번 받지 못한다.** 한 종의 스톤은 계정에 하나씩.
+  4. **두 번 받지 못한다.** 한 종의 스톤은 계정에 하나씩. 다 가진 종의 다른 개체가 마치면 스톤 없이
+     '유대 완료' 만 된다 (stone='-', 알림은 bondOnly).
   5. 메가스톤을 지닐 수 있다 (held.normalize 가 버리지 않는다).
 """
 import json
@@ -153,13 +155,31 @@ def main():
     mega.mark_seen(u8, liz2)
     chk("  알렸다고 하면 빠진다", mega.me_card(u8)["got"] == [], mega.me_card(u8)["got"])
     chk("카드에 이름이 실린다 (알림 창용)", mega.card(u8, liz2)["name"] == "리자몽")
+    print("\n=== 스톤이 다 있어도 다른 개체가 유대 미션을 한다 (10/22) ===")
     liz3 = mkmon(u8, "CHARIZARD")
-    chk("둘 다 있으면 더는 안 뜬다", liz3 not in mega.ready(u8))
+    chk("둘 다 있어도 뜬다 (마치면 이 개체가 메가진화할 수 있다)", liz3 in mega.ready(u8), mega.ready(u8))
+    mega.start(u8, liz3)
+    chk("  시작할 수 있다", bond(liz3) is not None)
+    chk("  마치기 전에는 유대가 없다", not mega.is_bonded(liz3))
+    finish(u8, liz3, "FIRE")
+    b3 = bond(liz3)
+    chk("  마치면 유대 완료, 받는 스톤은 없다 ('-')", b3["done_at"] and b3["stone"] == mega.NO_STONE, dict(b3))
+    chk("  가방의 스톤 수는 그대로", items.bag_get(u8).get("CHARIZARDITEX") == 1
+        and items.bag_get(u8).get("CHARIZARDITEY") == 1, items.bag_get(u8))
+    chk("  이제 이 개체는 메가진화할 수 있다", mega.is_bonded(liz3))
+    c3 = mega.card(u8, liz3)
+    chk("  카드: 받을 것 없음 · 유대만", not c3["claimable"] and c3["stone"] is None and c3["bondOnly"], c3)
+    me = mega.me_card(u8)
+    chk("  받을 스톤 목록에는 없다", liz3 not in me["claim"], me["claim"])
+    chk("  /api/me 로 유대만 마쳤다고 알린다", [g for g in me["got"] if g["pokemon"] == liz3] ==
+        [{"pokemon": liz3, "name": "리자몽", "stone": None, "stoneKr": None, "bondOnly": True}], me["got"])
+    mega.mark_seen(u8, liz3)
+    chk("  알렸다고 하면 빠진다", liz3 not in [g["pokemon"] for g in mega.me_card(u8)["got"]])
     try:
-        mega.start(u8, liz3)
-        chk("둘 다 있으면 시작도 못 한다", False)
+        mega.claim(u8, liz3, "CHARIZARDITEX")
+        chk("  스톤을 또 받을 수는 없다", False, "받았다")
     except ValueError:
-        chk("둘 다 있으면 시작도 못 한다", True)
+        chk("  스톤을 또 받을 수는 없다", True)
 
     print("\n=== 스톤 하나짜리 · 지니고 있어도 가진 것 ===")
     gen = mkmon(u8, "GENGAR")
@@ -170,7 +190,12 @@ def main():
     items.bag_take(u8, "GENGARITE", 1)
     db.run("UPDATE pokemon SET held='GENGARITE' WHERE id=?", (low,))
     gen2 = mkmon(u8, "GENGAR")
-    chk("지니고 있는 스톤도 가진 것으로 친다", gen2 not in mega.ready(u8))
+    chk("지니고 있는 스톤도 가진 것으로 친다", mega.missing_stones(u8, "GENGAR") == [])
+    chk("  그래도 다른 팬텀은 유대 미션을 할 수 있다", gen2 in mega.ready(u8))
+    mega.start(u8, gen2)
+    finish(u8, gen2, "GHOST")
+    chk("  마치면 스톤 없이 유대 완료", bond(gen2)["stone"] == mega.NO_STONE and mega.is_bonded(gen2)
+        and not items.bag_get(u8).get("GENGARITE"), (dict(bond(gen2)), items.bag_get(u8).get("GENGARITE")))
 
     print("\n=== 지닐 수 있다 ===")
     from common import held as H

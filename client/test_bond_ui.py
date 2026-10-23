@@ -83,8 +83,8 @@ class BondApi(SB.FakeApi):
                 {"key": "kos", "text": "직접 30번 쓰러뜨리기", "value": b["kos"], "target": 30},
                 {"key": "wild", "text": "데리고 다니는 동안 야생 10마리 잡기",
                  "value": b["wild"], "target": 10}],
-                "done": b["done"], "stone": b["stone"],
-                "claimable": bool(b["done"] and not b["stone"])})
+                "done": b["done"], "stone": b["stone"], "bondOnly": bool(b.get("bondOnly")),
+                "claimable": bool(b["done"] and not b["stone"] and not b.get("bondOnly"))})
         return out
 
     def bond(self, pid):
@@ -255,6 +255,34 @@ def main():
     chk("늦게 온 옛 응답이 칸을 덮지 않는다", win.bond.card["species"] == "CHARIZARD"
         and "팬텀나이트" not in panel_text(win), win.bond.card["species"])
     api.slow.pop(2)
+
+    print("\n=== 스톤이 이미 있는 종의 다른 개체 (10/22: 유대를 마친 개체만 메가진화) ===")
+    api.owned.add("GENGARITE")
+    api.happy[2] = 255
+    next(m for m in win.mons if m["id"] == 2)["bonded"] = False      # 서버가 보내는 유대 여부
+    win.select(1)
+    wait(root, lambda: win.bond.card and win.bond.card["species"] == "CHARIZARD")
+    win.select(2)
+    wait(root, lambda: win.bond.card and win.bond.card["species"] == "GENGAR")
+    settle(root)
+    t = panel_text(win)
+    chk("'모두 가지고 있다' 로 막지 않고 '미션 시작'", win.bond.btn is not None
+        and win.bond.btn.label.cget("text") == "미션 시작" and "모두 가지고" not in t, t)
+    chk("  마치면 이 포켓몬도 메가진화할 수 있다고", "이 포켓몬도 메가진화" in t, t)
+    chk("  메가진화하면 칸: '유대 미션을 마치고 팬텀나이트를 지니면'", "유대 미션을 마치고 팬텀나이트" in t, t)
+    win.bond.btn.command()
+    wait(root, lambda: ("start", 2) in api.calls)
+    settle(root)
+    chk("  미션 중에도 같은 안내", "이 포켓몬도 메가진화" in panel_text(win), panel_text(win))
+    api.bonds[2].update({"gym": 1, "kos": 30, "wild": 10, "done": True, "bondOnly": True})
+    win.select(1)
+    wait(root, lambda: win.bond.card and win.bond.card["species"] == "CHARIZARD")
+    win.select(2)
+    wait(root, lambda: win.bond.card and win.bond.card.get("bondOnly"))
+    settle(root)
+    t = panel_text(win)
+    chk("스톤 없이 마치면 '이제 메가진화할 수 있다', 받기 단추는 없다",
+        "이제 메가진화할 수 있" in t and win.bond.btn is None, t)
 
     print("\n=== 레쿠쟈 ===")
     n = len(api.calls)

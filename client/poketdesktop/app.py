@@ -1632,6 +1632,7 @@ class App(object):
                 except Exception:                           # noqa: BLE001
                     pass
             self.show_pvp_result(r)
+            self.after_match(self._refresh_scores)  # 열어 둔 마이페이지도 다 본 뒤에 새 점수로 (1.13.4)
             self.after_match(lambda: tell(r, None))
         run_async(self.root, fn, done)
 
@@ -1648,7 +1649,33 @@ class App(object):
         """
         if not self.match_playing():
             return fn()
-        self._after_match.append(fn)
+        if fn not in self._after_match:         # 같은 창이 여러 번 걸어도 끝나면 한 번만 (1.13.4)
+            self._after_match.append(fn)
+
+    def _refresh_scores(self):
+        """대전 재생이 끝났다 - 점수를 보여 주는데 탭을 다시 열어도 새로 읽지 않는 마이페이지를 새로 읽는다 (1.13.4).
+
+        랭크 창은 제 손으로 다시 읽는다 (_pvp 의 on_done).
+        """
+        pane = (self.hub.panes.get("my") if self.hub else None)
+        if pane is None:
+            return
+        try:
+            pane.refresh()
+        except Exception as e:                              # noqa: BLE001
+            config.log("대전 뒤 마이페이지 새로 읽기 실패: %s" % e)
+
+    def scores_after_match(self, fn):
+        """점수·전적이 담긴 것(마이페이지 · 프로필 · 친구 목록)을 읽기 전에 부른다 (1.13.4).
+
+        대전을 재생하는 중이면 fn 을 끝난 뒤로 미루고 True 를 돌려준다 - 부른 쪽은 읽지 말고
+        '대전이 끝나면 불러옵니다' 라고 적는다. 서버는 누르는 순간 점수까지 넣어서, 재생 중에 읽으면
+        끝나기도 전에 결과가 보였다 (랭크 창은 1.12.1 부터 이렇게 했다).
+        """
+        if not self.match_playing():
+            return False
+        self.after_match(fn)
+        return True
 
     def _match_over(self):
         """재생이 끝났다 (또는 못 펼쳤다). 미뤄 둔 것을 부른다."""
@@ -2334,7 +2361,12 @@ class App(object):
             return {"text": "메가진화한 모습으로 걷기",
                     "command": lambda: self.toggle_mega_walk(pet)}
         # 될 수 있는 종인데 아직 못 한다 - 무엇이 모자란지 알려 준다.
-        why = "키스톤 필요" if not self.keystone else "메가스톤을 지녀야 함"
+        if not self.keystone:
+            why = "키스톤 필요"
+        elif mon.get("bonded") is False:
+            why = "유대 미션을 마쳐야 함"          # 스톤은 지녔다 (서버가 스톤을 지닌 것에만 bonded 를 붙인다, 10/22)
+        else:
+            why = "메가스톤을 지녀야 함"
         return {"text": "메가 모습으로 걷기 (%s)" % why, "enabled": False}
 
     def toggle_mega_walk(self, pet):

@@ -296,9 +296,12 @@ class Fighter(object):
         # Z크리스탈을 지닌 레쿠쟈는 화룡점정을 알아도 메가진화하지 못한다 (본가와 같다) -
         # 스톤 없이 되는 유일한 메가라, 안 막으면 한 마리가 메가진화와 Z기술을 다 쓴다.
         no_move = ZM.is_crystal(held)
+        # 스톤 메가는 유대 미션을 마친 개체만 (10/22 사용자). 서버가 사람 포켓몬에 bonded 를 붙인다 -
+        # 없으면(관장·AI 팀) 보지 않는다. 레쿠쟈는 미션이 없어서 화룡점정이면 된다.
+        stone = held if self.mon.get("bonded") is not False else None
         cand = [m for m in forms
                 if (m.get("megaMove") and m["megaMove"] in self.moves and not no_move)
-                or (held and m.get("megaStone") == held)]
+                or (stone and m.get("megaStone") == stone)]
         if not cand:
             return None
         g = self.mon.get("gender")

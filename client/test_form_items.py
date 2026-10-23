@@ -98,6 +98,27 @@ def main():
     chk("꽃꿀: 이미 그 모습이면 막는다", st(PINK, M(4, "ORICORIO", "춤추새", form="PAU"))[1] is True)
     chk("  다른 모습이면 쓸 수 있다", st(PINK, M(4, "ORICORIO", "춤추새"))[1] is False)
 
+    print("\n=== 메가스톤 대상 (10/22 오이쉬에: 파티 맨 앞 빈손 치엔파오가 먼저 골라져 받아 갔다)")
+    dnite = {"id": "DRAGONINITE", "kr": "망나뇽나이트", "cat": "megastone", "effect": {"kind": "held"}}
+    left = {"id": "LEFTOVERS", "kr": "먹다남은음식", "cat": "held", "effect": {"kind": "held"}}
+    dex = types.SimpleNamespace(mega_of={"DRAGONITE": [{"megaStone": "DRAGONINITE"}]})
+    bag = types.SimpleNamespace(app=types.SimpleNamespace(dex=dex))
+    ts = lambda it, m: ui_bag.BagWindow._target_state(bag, it, m)   # noqa: E731
+    g = ts(dnite, M(1, "CHIENPAO", "치엔파오"))
+    chk("다른 종은 막는다 (빈손이어도 먼저 골라지지 않는다)", g[1] is True and "메가진화" in g[2], g)
+    g = ts(dnite, M(2, "DRAGONITE", "망나뇽"))
+    chk("  망나뇽은 밝힌다", g[0] and not g[1], g)
+    g = ts(dnite, M(2, "DRAGONITE", "망나뇽", held="SITRUSBERRY", heldKr="자뭉열매"))
+    chk("  다른 것을 지닌 망나뇽은 바꿀 수 있다", not g[1] and "자뭉열매" in g[2], g)
+    chk("지닌 도구는 아무나 그대로", ts(left, M(1, "CHIENPAO", "치엔파오"))[:2] == (True, False))
+    g = ts(dnite, M(3, "DRAGONITE", "망나뇽", bonded=False))
+    chk("유대 미션을 안 마친 망나뇽은 막는다 (10/22: 유대가 없으면 메가진화 못 한다)",
+        g[1] is True and "유대" in g[2], g)
+    chk("  마친 망나뇽은 밝힌다", ts(dnite, M(3, "DRAGONITE", "망나뇽", bonded=True))[:2] == (True, False))
+    chk("  옛 서버(bonded 를 안 보냄)면 막지 않는다 (서버가 본다)", ts(dnite, M(2, "DRAGONITE", "망나뇽"))[1] is False)
+    bag.app.dex = None
+    chk("도감이 없으면 막지 않는다 (서버가 본다)", ts(dnite, M(1, "CHIENPAO", "치엔파오"))[1] is False)
+
     print("\n=== 쓰기 전에 묻기")
     asked = []
     answer = {"v": None}

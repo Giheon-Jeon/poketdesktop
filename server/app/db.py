@@ -1321,7 +1321,26 @@ def _note_failure(sql, e):
 
 # ---------------------------------------------------------------- 변환
 def row_to_mon(r):
-    """DB 행 -> pokelogic 이 쓰는 dict."""
+    """DB 행 -> pokelogic 이 쓰는 dict.
+
+    메가스톤을 지녔으면 유대 미션을 마쳤는지(bonded)도 붙인다 - 마치지 않은 개체는 메가진화하지 못한다
+    (10/22 사용자, battle.Fighter.mega_target). 배틀은 모두 여기를 거쳐 사람 포켓몬을 읽는다.
+    """
+    mon = _row_to_mon(r)
+    if mon["held"] and _mega_stone(mon["held"]):
+        mon["bonded"] = bool(q1("SELECT 1 FROM bond WHERE pokemon_id=? AND done_at IS NOT NULL", (mon["id"],)))
+    return mon
+
+
+def _mega_stone(item):
+    from common import held as H
+    if not H.MEGA:
+        from . import deps
+        deps.dex()                  # 도감을 읽어야 메가스톤 목록이 찬다 (held.register_megas)
+    return H.is_mega_stone(item)
+
+
+def _row_to_mon(r):
     return {
         "id": r["id"],
         "species": r["species"],

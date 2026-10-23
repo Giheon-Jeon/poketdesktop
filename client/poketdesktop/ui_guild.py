@@ -1554,7 +1554,21 @@ class GuildWindow(object):
                 fit(win, hi=PROFILE_H, scroll=(cv, inner), keep_pos=True)
             except tk.TclError:
                 pass                        # 받아 오는 사이에 창을 닫았다
-        run_async(self.root, lambda: api.guild_profile(uid), done)
+
+        def fetch():
+            try:
+                if not win.winfo_exists():
+                    return                  # 기다리는 사이에 창을 닫았다
+                wait.configure(text="불러오는 중...")
+            except tk.TclError:
+                return
+            run_async(self.root, lambda: api.guild_profile(uid), done)
+        # 대전을 재생하는 동안에는 읽지 않는다 - 시즌 기록(RP · 전적)이 끝나기도 전에 바뀌어 보인다 (1.13.4)
+        later = getattr(self.app, "scores_after_match", None)
+        if later is not None and later(fetch):
+            wait.configure(text="대전이 끝나면 불러옵니다.")
+        else:
+            fetch()
         return win
 
     def _fill_profile(self, inner, cv, p):

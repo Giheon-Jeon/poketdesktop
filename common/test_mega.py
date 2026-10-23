@@ -294,6 +294,30 @@ def main():
     chk("냐오닉스 암컷", f_f.mega_target()["internal"] == "MEOWSTIC_MEGA_F",
         f_f.mega_target()["internal"])
 
+    print("\n=== 유대 (10/22 사용자: 유대 미션을 안 마친 개체는 메가진화 못 한다) ===")
+    # 서버가 메가스톤을 지닌 사람 포켓몬에 bonded 를 붙인다 (db.row_to_mon). 없으면(관장·AI 팀) 보지 않는다.
+    lone = dict(mon("CHARIZARD", "CHARIZARDITEX", ("FLAMETHROWER",)), bonded=False)
+    bt14, a14, _ = duel(lone, mon("SNORLAX"))
+    chk("유대 안 마친 개체는 can_mega 가 None", bt14.can_mega("me") is None)
+    bt14.take_turn("FLAMETHROWER", mega=True)
+    chk("  메가를 눌러도 안 바뀐다", a14.mega is None, a14.mega)
+    bt15, _a, _ = duel(dict(mon("CHARIZARD", "CHARIZARDITEX"), bonded=True), mon("SNORLAX"))
+    chk("유대 마친 개체는 된다", bt15.can_mega("me") is not None)
+    chk("bonded 가 없으면(관장·AI 팀) 그대로 된다",
+        duel(mon("CHARIZARD", "CHARIZARDITEX"), mon("SNORLAX"))[0].can_mega("me") is not None)
+    ray = dict(mon("RAYQUAZA", "CHARIZARDITEX", ("DRAGONASCENT", "TACKLE")), bonded=False)
+    chk("레쿠쟈(스톤 없이 화룡점정)는 유대와 상관없다", duel(ray, mon("SNORLAX"))[0].can_mega("me") is not None)
+    from common import trainer_battle as TB
+    tbl = TB.TrainerBattle(DEX, [lone], {"id": "t_x", "name": "x", "level": 50,
+                                         "team": [{"species": "SNORLAX", "level": 50, "moves": ["TACKLE"]}]},
+                           random.Random(5))
+    tbl.keystone["me"] = True
+    tbl2 = TB.TrainerBattle.load(DEX, tbl.dump())
+    chk("저장했다 불러와도 못 한다", tbl2.bt.can_mega("me") is None and tbl.bt.can_mega("me") is None)
+    chk("바탕화면 메가 모습(mega_for)도 같은 규칙", DEX.mega_for(lone) is None
+        and DEX.mega_for(dict(lone, bonded=True)) is not None
+        and DEX.mega_for(mon("CHARIZARD", "CHARIZARDITEX")) is not None)
+
     print("\n=== 별명 · AI ===")
     bt12, a12, _ = duel(mon("GARDEVOIR", "GARDEVOIRITE", nick="가디"), mon("SNORLAX"))
     bt12.take_turn("TACKLE", mega=True)

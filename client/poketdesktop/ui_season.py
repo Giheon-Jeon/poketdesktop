@@ -174,6 +174,8 @@ class TeamWindow(object):
         self.cap = int(team.get("levelCap") or 50)
         self.restricted = set(int(n) for n in team.get("restrictedNums") or [])
         self.restricted_max = int(team.get("restrictedMax") or 1)
+        # 같은 종 상한 (10/22). 옛 서버는 안 보낸다 - 그때는 막지 않는다 (서버가 본다).
+        self.same_max = int(team["sameSpeciesMax"]) if team.get("sameSpeciesMax") else None
         self.rank_min = None if self.spec else team.get("rankMin")
         self.registered = bool(team.get("registered"))
         self.picked = [int(i) for i in team.get("ids") or []]
@@ -196,6 +198,8 @@ class TeamWindow(object):
                     "팀만 만나고, 받는 쪽도 거는 쪽보다 적은 팀이면 안 붙습니다. "
                     "전설·환상 포켓몬은 %d마리까지 넣을 수 있습니다."
                     % (self.cap, self.cap, self.max, self.max, self.restricted_max))
+        if self.same_max and not self.spec.get("note"):
+            note += " 같은 포켓몬은 %d마리까지 넣을 수 있습니다." % self.same_max
         self.note.configure(text=natural(note))
         if self.registered and not self.spec:
             self.unreg_btn.pack(side="left", padx=(8, 0))
@@ -209,6 +213,10 @@ class TeamWindow(object):
             self.say("전설·환상이 %d마리 더 있어 랭크 배틀에는 앞의 %d마리만 나갑니다. "
                      "등록하려면 %d마리를 빼세요." % (extra, self.restricted_max, extra),
                      U.ACCENT)
+        same = self._same_extra(self.picked)
+        if same and not self.spec:
+            self.say("같은 포켓몬이 %d마리 더 있어 랭크 배틀에는 앞의 %d마리만 나갑니다. "
+                     "등록하려면 %d마리를 빼세요." % (same, self.same_max, same), U.ACCENT)
 
     def _filter(self):
         """찾기 칸의 글에 맞는 포켓몬만 목록에 담는다. 고른 것은 안 보여도 고른 그대로다."""
@@ -321,14 +329,20 @@ class TeamWindow(object):
             self.say("")
 
     def rank_ready_count(self):
-        """고른 팀에서 랭크전 조건(Lv.N 이상)에 드는 마릿수. 서버처럼 전설·환상은 앞의 몇 마리만 나간다고 센다."""
+        """고른 팀에서 랭크전 조건(Lv.N 이상)에 드는 마릿수. 서버처럼 같은 종·전설·환상은 앞의 몇 마리만 나간다고 센다."""
         lv = int((self.rank_min or {}).get("level") or 50)
         by = dict((m["id"], m) for m in self.mons)
         legends = n = 0
+        kinds = {}
         for pid in self.picked:
             m = by.get(pid)
             if not m:
                 continue
+            sp = self._species(m)
+            if sp and self.same_max and kinds.get(sp, 0) >= self.same_max:
+                continue
+            if sp:
+                kinds[sp] = kinds.get(sp, 0) + 1
             if self._is_restricted(m):
                 legends += 1
                 if legends > self.restricted_max:
@@ -344,6 +358,27 @@ class TeamWindow(object):
         by = dict((m["id"], m) for m in self.mons)
         return sum(1 for i in ids if self._is_restricted(by.get(i)))
 
+    @staticmethod
+    def _species(m):
+        """종 (내부 이름). 옛 자료처럼 없으면 None - 그 포켓몬은 같은 종을 세지 않는다."""
+        return (m or {}).get("species") or None
+
+    def _same_count(self, ids, species):
+        by = dict((m["id"], m) for m in self.mons)
+        return sum(1 for i in ids if species and self._species(by.get(i)) == species)
+
+    def _same_extra(self, ids):
+        """같은 종이 상한보다 몇 마리 더 있나 (서버 pvp.split_restricted 처럼 뒤의 것이 빠진다)."""
+        if not self.same_max:
+            return 0
+        by = dict((m["id"], m) for m in self.mons)
+        count = {}
+        for i in ids:
+            sp = self._species(by.get(i))
+            if sp:
+                count[sp] = count.get(sp, 0) + 1
+        return sum(max(0, n - self.same_max) for n in count.values())
+
     def toggle(self, pid):
         if pid in self.picked:
             self.picked.remove(pid)
@@ -356,6 +391,8 @@ class TeamWindow(object):
                     and self._restricted_count(self.picked) >= self.restricted_max):
                 return self.say("전설·환상 포켓몬은 %d마리까지 넣을 수 있습니다."
                                 % self.restricted_max, U.ACCENT)
+            if self.same_max and self._same_count(self.picked, self._species(by.get(pid))) >= self.same_max:
+                return self.say("같은 포켓몬은 %d마리까지 넣을 수 있습니다." % self.same_max, U.ACCENT)
             self.picked.append(pid)
         self._paint()
 
@@ -365,6 +402,8 @@ class TeamWindow(object):
                                   else 99, m["id"]))
         picked, legends = [], 0
         for m in party:
+            if self.same_max and self._same_count(picked, self._species(m)) >= self.same_max:
+                continue                # 같은 종 두 마리째는 건너뛴다 (10/22)
             if self._is_restricted(m):
                 if legends >= self.restricted_max:
                     continue            # 두 마리째 전설·환상은 건너뛴다

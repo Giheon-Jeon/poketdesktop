@@ -60,6 +60,13 @@ def settle(root, n=8):
         root.update()
 
 
+def _walk(w):
+    for c in w.winfo_children():
+        yield c
+        for x in _walk(c):
+            yield x
+
+
 def wait_for(root, cond, secs=4):
     end = time.time() + secs
     while time.time() < end and not cond():
@@ -224,7 +231,7 @@ class FakeApi(object):
         return open(p, "rb").read() if os.path.exists(p) else None
 
     def shop(self):
-        return {"money": 0, "bag": {"ORANBERRY": 2, "POKEBALL": 5, "FIRESTONE": 1},
+        return {"money": 0, "bag": {"ORANBERRY": 2, "POKEBALL": 5, "FIRESTONE": 1, "CHARIZARDITEX": 1},
                 "items": [
                     {"id": "ORANBERRY", "kr": "오랭열매", "cat": "held", "holdable": True,
                      "desc": "HP를 10만큼 회복한다.", "effect": {"kind": "held"}},
@@ -234,6 +241,8 @@ class FakeApi(object):
                      "effect": {"kind": "stone"}},
                     {"id": "LEFTOVERS", "kr": "먹다남은음식", "cat": "held", "holdable": True,
                      "desc": "조금씩 회복", "effect": {"kind": "held"}},
+                    {"id": "CHARIZARDITEX", "kr": "리자몽나이트X", "cat": "megastone", "holdable": True,
+                     "desc": "리자몽에게 지니게 하면", "effect": {"kind": "held"}},
                 ]}
 
     def hold(self, pid, item):
@@ -581,10 +590,50 @@ def main():
     chk("가진 것 중 지닐 수 있는 것만 (오랭열매)", any("오랭열매" in n for n in names), names)
     chk("몬스터볼·불꽃의돌은 안 나온다", not any(("몬스터볼" in n) or ("불꽃의돌" in n) for n in names), names)
     chk("안 가진 먹다남은음식도 안 나온다", not any("먹다남은음식" in n for n in names), names)
+    chk("맞지 않는 메가스톤은 안 나온다 (꼬부기에게 리자몽나이트X, 10/22)",
+        not any("리자몽나이트" in n for n in names), names)
     picker.pick({"id": "ORANBERRY", "kr": "오랭열매"})
     wait_for(root, lambda: app.api.calls)
     settle(root)
     chk("고르면 hold 를 부른다", app.api.calls[:1] == [("hold", 2, "ORANBERRY")], app.api.calls)
+    liz = next(m for m in win.mons if m["id"] == 6)
+
+    def picked_names(m):
+        pk = ui_box.HeldPicker(win, m)
+        wait_for(root, lambda: len(pk.inner.winfo_children()) > 0)
+        settle(root)
+        out = [w.winfo_children()[0].winfo_children()[-2].cget("text")
+               for w in pk.inner.winfo_children() if w.winfo_children()]
+        pk.close()
+        return out
+    chk("  리자몽에게는 나온다 (옛 서버 - 유대 정보가 없으면 서버가 본다)",
+        any("리자몽나이트X" in n for n in picked_names(liz)))
+    chk("  유대 미션을 안 마친 리자몽에게는 안 나온다",
+        not any("리자몽나이트X" in n for n in picked_names(dict(liz, bonded=False))))
+    chk("  마친 리자몽에게는 나온다", any("리자몽나이트X" in n for n in picked_names(dict(liz, bonded=True))))
+
+    print("-- 놓아주기 확인: 숨은 특성 (10/22 사용자)")
+
+    def release_dialog(m):
+        """확인 창의 글자와 크기를 보고 '취소' 를 누른다. (글자들, 눌린 위젯, 답)"""
+        seen = {}
+
+        def look():
+            w = [x for x in root.winfo_children() if isinstance(x, tk.Toplevel)][-1]
+            w.update_idletasks()
+            seen["t"] = " ".join(str(x.cget("text")) for x in _walk(w) if isinstance(x, tk.Label))
+            seen["bad"] = squeezed(w)
+            w.destroy()
+        root.after(300, look)
+        seen["v"] = ui_box.confirm_release(root, app, m)
+        return seen.get("t", ""), seen.get("bad"), seen["v"]
+    hid = dict(liz, info=dict(liz["info"], ability="선파워", hiddenAbility=True), hiddenAbility=True)
+    t, bad, v = release_dialog(hid)
+    chk("숨은 특성이면 그렇다고 알리고 묻는다", "숨은 특성" in t and "선파워" in t and "정말 놓아줄까요" in t, t)
+    chk("  눌린 글자가 없다", not bad, bad and bad[:3])
+    chk("  취소하면 놓아주지 않는다", v is False)
+    t, _bad, _v = release_dialog(liz)
+    chk("숨은 특성이 아니면 그 말은 없다", "숨은 특성" not in t and "정말 놓아줄까요" in t, t)
 
     print("-- 벗기기")
     win.select(1)

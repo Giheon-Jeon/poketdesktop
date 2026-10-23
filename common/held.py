@@ -233,6 +233,51 @@ MENTAL_CONDS = ("attract", "taunt", "encore", "torment", "disable", "healblock")
 
 ALL = frozenset(KR)
 
+# ---- 종류 (1.13.4, 게시판 #323 '도구가 많아져 정렬이 마구잡이 - 이름순 / 특성순') ----
+# 가방의 '종류순' 이 지닌 도구를 하는 일로 묶어 이 차례로 보여 준다. 위의 효과 표로 먼저 가르고,
+# 거기 없는 것은 아래 네 묶음에 적는다. 어디에도 없으면 '기타' (새 도구가 생기면 여기도 적을 것).
+GROUPS = (("berry", "열매"), ("type", "타입 강화"), ("attack", "공격 강화"), ("recover", "회복 · 버티기"),
+          ("once", "한 번 발동"), ("guard", "상태 · 방어"), ("field", "날씨 · 필드"), ("train", "육성"),
+          ("species", "전용 도구"), ("etc", "기타"))
+ATTACK = {"CHOICEBAND", "CHOICESPECS", "CHOICESCARF", "LIFEORB", "EXPERTBELT", "MUSCLEBAND", "WISEGLASSES",
+          "METRONOME", "SCOPELENS", "WIDELENS", "ZOOMLENS", "LOADEDDICE", "PUNCHINGGLOVE", "QUICKCLAW"}
+RECOVER = {"LEFTOVERS", "BLACKSLUDGE", "SHELLBELL", "BIGROOT", "FOCUSSASH", "FOCUSBAND", "ASSAULTVEST",
+           "EVIOLITE", "ROCKYHELMET"}
+ONCE = {"WEAKNESSPOLICY", "BLUNDERPOLICY", "WHITEHERB", "MENTALHERB", "POWERHERB", "MIRRORHERB",
+        "ADRENALINEORB", "THROATSPRAY", "ROOMSERVICE", "EJECTBUTTON", "EJECTPACK", "REDCARD", "AIRBALLOON"}
+GUARD = {"FLAMEORB", "TOXICORB", "SAFETYGOGGLES", "COVERTCLOAK", "CLEARAMULET", "ABILITYSHIELD",
+         "HEAVYDUTYBOOTS", "PROTECTIVEPADS", "UTILITYUMBRELLA", "SHEDSHELL", "BRIGHTPOWDER", "LAXINCENSE"}
+_GROUP_KR = dict(GROUPS)
+
+
+def group(item):
+    """지닌 도구의 종류 열쇠 (GROUPS 의 하나). 모르는 도구는 'etc'."""
+    item = item or ""
+    if item.endswith("BERRY"):
+        return "berry"
+    if item in SPECIES_STAT or item in SPECIES_CRIT or item in SPECIES_POWER or item in LOCKED \
+            or item in MEMORY or item in DRIVE or item in MASK:
+        return "species"
+    if item in TYPE_BOOST or item in PLATES or item in GEM:
+        return "type"
+    if item in ATTACK:
+        return "attack"
+    if item in RECOVER:
+        return "recover"
+    if item in ONCE or item in HIT_TYPE_BOOST:
+        return "once"
+    if item in GUARD:
+        return "guard"
+    if item in WEATHER_ROCK or item in SEED or item in ("LIGHTCLAY", "TERRAINEXTENDER"):
+        return "field"
+    if item in POWER_EV or item in EXP_ITEMS or item in HAPPINESS_ITEMS or item == "MACHOBRACE":
+        return "train"
+    return "etc"
+
+
+def group_kr(key):
+    return _GROUP_KR.get(key, key)
+
 # 메가스톤 (시즌 3). 배틀 효과는 없고 메가진화의 열쇠다. 도감의 megas 에서
 # 채운다(register_megas) - 여기 없으면 normalize 가 버려서, 들리지도 못하고
 # 배틀에서도 사라진다.

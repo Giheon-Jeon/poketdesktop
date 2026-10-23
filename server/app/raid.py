@@ -304,9 +304,15 @@ def _can_play(uid, now=None):
         raise ValueError("오늘은 이미 레이드에 참가했습니다. 내일 다시 도전하세요.")
     if len(party_of(uid)) < config.RAID_MIN_PARTY:
         if len(party_all(uid)) >= config.RAID_MIN_PARTY:
-            raise ValueError("전설·환상 포켓몬은 한 팀에 한 마리만 데려갈 수 있습니다. "
+            from . import pvp
+            _team, legend, same = pvp.drop_counts(party_all(uid))
+            if same and not legend:
+                raise ValueError("같은 포켓몬은 한 팀에 한 마리만 데려갈 수 있습니다. "
+                                 "서로 다른 포켓몬 %d마리 이상 데리고 와야 합니다." % config.RAID_MIN_PARTY)
+            raise ValueError("%s전설·환상 포켓몬은 한 팀에 한 마리만 데려갈 수 있습니다. "
                              "전설·환상이 아닌 포켓몬과 함께 %d마리 이상 데리고 와야 "
-                             "합니다." % config.RAID_MIN_PARTY)
+                             "합니다." % ("같은 포켓몬은 한 팀에 한 마리만 데려갈 수 있고, " if same else "",
+                                          config.RAID_MIN_PARTY))
         raise ValueError("포켓몬을 %d마리 이상 데리고 와야 합니다."
                          % config.RAID_MIN_PARTY)
 

@@ -402,6 +402,8 @@ def set_team(uid, kind, ids, now=None):
     if sum(1 for x in mons if x["species"] in names) > pvp.RESTRICTED_MAX:
         raise HTTPException(409, "전설·환상 포켓몬은 한 팀에 %d마리만 넣을 수 있습니다."
                             % pvp.RESTRICTED_MAX)
+    if pvp.too_many_same([x["species"] for x in mons]):
+        raise HTTPException(409, "같은 포켓몬은 한 팀에 %d마리만 넣을 수 있습니다." % pvp.SAME_SPECIES_MAX)
     col = "def_ids" if kind == "def" else "atk_ids"
     # 고정된 줄의 길드는 안 바꾼다 - 전략 기간에 다른 길드로 옮긴 사람이 그 길드 사람이 되면 안 된다
     db.run("INSERT INTO guild_war_team (season, user_id, guild_id, name, %s, updated_at)"
@@ -436,11 +438,20 @@ def _default_team(uid):
 
 
 def _snapshot(uid, ids):
-    """전쟁에 나갈 팀. 랭크 배틀과 같은 규칙으로 다듬는다 (전설·환상 한 마리, 레벨 상한)."""
+    """전쟁에 나갈 팀. 랭크 배틀과 같은 규칙으로 다듬는다 (전설·환상 한 마리, 같은 종 한 마리, 레벨 상한)."""
     mons = _mons(uid, ids) if ids else []
     if not mons:
         mons = _default_team(uid)
     return pvp.capped(pvp.restrict(mons[:config.MAX_PARTY])[0])
+
+
+def _ready(team):
+    """고정해 둔 팀을 판에 올리기 직전에 다시 다듬는다 (10/22).
+
+    팀은 전략 기간에 고정되는데 규칙은 그 뒤에 생길 수 있다 - 같은 종은 한 마리만 나가고(pvp.restrict),
+    유대 미션을 마친 개체만 메가진화한다(mega.mark_bonded - 지금의 유대로). AI 수비대 팀은 id 가 없어 유대는 그대로다.
+    """
+    return mega.mark_bonded(pvp.restrict(team)[0])
 
 
 # ---------------------------------------------------------------- 명단 고정·지도 나누기 (전략 기간 시작)
@@ -845,7 +856,7 @@ def _trainer(t, s):
     """그 칸을 지키는 쪽을 관장 판의 '트레이너' 로."""
     e = entry(t["guild_id"], s)
     gname = e["name"] if e else "?"
-    team = _guard_team(t, s)
+    team = _ready(_guard_team(t, s))
     if t["guard_user"] == AI_GUARD:
         name, sprite, uid = "AI 수비대", t["ai_sprite"], None
     else:
@@ -886,7 +897,7 @@ def attack(uid, region, now=None):
     trainer = _trainer(t, s)
     if not trainer["team"]:
         raise HTTPException(409, "그 칸을 지키는 팀이 없습니다.")
-    tb = TB.TrainerBattle(deps.dex(), json.loads(me["atk_team"]), trainer, random.Random())
+    tb = TB.TrainerBattle(deps.dex(), _ready(json.loads(me["atk_team"])), trainer, random.Random())
     tb.keystone["me"] = mega.has_keystone(uid)
     tb.zring["me"] = gimmick.has_zring(uid)
     events = tb.start()
@@ -1225,7 +1236,8 @@ def tile_view(uid, region, now=None):
         raise HTTPException(404, "그런 칸이 없습니다.")
     my = _my_gid(uid, s)
     mine = t["guild_id"] == my
-    mons, hidden = _hide(_guard_team(t, s), mine)
+    # 판에 나가는 것과 같게 - 규칙(같은 종 한 마리, 10/22) 전에 고정된 팀도 거른다 (_ready 와 같다)
+    mons, hidden = _hide(pvp.restrict(_guard_team(t, s))[0], mine)
     e = entry(t["guild_id"], s)
     home = entry(t["home_guild"], s) if t["home_guild"] != t["guild_id"] else None
     adj = neighbors(s)
@@ -1340,7 +1352,7 @@ def state(uid, now=None):
         if t and t["locked"] == 1:
             # 전략 기간에는 고정된 팀을 그대로 보여 주되 고칠 수 있다 (set_team 이 고정된 것도 고친다)
             teams[kind] = {"fixed": ph != "plan", "set": True,
-                           "mons": preview(json.loads(t["%s_team" % kind]))}
+                           "mons": preview(pvp.restrict(json.loads(t["%s_team" % kind]))[0])}
         else:
             ids = _ids(t["%s_ids" % kind]) if t else []
             mons = _mons(uid, ids) if ids else []
